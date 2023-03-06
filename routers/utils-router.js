@@ -2,7 +2,7 @@
 
 const express = require("express");
 const axios = require('axios');
-const { headers, topUpBotAccounts, topUpOwner } = require("../utils");
+const { headers, topUpBotAccounts, topUpOwner, topUpAccount } = require("../utils");
 
 const router = express.Router();
 
@@ -22,6 +22,7 @@ router.post("/clone-fork", async (req, res) => {
     const {cloneForkId, botAccounts} = req.body;
 
     const url = 'https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/clone-fork'
+    
     const body = { fork_id : cloneForkId};
     const forkRes = await axios.post(url, body, { headers });
 
@@ -31,5 +32,26 @@ router.post("/clone-fork", async (req, res) => {
     await topUpOwner(chainId, forkId);
     res.send(forkId);
 });
+
+router.post("/set-both-auth", async (req, res) => {
+    const {forkId, botAccounts} = req.body;
+
+    const url = 'https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/fork/' + forkId;
+    const forkRes = await axios.get(url, {headers});
+
+    const chainId = forkRes.data.simulation_fork.network_id;
+
+    await topUpBotAccounts(botAccounts, chainId, forkId);
+    await topUpOwner(chainId, forkId);
+    res.send("Success");
+});
+
+router.post("gib-money", async (req, res) => {
+    const {forkId, accounts} = req.body;
+    for (let i = 0; i < accounts.length; i++){
+        await topUpAccount(accounts[i], forkId);
+    }
+    res.send("Success");
+})
 
 module.exports = router;

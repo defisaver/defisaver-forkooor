@@ -1,7 +1,8 @@
 const hre = require('hardhat');
 const axios = require('axios');
+const storageSlots = require('./storageSlots.json');
 
-const { botAuthAbi, dfsRegistryAbi } = require('./abi/utils-abi');
+const { botAuthAbi, dfsRegistryAbi, iProxyERC20Abi, erc20Abi } = require('./abi/utils-abi');
 
 const headers = {
     'Content-Type': 'application/json',
@@ -77,6 +78,8 @@ const getNameId = (name) => {
     return hash.substr(0, 10);
 };
 
+const toBytes32 = (bn) => hre.ethers.utils.hexlify(hre.ethers.utils.zeroPad(bn.toHexString(), 32));
+
 const topUpBotAccounts = async (botAccounts, chainId, forkId) => {
     hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
     for (let i = 0; i < botAccounts.length; i++) {
@@ -117,6 +120,58 @@ const getAddrFromRegistry = async (name, chainId) => {
     return addr;
 };
 
+const setBalance = async (tokenAddr, userAddr, amount, forkId) => {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    const chainId = await getChainId(forkId);
+    const [signer] = await hre.ethers.getSigners();
+
+    const erc20 = new hre.ethers.Contract(tokenAddr, erc20Abi, signer);
+
+    const decimals = await erc20.decimals();
+    const value = hre.ethers.utils.parseUnits(amount.toString(), decimals);
+    try {
+        const [signer] = await hre.ethers.getSigners();
+
+        let tokenContract = new hre.ethers.Contract(tokenAddr, iProxyERC20Abi, signer);
+        const newTokenAddr = await tokenContract.callStatic.target();
+
+        tokenContract = new hre.ethers.Contract(newTokenAddr, iProxyERC20Abi, signer);
+        const tokenState = await tokenContract.callStatic.tokenState();
+        // eslint-disable-next-line no-param-reassign
+        tokenAddr = tokenState;
+    // eslint-disable-next-line no-empty
+    } catch (error) {
+    }
+    const slotObj = storageSlots[chainId][tokenAddr];
+    if (!slotObj) {
+        console.log("ERRROR", tokenAddr, userAddr);
+    }
+    const slotInfo = { isVyper: slotObj.isVyper, num: slotObj.num };
+    let index;
+    if (slotInfo.isVyper) {
+        index = hre.ethers.utils.solidityKeccak256(
+            ['uint256', 'uint256'],
+            [slotInfo.num, userAddr], // key, slot
+        );
+    } else {
+        index = hre.ethers.utils.solidityKeccak256(
+            ['uint256', 'uint256'],
+            [userAddr, slotInfo.num], // key, slot
+        );
+    }
+    while (index.startsWith('0x0')) { index = `0x${index.slice(3)}`; }
+
+    await hre.ethers.provider.send('tenderly_setStorageAt', [tokenAddr, index.toString(), toBytes32(value).toString()]);
+    await hre.ethers.provider.send('evm_mine', []); // Just mines to the next block
+}
+
+const getChainId = async (forkId) => {
+    const url = 'https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/fork/' + forkId;
+    const forkRes = await axios.get(url, {headers});
+
+    return forkRes.data.simulation_fork.network_id;
+}
+
 
 module.exports = {
     headers,
@@ -125,4 +180,6 @@ module.exports = {
     topUpAccount,
     getAddrFromRegistry,
     topUpOwner,
+    getChainId,
+    setBalance
 }

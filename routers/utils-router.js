@@ -2,7 +2,7 @@
 
 const express = require("express");
 const axios = require('axios');
-const { headers, topUpBotAccounts, topUpOwner, topUpAccount } = require("../utils");
+const { headers, topUpBotAccounts, topUpOwner, topUpAccount, getChainId, setBalance } = require("../utils");
 
 const router = express.Router();
 
@@ -36,22 +36,36 @@ router.post("/clone-fork", async (req, res) => {
 router.post("/set-both-auth", async (req, res) => {
     const {forkId, botAccounts} = req.body;
 
-    const url = 'https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/fork/' + forkId;
-    const forkRes = await axios.get(url, {headers});
-
-    const chainId = forkRes.data.simulation_fork.network_id;
+    const chainId = await getChainId(forkId);
 
     await topUpBotAccounts(botAccounts, chainId, forkId);
     await topUpOwner(chainId, forkId);
     res.send("Success");
 });
 
-router.post("gib-money", async (req, res) => {
+router.post("/gib-money", async (req, res) => {
     const {forkId, accounts} = req.body;
     for (let i = 0; i < accounts.length; i++){
         await topUpAccount(accounts[i], forkId);
     }
     res.send("Success");
+})
+
+router.post("/gib-tokens", async (req, res) => {
+    console.log("HERE")
+    const { forkId, accounts, tokens, amounts} = req.body;
+    
+
+    for (let i = 0; i < accounts.length; i++){
+        for (let j = 0; j < tokens.length; j++) {
+            await setBalance(tokens[j], accounts[i], amounts[j], forkId);
+        }
+    }
+    res.send("success");
+})
+router.get('/', (req, res) => {
+    res.send('Hello2');
+    // point to docs, have a list of endpoints
 })
 
 module.exports = router;

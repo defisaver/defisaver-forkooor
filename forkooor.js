@@ -1,11 +1,12 @@
 const express = require('express')
 require('dotenv-safe').config();
 
-const utilsRouter = require("./routers/utils-router");
+const generalRouter = require("./src/routers/general");
 
 const app = express();
 app.use(express.json({extended: true}))
-app.use("/utils", utilsRouter);
+
+app.use("/general", generalRouter);
 
 app.get('/', (req, res) => {
     res.send('Hello');

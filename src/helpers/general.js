@@ -108,6 +108,13 @@ const cloneFork = async(cloningForkId, tenderlyAccessKey) => {
     return forkRes.data.simulation_fork.id;
 }
 
+const timeTravel = async (forkId, timeIncrease) => {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    
+    await hre.ethers.provider.send('evm_increaseTime', [timeIncrease]);
+    await hre.ethers.provider.send('evm_mine', []); // Just mines to the next block
+};
+
 
 module.exports = {
     createNewFork,
@@ -116,4 +123,5 @@ module.exports = {
     topUpAccount,
     setUpBotAccounts,
     setBalance,
+    timeTravel,
 }

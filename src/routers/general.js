@@ -1,7 +1,7 @@
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, setBalance } = require("../helpers/general");
+const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, setBalance, timeTravel } = require("../helpers/general");
 
 const router = express.Router();
 
@@ -67,6 +67,19 @@ router.post("/set-token-balances", async (req, res) => {
         const { forkId, tenderlyAccessKey, token, account, amount} = req.body;
 
         await setBalance(forkId, tenderlyAccessKey, token, account, amount);
+        res.send("Success");
+    } catch(err){
+        res.status(500);
+        res.send(err); 
+    }
+});
+
+
+router.post("/time-travel", async (req, res) => {
+    try{
+        const { forkId, amount} = req.body;
+
+        await timeTravel(forkId, amount);
         res.send("Success");
     } catch(err){
         res.status(500);

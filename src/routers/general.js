@@ -63,14 +63,15 @@ router.post("/set-eth-balances", async (req, res) => {
 });
 
 router.post("/set-token-balances", async (req, res) => {
+    let balanceResponse = "Unknown error"
     try{
         const { forkId, tenderlyAccessKey, token, account, amount} = req.body;
 
-        const balanceResponse = await setBalance(forkId, tenderlyAccessKey, token, account, amount);
+        balanceResponse = await setBalance(forkId, tenderlyAccessKey, token, account, amount);
         res.send("Success");
     } catch(err){
-        res.status(500);
-        res.send(err, balanceResponse); 
+        console.log(err);
+        res.status(500).send(err, balanceResponse);
     }
 });
 

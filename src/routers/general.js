@@ -66,11 +66,11 @@ router.post("/set-token-balances", async (req, res) => {
     try{
         const { forkId, tenderlyAccessKey, token, account, amount} = req.body;
 
-        await setBalance(forkId, tenderlyAccessKey, token, account, amount);
+        const balanceResponse = await setBalance(forkId, tenderlyAccessKey, token, account, amount);
         res.send("Success");
     } catch(err){
         res.status(500);
-        res.send(err); 
+        res.send(err, balanceResponse); 
     }
 });
 

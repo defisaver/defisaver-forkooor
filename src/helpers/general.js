@@ -55,6 +55,7 @@ const setBalance = async (forkId, tenderlyAccessKey, tokenAddr, userAddr, amount
 
     const decimals = await erc20.decimals();
     const value = hre.ethers.utils.parseUnits(amount.toString(), decimals);
+    const inputTokenAddr = tokenAddr;
     try {
         const [signer] = await hre.ethers.getSigners();
 
@@ -68,9 +69,9 @@ const setBalance = async (forkId, tenderlyAccessKey, tokenAddr, userAddr, amount
     // eslint-disable-next-line no-empty
     } catch (error) {
     }
-    const slotObj = storageSlots[chainId][tokenAddr];
+    const slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
     if (!slotObj) {
-        console.log("ERRROR", tokenAddr, userAddr);
+        return ("Token balance not changeable : " + inputTokenAddr + " - " + chainId);
     }
     const slotInfo = { isVyper: slotObj.isVyper, num: slotObj.num };
     let index;

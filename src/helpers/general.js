@@ -5,32 +5,36 @@ const storageSlots = require('../storageSlots.json');
 const { botAuthAbi, iProxyERC20Abi, erc20Abi } = require('../abi/utils');
 const { getHeaders, addresses, getAddrFromRegistry, toBytes32 } = require('../utils');
 
-const getChainId = async (forkId, tenderlyAccessKey) => {
-    const url = 'https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/fork/' + forkId;
+const getChainId = async (forkId, tenderlyProject, tenderlyAccessKey) => {
+    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork/${forkId}`;
     const headers = getHeaders(tenderlyAccessKey);
     const forkRes = await axios.get(url, {headers});
     return forkRes.data.simulation_fork.network_id;
 }
 
-const topUpAccount = async(forkId, tenderlyAccessKey, address, amount, ) => {
+const topUpAccount = async(forkId, tenderlyProject, tenderlyAccessKey, address, amount, ) => {
     headers = getHeaders(tenderlyAccessKey);
     const body = { accounts: [address], amount: amount };
-    await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/fork/${forkId}/balance`, body, { headers });
+    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork/${forkId}/balance`
+    await axios.post(url, body, { headers });
 }
 
-const topUpOwner = async(forkId, tenderlyAccessKey) => {
-    const chainId = await getChainId(forkId, tenderlyAccessKey);
+const topUpOwner = async(forkId, tenderlyProject, tenderlyAccessKey) => {
+    const chainId = await getChainId(forkId, tenderlyProject, tenderlyAccessKey);
     const owner = addresses[chainId].OWNER_ACC;
-    await topUpAccount(forkId, tenderlyAccessKey, owner, 100);
+    await topUpAccount(forkId, tenderlyProject, tenderlyAccessKey, owner, 100);
 }
 
-const setUpBotAccounts = async (forkId, tenderlyAccessKey, botAccounts) => {
-    const chainId = await getChainId(forkId, tenderlyAccessKey);
+const setUpBotAccounts = async (forkId, tenderlyProject, tenderlyAccessKey, botAccounts) => {
+    const chainId = await getChainId(forkId, tenderlyProject, tenderlyAccessKey);
     hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    if (!botAccounts) {
+        botAccounts = [];
+    }
     for (let i = 0; i < botAccounts.length; i++) {
         const botAddr = botAccounts[i];
         // eslint-disable-next-line no-await-in-loop
-        await topUpAccount(forkId, tenderlyAccessKey, botAddr, 1000);
+        await topUpAccount(forkId, tenderlyProject, tenderlyAccessKey, botAddr, 1000);
         // eslint-disable-next-line no-await-in-loop
         await addBotCaller(botAddr, chainId);
     }
@@ -92,10 +96,11 @@ const setBalance = async (forkId, tenderlyAccessKey, tokenAddr, userAddr, amount
     await hre.ethers.provider.send('evm_mine', []); // Just mines to the next block
 }
 
-const createNewFork = async(tenderlyAccessKey, chainId) => {
+const createNewFork = async(tenderlyProject, tenderlyAccessKey, chainId) => {
     const body = { network_id: chainId };
     const headers = getHeaders(tenderlyAccessKey);
-    const forkRes = await axios.post('https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/fork', body, { headers });
+    const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork`, body, { headers });
+    console.log(forkRes);
     return forkRes.data.simulation_fork.id;
 }
 

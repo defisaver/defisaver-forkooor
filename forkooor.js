@@ -1,4 +1,7 @@
 const express = require('express')
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
+
 require('dotenv-safe').config();
 
 const generalRouter = require("./src/routers/general");
@@ -8,10 +11,7 @@ app.use(express.json({extended: true}))
 
 app.use("/general", generalRouter);
 
-app.get('/', (req, res) => {
-    res.send('Hello');
-    // point to docs, have a list of endpoints
-})
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
 const port = process.env.PORT || 3000;

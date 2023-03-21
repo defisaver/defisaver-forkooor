@@ -9,17 +9,70 @@ const router = express.Router();
 // TODO: split helpers utils into view (getters), strategy sub specifics, and state changing
 // TODO: README file for adding new routers/functions/endpoints etc.
 
+/**
+ * @swagger
+ * /general/new-fork:
+ *   post:
+ *     summary: Returns forkId of the Tenderly fork created using given parameters
+ *     tags:
+ *      - general
+ *     description: Creates a Tenderly fork in a desired tenderly project, using provided access key, on network matching given chainId and sets up bot accounts if given
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              tenderlyProject:
+ *                type: string
+ *                example: strategies
+ *              tenderlyAccessKey:
+ *                type: string
+ *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
+ *              chainId:
+ *                type: integer
+ *                example: 1
+ *              botAccounts:
+ *                type: array
+ *                items:
+ *                 type: string
+ *                 example: "0x000000000000000000000000000000000000dEaD"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 forkId:
+ *                   type: string
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 router.post("/new-fork", async (req, res) => {
+    let resObj;
     try {
-        const { tenderlyAccessKey, chainId, botAccounts} = req.body;
+        const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts} = req.body;
 
-        const forkId = await createNewFork(tenderlyAccessKey, chainId);
-        await topUpOwner(forkId, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyAccessKey, botAccounts);
-        res.send(forkId);
+        const forkId = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
+        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
+        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+
+        resObj = { "forkId" : forkId };
+        res.status(200).send(resObj);
     } catch(err){
-        res.status(500);
-        res.send(err);    
+        resObj = { "error" : "Failed to create a new fork" };
+        res.status(500).send(resObj); 
     }
 });
 

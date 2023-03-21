@@ -50,9 +50,9 @@ const addBotCaller = async (
     await botAuth.addCaller(botAddr, { gasLimit: 800000 });
 };
 
-const setBalance = async (forkId, tenderlyAccessKey, tokenAddr, userAddr, amount) => {
+const setBalance = async (forkId, tenderlyProject, tenderlyAccessKey, tokenAddr, userAddr, amount) => {
     hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-    const chainId = await getChainId(forkId, tenderlyAccessKey);
+    const chainId = await getChainId(forkId, tenderlyProject, tenderlyAccessKey);
     const [signer] = await hre.ethers.getSigners();
 
     const erc20 = new hre.ethers.Contract(tokenAddr, erc20Abi, signer);
@@ -75,7 +75,7 @@ const setBalance = async (forkId, tenderlyAccessKey, tokenAddr, userAddr, amount
     }
     const slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
     if (!slotObj) {
-        return ("Token balance not changeable : " + inputTokenAddr + " - " + chainId);
+        throw new Error("Token balance not changeable : " + inputTokenAddr + " - " + chainId);
     }
     const slotInfo = { isVyper: slotObj.isVyper, num: slotObj.num };
     let index;
@@ -100,12 +100,11 @@ const createNewFork = async(tenderlyProject, tenderlyAccessKey, chainId) => {
     const body = { network_id: chainId };
     const headers = getHeaders(tenderlyAccessKey);
     const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork`, body, { headers });
-    console.log(forkRes);
     return forkRes.data.simulation_fork.id;
 }
 
-const cloneFork = async(cloningForkId, tenderlyAccessKey) => {
-    const url = 'https://api.tenderly.co/api/v1/account/defisaver-v2/project/strategies/clone-fork'
+const cloneFork = async(cloningForkId, tenderlyProject, tenderlyAccessKey) => {
+    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/clone-fork`
     
     const body = { fork_id : cloningForkId};
     const headers = getHeaders(tenderlyAccessKey);
@@ -116,9 +115,13 @@ const cloneFork = async(cloningForkId, tenderlyAccessKey) => {
 
 const timeTravel = async (forkId, timeIncrease) => {
     hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-    
+
+    const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
     await hre.ethers.provider.send('evm_increaseTime', [timeIncrease]);
     await hre.ethers.provider.send('evm_mine', []); // Just mines to the next block
+    const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
+
+    return { oldTimestamp, newTimestamp };
 };
 
 

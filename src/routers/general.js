@@ -68,7 +68,7 @@ router.post("/new-fork", async (req, res) => {
         await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
         await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
 
-        resObj = { "forkId" : forkId };
+        resObj = { forkId };
         res.status(200).send(resObj);
     } catch(err){
         resObj = { "error" : "Failed to create a new fork" };
@@ -76,68 +76,347 @@ router.post("/new-fork", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /general/clone-fork:
+ *   post:
+ *     summary: Returns forkId of the Tenderly fork cloned from an existing fork
+ *     tags:
+ *      - general
+ *     description: Creates a Tenderly fork by cloning an already existing fork in the same project as provided, using the same access key and sets up bot accounts if given
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              tenderlyProject:
+ *                type: string
+ *                example: strategies
+ *              tenderlyAccessKey:
+ *                type: string
+ *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
+ *              cloningForkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              botAccounts:
+ *                type: array
+ *                items:
+ *                 type: string
+ *                 example: "0x000000000000000000000000000000000000dEaD"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 forkId:
+ *                   type: string
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 router.post("/clone-fork", async (req, res) => {
+    let respObj;
     try {
-        const { cloningForkId, tenderlyAccessKey, botAccounts} = req.body;
+        const { cloningForkId, tenderlyProject, tenderlyAccessKey, botAccounts} = req.body;
 
-        const forkId = await cloneFork(cloningForkId, tenderlyAccessKey)
-        await topUpOwner(forkId, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyAccessKey, botAccounts);
-        res.send(forkId);
+        const forkId = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey)
+        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
+        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+        resObj = { forkId };
+        res.status(200).send(resObj);
     } catch(err){
-        res.status(500);
-        res.send(err); 
+        resObj = { "error" : "Failed to clone a fork" };
+        res.status(500).send(resObj);  
     }
 });
 
+/**
+ * @swagger
+ * /general/set-bot-auth:
+ *   post:
+ *     summary: Sets up bot accounts 
+ *     tags:
+ *      - general
+ *     description: Sets up bot accounts by  iving them ETH and adding them as bot caller on BotAuth contract
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              tenderlyProject:
+ *                type: string
+ *                example: strategies
+ *              tenderlyAccessKey:
+ *                type: string
+ *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
+ *              botAccounts:
+ *                type: array
+ *                items:
+ *                 type: string
+ *                 example: "0x000000000000000000000000000000000000dEaD"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 botAccounts:
+ *                   type: array
+ *                   items:
+ *                    type: string
+ *                    example: "0x000000000000000000000000000000000000dEaD"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 router.post("/set-bot-auth", async (req, res) => {
+    let resObj;
     try {
-        const { forkId, tenderlyAccessKey, botAccounts} = req.body;
+        const { forkId, tenderlyProject, tenderlyAccessKey, botAccounts} = req.body;
 
-        await topUpOwner(forkId, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyAccessKey, botAccounts);
-        res.send("Success");
+        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
+        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+        resObj = { botAccounts };
+        res.status(200).send(resObj);
     } catch(err){
-        res.status(500);
-        res.send(err); 
+        resObj = { "error" : "Failed to set both auth" };
+        res.status(500).send(resObj);  
     }
 });
 
-router.post("/set-eth-balances", async (req, res) => {
+/**
+ * @swagger
+ * /general/set-eth-balance:
+ *   post:
+ *     summary: Sets eth balance of a given address to requested amount
+ *     tags:
+ *      - general
+ *     description: Sets eth balance of a given address to requested amount
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              tenderlyProject:
+ *                type: string
+ *                example: strategies
+ *              tenderlyAccessKey:
+ *                type: string
+ *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
+ *              account:
+ *                type: string
+ *                example: "0x000000000000000000000000000000000000dEaD"
+ *              amount:
+ *                type: integer
+ *                example: 100
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 account:
+ *                   type: string
+ *                   example: "0x000000000000000000000000000000000000dEaD"
+ *                 amount:
+ *                   type: integer
+ *                   example: 100
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/set-eth-balance", async (req, res) => {
+    let resObj;
     try{
-        const { forkId, tenderlyAccessKey, account, amount} = req.body;
+        const { forkId, tenderlyProject, tenderlyAccessKey, account, amount} = req.body;
 
-        await topUpAccount(forkId, tenderlyAccessKey, account, amount);
-        res.send("Success");
+        await topUpAccount(forkId, tenderlyProject, tenderlyAccessKey, account, amount);
+        resObj = { 
+            account,
+            amount 
+        };
+        res.status(200).send(resObj);
     } catch(err){
-        res.status(500);
-        res.send(err); 
+        resObj = { "error" : "Failed to set ETH balance" };
+        res.status(500).send(resObj);  
     }
 });
 
-router.post("/set-token-balances", async (req, res) => {
-    let balanceResponse = "Unknown error"
+/**
+ * @swagger
+ * /general/set-token-balance:
+ *   post:
+ *     summary: Sets token balance of a given address to requested amount
+ *     tags:
+ *      - general
+ *     description: Sets token balance (ERC20) of a given address to requested amount
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              tenderlyProject:
+ *                type: string
+ *                example: strategies
+ *              tenderlyAccessKey:
+ *                type: string
+ *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
+ *              token:
+ *                type: string
+ *                example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+ *              account:
+ *                type: string
+ *                example: "0x000000000000000000000000000000000000dEaD"
+ *              amount:
+ *                type: integer
+ *                example: 100
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+ *                 account:
+ *                   type: string
+ *                   example: "0x000000000000000000000000000000000000dEaD"
+ *                 amount:
+ *                   type: integer
+ *                   example: 100
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/set-token-balance", async (req, res) => {
+    let resObj;
     try{
-        const { forkId, tenderlyAccessKey, token, account, amount} = req.body;
+        const { forkId, tenderlyProject, tenderlyAccessKey, token, account, amount} = req.body;
 
-        balanceResponse = await setBalance(forkId, tenderlyAccessKey, token, account, amount);
-        res.send("Success");
+        await setBalance(forkId, tenderlyProject, tenderlyAccessKey, token, account, amount);
+        resObj = { 
+            token,
+            account,
+            amount 
+        };
+        res.status(200).send(resObj);
     } catch(err){
-        console.log(err);
-        res.status(500).send(err, balanceResponse);
+        resObj = { "error" : err.toString() };
+        res.status(500).send(resObj);  
     }
 });
 
-
+/**
+ * @swagger
+ * /general/time-travel:
+ *   post:
+ *     summary: Increases the timestamp on a fork by a given amount
+ *     tags:
+ *      - general
+ *     description: Increases the timestamp on a fork by a given amount
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              amount:
+ *                type: integer
+ *                example: 10000000
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 oldTimestamp:
+ *                   type: integer
+ *                   example: 1679424065
+ *                 newTimestamp:
+ *                   type: integer
+ *                   example: 1689424065
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 router.post("/time-travel", async (req, res) => {
+    let resObj;
     try{
         const { forkId, amount} = req.body;
 
-        await timeTravel(forkId, amount);
-        res.send("Success");
+        resObj = await timeTravel(forkId, amount);
+        res.status(200).send(resObj);
     } catch(err){
-        res.status(500);
-        res.send(err); 
+        resObj = { "error" : "Failed to time travel"};
+        res.status(500).send(resObj);  
     }
 });
 

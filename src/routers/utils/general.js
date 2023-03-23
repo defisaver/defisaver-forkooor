@@ -1,7 +1,7 @@
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, setBalance, timeTravel } = require("../helpers/general");
+const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, setBalance, timeTravel } = require("../../helpers/utils/general");
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /general/new-fork:
+ * /utils/general/new-fork:
  *   post:
  *     summary: Returns forkId of the Tenderly fork created using given parameters
  *     tags:
@@ -65,8 +65,8 @@ router.post("/new-fork", async (req, res) => {
         const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts} = req.body;
 
         const forkId = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
-        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+        await topUpOwner(forkId);
+        await setUpBotAccounts(forkId, botAccounts);
 
         resObj = { forkId };
         res.status(200).send(resObj);
@@ -78,7 +78,7 @@ router.post("/new-fork", async (req, res) => {
 
 /**
  * @swagger
- * /general/clone-fork:
+ * /utils/general/clone-fork:
  *   post:
  *     summary: Returns forkId of the Tenderly fork cloned from an existing fork
  *     tags:
@@ -127,13 +127,13 @@ router.post("/new-fork", async (req, res) => {
  *                   type: string
  */
 router.post("/clone-fork", async (req, res) => {
-    let respObj;
+    let resObj;
     try {
         const { cloningForkId, tenderlyProject, tenderlyAccessKey, botAccounts} = req.body;
 
         const forkId = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey)
-        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+        await topUpOwner(forkId);
+        await setUpBotAccounts(forkId, botAccounts);
         resObj = { forkId };
         res.status(200).send(resObj);
     } catch(err){
@@ -144,7 +144,7 @@ router.post("/clone-fork", async (req, res) => {
 
 /**
  * @swagger
- * /general/set-bot-auth:
+ * /utils/general/set-bot-auth:
  *   post:
  *     summary: Sets up bot accounts 
  *     tags:
@@ -161,12 +161,6 @@ router.post("/clone-fork", async (req, res) => {
  *              forkId:
  *                type: string
  *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
  *              botAccounts:
  *                type: array
  *                items:
@@ -198,10 +192,10 @@ router.post("/clone-fork", async (req, res) => {
 router.post("/set-bot-auth", async (req, res) => {
     let resObj;
     try {
-        const { forkId, tenderlyProject, tenderlyAccessKey, botAccounts} = req.body;
+        const { forkId, botAccounts} = req.body;
 
-        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+        await topUpOwner(forkId);
+        await setUpBotAccounts(forkId, botAccounts);
         resObj = { botAccounts };
         res.status(200).send(resObj);
     } catch(err){
@@ -212,7 +206,7 @@ router.post("/set-bot-auth", async (req, res) => {
 
 /**
  * @swagger
- * /general/set-eth-balance:
+ * /utils/general/set-eth-balance:
  *   post:
  *     summary: Sets eth balance of a given address to requested amount
  *     tags:
@@ -229,12 +223,6 @@ router.post("/set-bot-auth", async (req, res) => {
  *              forkId:
  *                type: string
  *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
  *              account:
  *                type: string
  *                example: "0x000000000000000000000000000000000000dEaD"
@@ -268,9 +256,9 @@ router.post("/set-bot-auth", async (req, res) => {
 router.post("/set-eth-balance", async (req, res) => {
     let resObj;
     try{
-        const { forkId, tenderlyProject, tenderlyAccessKey, account, amount} = req.body;
+        const { forkId, account, amount} = req.body;
 
-        await topUpAccount(forkId, tenderlyProject, tenderlyAccessKey, account, amount);
+        await topUpAccount(forkId, account, amount);
         resObj = { 
             account,
             amount 
@@ -284,7 +272,7 @@ router.post("/set-eth-balance", async (req, res) => {
 
 /**
  * @swagger
- * /general/set-token-balance:
+ * /utils/general/set-token-balance:
  *   post:
  *     summary: Sets token balance of a given address to requested amount
  *     tags:
@@ -301,12 +289,6 @@ router.post("/set-eth-balance", async (req, res) => {
  *              forkId:
  *                type: string
  *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
  *              token:
  *                type: string
  *                example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
@@ -346,9 +328,9 @@ router.post("/set-eth-balance", async (req, res) => {
 router.post("/set-token-balance", async (req, res) => {
     let resObj;
     try{
-        const { forkId, tenderlyProject, tenderlyAccessKey, token, account, amount} = req.body;
+        const { forkId, token, account, amount} = req.body;
 
-        await setBalance(forkId, tenderlyProject, tenderlyAccessKey, token, account, amount);
+        await setBalance(forkId, token, account, amount);
         resObj = { 
             token,
             account,
@@ -363,7 +345,7 @@ router.post("/set-token-balance", async (req, res) => {
 
 /**
  * @swagger
- * /general/time-travel:
+ * /utils/general/time-travel:
  *   post:
  *     summary: Increases the timestamp on a fork by a given amount
  *     tags:

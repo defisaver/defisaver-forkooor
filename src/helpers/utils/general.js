@@ -1,40 +1,41 @@
 const hre = require('hardhat');
 const axios = require('axios');
-const storageSlots = require('../storageSlots.json');
+const storageSlots = require('../../storageSlots.json');
 
-const { botAuthAbi, iProxyERC20Abi, erc20Abi } = require('../abi/utils');
-const { getHeaders, addresses, getAddrFromRegistry, toBytes32 } = require('../utils');
+const { botAuthAbi, iProxyERC20Abi, erc20Abi } = require('../../abi/utils');
+const { getHeaders, addresses, getAddrFromRegistry, toBytes32 } = require('../../utils');
 
-const getChainId = async (forkId, tenderlyProject, tenderlyAccessKey) => {
-    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork/${forkId}`;
-    const headers = getHeaders(tenderlyAccessKey);
-    const forkRes = await axios.get(url, {headers});
-    return forkRes.data.simulation_fork.network_id;
-}
+const topUpAccount = async(forkId, address, amount) => {
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    const weiAmount = hre.ethers.utils.parseUnits(amount.toString(), 18);
+    const weiAmountInHexString = weiAmount.toHexString();
+    await hre.ethers.provider.send("tenderly_setBalance", [
+        [address],
+        //amount in wei will be set for all wallets
+        hre.ethers.utils.hexValue(weiAmountInHexString),
+      ]);
 
-const topUpAccount = async(forkId, tenderlyProject, tenderlyAccessKey, address, amount, ) => {
-    headers = getHeaders(tenderlyAccessKey);
-    const body = { accounts: [address], amount: amount };
-    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork/${forkId}/balance`
-    await axios.post(url, body, { headers });
-}
+    const newBalance = await hre.ethers.provider.getBalance(address);
+    if (newBalance.toString() !== weiAmount.toString()) throw new Error(`Failed to update balance, balance now : ${newBalance}`);
+};
 
-const topUpOwner = async(forkId, tenderlyProject, tenderlyAccessKey) => {
-    const chainId = await getChainId(forkId, tenderlyProject, tenderlyAccessKey);
+const topUpOwner = async(forkId) => {
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    const { chainId } = await hre.ethers.provider.getNetwork();
     const owner = addresses[chainId].OWNER_ACC;
-    await topUpAccount(forkId, tenderlyProject, tenderlyAccessKey, owner, 100);
+    await topUpAccount(forkId, owner, 100);
 }
 
-const setUpBotAccounts = async (forkId, tenderlyProject, tenderlyAccessKey, botAccounts) => {
-    const chainId = await getChainId(forkId, tenderlyProject, tenderlyAccessKey);
-    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+const setUpBotAccounts = async (forkId, botAccounts) => {
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    const { chainId } = await hre.ethers.provider.getNetwork();
     if (!botAccounts) {
         botAccounts = [];
     }
     for (let i = 0; i < botAccounts.length; i++) {
         const botAddr = botAccounts[i];
         // eslint-disable-next-line no-await-in-loop
-        await topUpAccount(forkId, tenderlyProject, tenderlyAccessKey, botAddr, 1000);
+        await topUpAccount(forkId, botAddr, 1000);
         // eslint-disable-next-line no-await-in-loop
         await addBotCaller(botAddr, chainId);
     }
@@ -45,14 +46,16 @@ const addBotCaller = async (
     chainId
 ) => {
     const signer = await hre.ethers.provider.getSigner(addresses[chainId].OWNER_ACC);
-    const botAuthAddr = await getAddrFromRegistry('BotAuth', chainId);
+    const botAuthAddr = await getAddrFromRegistry('BotAuth');
     const botAuth = new hre.ethers.Contract(botAuthAddr, botAuthAbi, signer);
     await botAuth.addCaller(botAddr, { gasLimit: 800000 });
 };
 
-const setBalance = async (forkId, tenderlyProject, tenderlyAccessKey, tokenAddr, userAddr, amount) => {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-    const chainId = await getChainId(forkId, tenderlyProject, tenderlyAccessKey);
+const setBalance = async (forkId, tokenAddr, userAddr, amount) => {
+    console.log(forkId, tokenAddr, userAddr, amount);
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
     const [signer] = await hre.ethers.getSigners();
 
     const erc20 = new hre.ethers.Contract(tokenAddr, erc20Abi, signer);
@@ -96,6 +99,17 @@ const setBalance = async (forkId, tenderlyProject, tenderlyAccessKey, tokenAddr,
     await hre.ethers.provider.send('evm_mine', []); // Just mines to the next block
 }
 
+const timeTravel = async (forkId, timeIncrease) => {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+
+    const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
+    await hre.ethers.provider.send('evm_increaseTime', [timeIncrease]);
+    await hre.ethers.provider.send('evm_mine', []); // Just mines to the next block
+    const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
+
+    return { oldTimestamp, newTimestamp };
+};
+
 const createNewFork = async(tenderlyProject, tenderlyAccessKey, chainId) => {
     const body = { network_id: chainId };
     const headers = getHeaders(tenderlyAccessKey);
@@ -112,18 +126,6 @@ const cloneFork = async(cloningForkId, tenderlyProject, tenderlyAccessKey) => {
 
     return forkRes.data.simulation_fork.id;
 }
-
-const timeTravel = async (forkId, timeIncrease) => {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-
-    const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
-    await hre.ethers.provider.send('evm_increaseTime', [timeIncrease]);
-    await hre.ethers.provider.send('evm_mine', []); // Just mines to the next block
-    const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
-
-    return { oldTimestamp, newTimestamp };
-};
-
 
 module.exports = {
     createNewFork,

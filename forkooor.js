@@ -2,14 +2,17 @@ const express = require('express')
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./swagger');
 
+const generalRouter = require("./src/routers/utils/index");
+const makerRouter = require("./src/routers/maker/index");
+
 require('dotenv-safe').config();
 
-const generalRouter = require("./src/routers/general");
 
 const app = express();
 app.use(express.json({extended: true}))
 
-app.use("/general", generalRouter);
+app.use("/utils", generalRouter);
+app.use("/maker", makerRouter);
 
 app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

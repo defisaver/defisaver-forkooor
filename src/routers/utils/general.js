@@ -5,17 +5,13 @@ const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, se
 
 const router = express.Router();
 
-// TODO: folder and files for util functions
-// TODO: split helpers utils into view (getters), strategy sub specifics, and state changing
-// TODO: README file for adding new routers/functions/endpoints etc.
-
 /**
  * @swagger
  * /utils/general/new-fork:
  *   post:
  *     summary: Returns forkId of the Tenderly fork created using given parameters
  *     tags:
- *      - General
+ *      - Utils
  *     description: Creates a Tenderly fork in a desired tenderly project, using provided access key, on network matching given chainId and sets up bot accounts if given
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -83,7 +79,7 @@ router.post("/new-fork", async (req, res) => {
  *   post:
  *     summary: Returns forkId of the Tenderly fork cloned from an existing fork
  *     tags:
- *      - General
+ *      - Utils
  *     description: Creates a Tenderly fork by cloning an already existing fork in the same project as provided, using the same access key and sets up bot accounts if given
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -150,7 +146,7 @@ router.post("/clone-fork", async (req, res) => {
  *   post:
  *     summary: Sets up bot accounts 
  *     tags:
- *      - General
+ *      - Utils
  *     description: Sets up bot accounts by  iving them ETH and adding them as bot caller on BotAuth contract
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -212,7 +208,7 @@ router.post("/set-bot-auth", async (req, res) => {
  *   post:
  *     summary: Sets eth balance of a given address to requested amount
  *     tags:
- *      - General
+ *      - Utils
  *     description: Sets eth balance of a given address to requested amount
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -278,7 +274,7 @@ router.post("/set-eth-balance", async (req, res) => {
  *   post:
  *     summary: Sets token balance of a given address to requested amount
  *     tags:
- *      - General
+ *      - Utils
  *     description: Sets token balance (ERC20) of a given address to requested amount
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -351,7 +347,7 @@ router.post("/set-token-balance", async (req, res) => {
  *   post:
  *     summary: Increases the timestamp on a fork by a given amount
  *     tags:
- *      - General
+ *      - Utils
  *     description: Increases the timestamp on a fork by a given amount
  *     requestBody:
  *       description: Request body for the API endpoint

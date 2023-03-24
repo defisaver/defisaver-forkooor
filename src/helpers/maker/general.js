@@ -35,15 +35,13 @@ const createMcdVault = async (forkId, type, coll, debt, sender) => {
 
     const mcdManager = await getMcdManagerAddr();
 
-    // create Recipe 
+    // create and execute Recipe 
     const createVaultRecipe = new dfs.Recipe('CreateVaultRecipe', [
         new dfs.actions.maker.MakerOpenVaultAction(ilkObj.join, mcdManager),
         new dfs.actions.maker.MakerSupplyAction('$1', amountColl, ilkObj.join, senderAcc.address, mcdManager),
         new dfs.actions.maker.MakerGenerateAction('$1', amountDai, senderAcc.address, mcdManager),
     ]);
     const functionData = createVaultRecipe.encodeForDsProxyCall();
-
-    // execute Recipe
     try {
         const recipeExecutorAddr = await getAddrFromRegistry('RecipeExecutor');
         await proxy['execute(address,bytes)'](recipeExecutorAddr, functionData[1], { gasLimit: 3000000 });
@@ -66,6 +64,7 @@ const openEmptyMcdVault = async(forkId, type, sender) => {
     // get ethers.Signer object for sender eoa
     senderAcc = await hre.ethers.provider.getSigner(sender.toString());
     senderAcc.address = senderAcc._address;
+    
     // create Proxy if the sender doesn't already have one
     let proxy = await getProxy(senderAcc.address);
 
@@ -73,25 +72,19 @@ const openEmptyMcdVault = async(forkId, type, sender) => {
     const ilkObj = ilks.find((i) => i.ilkLabel === type);
     let asset = ilkObj.asset;
     if (asset === 'ETH') asset = 'WETH';
-    const tokenData = getAssetInfo(asset);
-
 
     const mcdManager = await getMcdManagerAddr();
-
-    // create Recipe 
+    // create and execute Recipe 
     const createVaultRecipe = new dfs.Recipe('CreateEmptyVaultRecipe', [
         new dfs.actions.maker.MakerOpenVaultAction(ilkObj.join, mcdManager),
     ]);
     const functionData = createVaultRecipe.encodeForDsProxyCall();
-
-    // execute Recipe
     try {
         const recipeExecutorAddr = await getAddrFromRegistry('RecipeExecutor');
         await proxy['execute(address,bytes)'](recipeExecutorAddr, functionData[1], { gasLimit: 3000000 });
     } catch (err) {
         throw new Error("Vault creation recipe failed");
     }
-
     // return createdVault object
     const vaultsAfter = await getVaultsForUser(proxy.address ,mcdManager);
     const vaultId = vaultsAfter.ids[vaultsAfter.ids.length - 1].toNumber();
@@ -125,20 +118,17 @@ const mcdSupply = async (forkId, sender, vaultId, supplyAmount) => {
     await approve(tokenData.address, proxy.address, sender);
 
     const amountColl = hre.ethers.utils.parseUnits(supplyAmount.toString(), tokenData.decimals);
-    // create Recipe 
+    // create and execute Recipe 
     const createVaultRecipe = new dfs.Recipe('SupplyRecipe', [
         new dfs.actions.maker.MakerSupplyAction(vaultId, amountColl, ilkObj.join, senderAcc.address, mcdManager),
     ]);
     const functionData = createVaultRecipe.encodeForDsProxyCall();
-
-    // execute Recipe
     try {
         const recipeExecutorAddr = await getAddrFromRegistry('RecipeExecutor');
         await proxy['execute(address,bytes)'](recipeExecutorAddr, functionData[1], { gasLimit: 3000000 });
     } catch (err) {
         throw new Error("Vault supply recipe failed");
     }
-
     // return updatedVault object
     const updatedVault = await getVaultInfo(vaultId, mcdManager);
     return updatedVault;

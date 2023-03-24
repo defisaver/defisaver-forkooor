@@ -2,7 +2,7 @@ const hre = require('hardhat');
 const axios = require('axios');
 const storageSlots = require('../../storageSlots.json');
 
-const { botAuthAbi, iProxyERC20Abi, erc20Abi } = require('../../abi/utils');
+const { botAuthAbi, iProxyERC20Abi, erc20Abi } = require('../../abi/general');
 const { getHeaders, addresses, getAddrFromRegistry, toBytes32 } = require('../../utils');
 
 const topUpAccount = async(forkId, address, amount) => {
@@ -52,7 +52,6 @@ const addBotCaller = async (
 };
 
 const setBalance = async (forkId, tokenAddr, userAddr, amount) => {
-    console.log(forkId, tokenAddr, userAddr, amount);
     hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
     const { chainId } = await hre.ethers.provider.getNetwork();
 

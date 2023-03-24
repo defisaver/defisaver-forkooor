@@ -1,77 +1,151 @@
-const {
-    getAssetInfo, ilks, utils: { compare },
-} = require('@defisaver/tokens');
-const dfs = require('@defisaver/sdk');
 const hre = require('hardhat');
-const { getCDPsabi } = require('../../abi/maker/views');
+const dfs = require('@defisaver/sdk');
+const { getAssetInfo, ilks } = require('@defisaver/tokens');
 const { getAddrFromRegistry, getProxy, approve } = require('../../utils');
 const { setBalance, topUpAccount } = require('../utils/general');
+const { getVaultsForUser, getVaultInfo, getMcdManagerAddr } = require('./view');
 
 
-const GET_CDPS_ADDR = '0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573';
-const MCD_MANAGER_ADDR = '0x5ef30b9986345249bc32d8928B7ee64DE9435E39';
-
-
+// creates a MCD vault for sender on his proxy (created if he doesn't have one)
 const createMcdVault = async (forkId, type, coll, debt, sender) => {
+    
+    // top up sender account so it has eth balance to pay for transactions
     await topUpAccount(forkId, sender, 100);
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-    let senderAcc = (await hre.ethers.getSigners())[0];
-    if (sender) {
-        senderAcc = await hre.ethers.provider.getSigner(sender.toString());
-        // eslint-disable-next-line no-underscore-dangle
-        senderAcc.address = senderAcc._address;
-    }
+
+    // get ethers.Signer object for sender eoa
+    senderAcc = await hre.ethers.provider.getSigner(sender.toString());
+    senderAcc.address = senderAcc._address;
+    // create Proxy if the sender doesn't already have one
     let proxy = await getProxy(senderAcc.address);
 
+    // find coll asset
     const ilkObj = ilks.find((i) => i.ilkLabel === type);
-
     let asset = ilkObj.asset;
-
     if (asset === 'ETH') asset = 'WETH';
-
     const tokenData = getAssetInfo(asset);
+
+    // set coll balance for the user
+    await setBalance(forkId, tokenData.address, sender, coll);
+
+    // approve coll asset for proxy to pull
+    await approve(tokenData.address, proxy.address, sender);
 
     const amountColl = hre.ethers.utils.parseUnits(coll.toString(), tokenData.decimals);
     const amountDai = hre.ethers.utils.parseUnits(debt.toString(), 18);
 
-    await setBalance(forkId, tokenData.address, sender, coll);
-    await approve(tokenData.address, proxy.address, sender);
-    console.log("HERE");
-    const recipeExecutorAddr = await getAddrFromRegistry('RecipeExecutor');
-    console.log("HERE");
-    const createVaultRecipe = new dfs.Recipe('CreateVaultRecipe', [
-        new dfs.actions.maker.MakerOpenVaultAction(ilkObj.join, MCD_MANAGER_ADDR),
-        new dfs.actions.maker.MakerSupplyAction('$1', amountColl, ilkObj.join, senderAcc.address, MCD_MANAGER_ADDR),
-        new dfs.actions.maker.MakerGenerateAction('$1', amountDai, senderAcc.address, MCD_MANAGER_ADDR),
-    ]);
-    console.log("RECIPE");
+    const mcdManager = await getMcdManagerAddr();
 
+    // create Recipe 
+    const createVaultRecipe = new dfs.Recipe('CreateVaultRecipe', [
+        new dfs.actions.maker.MakerOpenVaultAction(ilkObj.join, mcdManager),
+        new dfs.actions.maker.MakerSupplyAction('$1', amountColl, ilkObj.join, senderAcc.address, mcdManager),
+        new dfs.actions.maker.MakerGenerateAction('$1', amountDai, senderAcc.address, mcdManager),
+    ]);
     const functionData = createVaultRecipe.encodeForDsProxyCall();
 
+    // execute Recipe
     try {
+        const recipeExecutorAddr = await getAddrFromRegistry('RecipeExecutor');
         await proxy['execute(address,bytes)'](recipeExecutorAddr, functionData[1], { gasLimit: 3000000 });
-
-        const vaultsAfter = await getVaultsForUser(proxy.address);
-        console.log(vaultsAfter);
-
-        console.log(`Vault #${vaultsAfter.ids[vaultsAfter.ids.length - 1].toString()} created`);
     } catch (err) {
-        console.log(err);
+        throw new Error("Vault creation recipe failed");
     }
 
-    process.exit(0);
+    // return createdVault object
+    const vaultsAfter = await getVaultsForUser(proxy.address ,mcdManager);
+    const vaultId = vaultsAfter.ids[vaultsAfter.ids.length - 1].toNumber();
+    const createdVault = await getVaultInfo(vaultId, mcdManager);
+    return createdVault;
 };
 
-const getVaultsForUser = async (user) => {
-    const [signer] = await hre.ethers.getSigners();
-    
-    const getCDPsContract = new hre.ethers.Contract(GET_CDPS_ADDR, getCDPsabi, signer);
+// open an empty MCD vault for a given ilk
+const openEmptyMcdVault = async(forkId, type, sender) => {
+    // top up sender account so it has eth balance to pay for transactions
+    await topUpAccount(forkId, sender, 100);
 
-    const vaults = await getCDPsContract.getCdpsAsc(MCD_MANAGER_ADDR, user);
+    // get ethers.Signer object for sender eoa
+    senderAcc = await hre.ethers.provider.getSigner(sender.toString());
+    senderAcc.address = senderAcc._address;
+    // create Proxy if the sender doesn't already have one
+    let proxy = await getProxy(senderAcc.address);
 
-    return vaults;
- }
+    // find coll asset
+    const ilkObj = ilks.find((i) => i.ilkLabel === type);
+    let asset = ilkObj.asset;
+    if (asset === 'ETH') asset = 'WETH';
+    const tokenData = getAssetInfo(asset);
 
- module.exports = {
-    createMcdVault
- }
+
+    const mcdManager = await getMcdManagerAddr();
+
+    // create Recipe 
+    const createVaultRecipe = new dfs.Recipe('CreateEmptyVaultRecipe', [
+        new dfs.actions.maker.MakerOpenVaultAction(ilkObj.join, mcdManager),
+    ]);
+    const functionData = createVaultRecipe.encodeForDsProxyCall();
+
+    // execute Recipe
+    try {
+        const recipeExecutorAddr = await getAddrFromRegistry('RecipeExecutor');
+        await proxy['execute(address,bytes)'](recipeExecutorAddr, functionData[1], { gasLimit: 3000000 });
+    } catch (err) {
+        throw new Error("Vault creation recipe failed");
+    }
+
+    // return createdVault object
+    const vaultsAfter = await getVaultsForUser(proxy.address ,mcdManager);
+    const vaultId = vaultsAfter.ids[vaultsAfter.ids.length - 1].toNumber();
+    const createdVault = await getVaultInfo(vaultId, mcdManager);
+    return createdVault;
+}
+
+const mcdSupply = async (forkId, sender, vaultId, supplyAmount) => {
+    // top up sender account so it has eth balance to pay for transactions
+    await topUpAccount(forkId, sender, 100);
+
+    // get ethers.Signer object for sender eoa
+    senderAcc = await hre.ethers.provider.getSigner(sender.toString());
+    senderAcc.address = senderAcc._address;
+    // create Proxy if the sender doesn't already have one
+    let proxy = await getProxy(senderAcc.address);
+
+    const mcdManager = await getMcdManagerAddr();
+
+    const vault = await getVaultInfo(vaultId, mcdManager);
+    // find coll asset
+    const ilkObj = ilks.find((i) => i.ilkLabel === vault.ilkLabel);
+    let asset = ilkObj.asset;
+    if (asset === 'ETH') asset = 'WETH';
+    const tokenData = getAssetInfo(asset);
+
+    // set coll balance for the user
+    await setBalance(forkId, tokenData.address, sender, supplyAmount);
+
+    // approve coll asset for proxy to pull
+    await approve(tokenData.address, proxy.address, sender);
+
+    const amountColl = hre.ethers.utils.parseUnits(supplyAmount.toString(), tokenData.decimals);
+    // create Recipe 
+    const createVaultRecipe = new dfs.Recipe('SupplyRecipe', [
+        new dfs.actions.maker.MakerSupplyAction(vaultId, amountColl, ilkObj.join, senderAcc.address, mcdManager),
+    ]);
+    const functionData = createVaultRecipe.encodeForDsProxyCall();
+
+    // execute Recipe
+    try {
+        const recipeExecutorAddr = await getAddrFromRegistry('RecipeExecutor');
+        await proxy['execute(address,bytes)'](recipeExecutorAddr, functionData[1], { gasLimit: 3000000 });
+    } catch (err) {
+        throw new Error("Vault supply recipe failed");
+    }
+
+    // return updatedVault object
+    const updatedVault = await getVaultInfo(vaultId, mcdManager);
+    return updatedVault;
+}
+
+module.exports = {
+    createMcdVault,
+    openEmptyMcdVault,
+    mcdSupply
+}

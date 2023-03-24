@@ -1,6 +1,6 @@
 const hre = require('hardhat');
 
-const { dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi } = require('./abi/utils');
+const { dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi } = require('./abi/general');
 
 const nullAddress = '0x0000000000000000000000000000000000000000';
 

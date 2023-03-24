@@ -22,3 +22,4 @@ app.listen(port, () => console.log('App listening on port ' + port));
 /// TODO: folder and files for util functions
 /// TODO: split helpers utils into view (getters), strategy sub specifics, and state changing
 /// TODO: README file for adding new routers/functions/endpoints etc.
+/// TODO: Throw error and 500 when tx fails

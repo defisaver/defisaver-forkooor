@@ -9,6 +9,7 @@ const topUpAccount = async(forkId, address, amount) => {
     hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
     const weiAmount = hre.ethers.utils.parseUnits(amount.toString(), 18);
     const weiAmountInHexString = weiAmount.toHexString();
+
     await hre.ethers.provider.send("tenderly_setBalance", [
         [address],
         //amount in wei will be set for all wallets
@@ -16,6 +17,7 @@ const topUpAccount = async(forkId, address, amount) => {
       ]);
 
     const newBalance = await hre.ethers.provider.getBalance(address);
+
     if (newBalance.toString() !== weiAmount.toString()) throw new Error(`Failed to update balance, balance now : ${newBalance}`);
 };
 

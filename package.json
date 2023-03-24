@@ -2,6 +2,8 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
+    "eslint": "^8.36.0",
+    "eslint-config-eslint": "^7.0.0",
     "hardhat": "^2.13.0"
   },
   "dependencies": {

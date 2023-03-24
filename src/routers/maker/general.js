@@ -1,7 +1,8 @@
+/* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { createMcdVault, openEmptyMcdVault, mcdSupply, mcdWithdraw, mcdBorrow, mcdPayback } = require("../../helpers/maker/general");
 const { getVaultInfo } = require("../../helpers/maker/view");
-const hre = require('hardhat');
+const hre = require("hardhat");
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const router = express.Router();
  *     summary: Fetch info about MCD vault on a fork
  *     tags:
  *      - Maker
- *     description: 
+ *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -61,15 +62,17 @@ const router = express.Router();
  */
 router.post("/get-vault", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, vaultId } = req.body;
 
         hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
         const vaultInfo = await getVaultInfo(vaultId);
+
         res.status(200).send(vaultInfo);
-    } catch(err){
-        resObj = { "error" : "Failed to fetch vault info" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: "Failed to fetch vault info" };
+        res.status(500).send(resObj, err);
     }
 });
 
@@ -80,7 +83,7 @@ router.post("/get-vault", async (req, res) => {
  *     summary: Create a MCD position with given coll and debt for a user
  *     tags:
  *      - Maker
- *     description: 
+ *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -101,7 +104,7 @@ router.post("/get-vault", async (req, res) => {
  *              collAmount:
  *                type: integer
  *                example: 100
- *              debtAmount: 
+ *              debtAmount:
  *                type: integer
  *                example: 50000
  *     responses:
@@ -138,15 +141,17 @@ router.post("/get-vault", async (req, res) => {
  */
 router.post("/create-vault", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, owner, collType, collAmount, debtAmount } = req.body;
 
         hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
         const vaultInfo = await createMcdVault(forkId, collType, collAmount, debtAmount, owner);
+
         res.status(200).send(vaultInfo);
-    } catch(err){
-        resObj = { "error" : "Failed to create a position" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: "Failed to create a position" };
+        res.status(500).send(resObj, err);
     }
 });
 
@@ -157,7 +162,7 @@ router.post("/create-vault", async (req, res) => {
  *     summary: Create an empty MCD position with given coll and debt for a user
  *     tags:
  *      - Maker
- *     description: 
+ *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -209,15 +214,17 @@ router.post("/create-vault", async (req, res) => {
  */
 router.post("/open-empty-vault", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, owner, collType } = req.body;
 
         hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
         const vaultInfo = await openEmptyMcdVault(forkId, collType, owner);
+
         res.status(200).send(vaultInfo);
-    } catch(err){
-        resObj = { "error" : "Failed to create an empty MCD vault" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: "Failed to create an empty MCD vault" };
+        res.status(500).send(resObj, err);
     }
 });
 
@@ -228,7 +235,7 @@ router.post("/open-empty-vault", async (req, res) => {
  *     summary: Supply certain amount of collateral to an existing MCD vault
  *     tags:
  *      - Maker
- *     description: 
+ *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -283,17 +290,20 @@ router.post("/open-empty-vault", async (req, res) => {
  */
 router.post("/supply", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, owner, vaultId, supplyAmount } = req.body;
 
         hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
         const vaultInfo = await mcdSupply(forkId, owner, vaultId, supplyAmount);
+
         res.status(200).send(vaultInfo);
-    } catch(err){
-        resObj = { "error" : "Failed to supply to MCD vault" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: "Failed to supply to MCD vault" };
+        res.status(500).send(resObj, err);
     }
 });
+
 /**
  * @swagger
  * /maker/general/withdraw:
@@ -356,16 +366,20 @@ router.post("/supply", async (req, res) => {
  */
 router.post("/withdraw", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, owner, vaultId, withdrawAmount } = req.body;
+
         hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
         const vaultInfo = await mcdWithdraw(forkId, owner, vaultId, withdrawAmount);
+
         res.status(200).send(vaultInfo);
-    } catch(err){
-        resObj = { "error" : "Failed to withdraw from MCD vault" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: "Failed to withdraw from MCD vault" };
+        res.status(500).send(resObj, err);
     }
 });
+
 /**
  * @swagger
  * /maker/general/borrow:
@@ -373,7 +387,7 @@ router.post("/withdraw", async (req, res) => {
  *     summary: Borrow a certain amount of DAI from a MCD vault
  *     tags:
  *      - Maker
- *     description: 
+ *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -428,16 +442,20 @@ router.post("/withdraw", async (req, res) => {
  */
 router.post("/borrow", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, owner, vaultId, borrowAmount } = req.body;
+
         hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
         const vaultInfo = await mcdBorrow(forkId, owner, vaultId, borrowAmount);
+
         res.status(200).send(vaultInfo);
-    } catch(err){
-        resObj = { "error" : "Failed to supply to MCD vault" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: "Failed to supply to MCD vault" };
+        res.status(500).send(resObj, err);
     }
 });
+
 /**
  * @swagger
  * /maker/general/payback:
@@ -445,7 +463,7 @@ router.post("/borrow", async (req, res) => {
  *     summary: Payback certain amount of DAI debt to a MCD vault
  *     tags:
  *      - Maker
- *     description: 
+ *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -500,16 +518,18 @@ router.post("/borrow", async (req, res) => {
  */
 router.post("/payback", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, owner, vaultId, paybackAmount } = req.body;
+
         hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
         const vaultInfo = await mcdPayback(forkId, owner, vaultId, paybackAmount);
+
         res.status(200).send(vaultInfo);
-    } catch(err){
-        resObj = { "error" : "Failed to payback to MCD vault" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: "Failed to payback to MCD vault" };
+        res.status(500).send(resObj, err);
     }
 });
-
 
 module.exports = router;

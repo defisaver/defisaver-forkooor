@@ -1,4 +1,4 @@
-const express = require('express')
+const express = require("express");
 
 const generalRouter = require("./general");
 const strategiesRouter = require("./strategies");

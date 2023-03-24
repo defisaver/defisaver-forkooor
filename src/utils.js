@@ -73,6 +73,11 @@ const approve = async (tokenAddr, to, signer) => {
     }
 }
 
+const executeAction = async (actionName, functionData, proxy) => {
+    const actionAddr = await getAddrFromRegistry(actionName);
+    receipt = await proxy['execute(address,bytes)'](actionAddr, functionData, {gasLimit: 10000000});
+}
+
 const toBytes32 = (bn) => hre.ethers.utils.hexlify(hre.ethers.utils.zeroPad(bn.toHexString(), 32));
 
 module.exports = {
@@ -82,5 +87,6 @@ module.exports = {
     getAddrFromRegistry,
     toBytes32,
     getProxy,
-    approve
+    approve,
+    executeAction
 }

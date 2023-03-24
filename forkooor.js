@@ -18,7 +18,6 @@ const port = 3000;
 
 app.listen(port, () => console.log('App listening on port ' + port));
 
-/// TODO: Single actions should use execute action direct
 /// TODO: folder and files for util functions
 /// TODO: split helpers utils into view (getters), strategy sub specifics, and state changing
 /// TODO: README file for adding new routers/functions/endpoints etc.

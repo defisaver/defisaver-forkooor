@@ -71,8 +71,8 @@ router.post("/get-vault", async (req, res) => {
 
         res.status(200).send(vaultInfo);
     } catch (err) {
-        resObj = { error: "Failed to fetch vault info" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to fetch vault info with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -145,13 +145,13 @@ router.post("/create-vault", async (req, res) => {
     try {
         const { forkId, owner, collType, collAmount, debtAmount } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
         const vaultInfo = await createMcdVault(forkId, collType, collAmount, debtAmount, owner);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
-        resObj = { error: "Failed to create a position" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to create vault info with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -218,13 +218,13 @@ router.post("/open-empty-vault", async (req, res) => {
     try {
         const { forkId, owner, collType } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
         const vaultInfo = await openEmptyMcdVault(forkId, collType, owner);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
-        resObj = { error: "Failed to create an empty MCD vault" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to create an empty vault info with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -294,13 +294,13 @@ router.post("/supply", async (req, res) => {
     try {
         const { forkId, owner, vaultId, supplyAmount } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
         const vaultInfo = await mcdSupply(forkId, owner, vaultId, supplyAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
-        resObj = { error: "Failed to supply to MCD vault" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to supply to an MCD vault info with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -370,13 +370,13 @@ router.post("/withdraw", async (req, res) => {
     try {
         const { forkId, owner, vaultId, withdrawAmount } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
         const vaultInfo = await mcdWithdraw(forkId, owner, vaultId, withdrawAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
-        resObj = { error: "Failed to withdraw from MCD vault" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to withdraw from an MCD vault info with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -446,13 +446,13 @@ router.post("/borrow", async (req, res) => {
     try {
         const { forkId, owner, vaultId, borrowAmount } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
         const vaultInfo = await mcdBorrow(forkId, owner, vaultId, borrowAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
-        resObj = { error: "Failed to supply to MCD vault" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to borrow from an MCD vault info with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -522,12 +522,12 @@ router.post("/payback", async (req, res) => {
     try {
         const { forkId, owner, vaultId, paybackAmount } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
         const vaultInfo = await mcdPayback(forkId, owner, vaultId, paybackAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
-        resObj = { error: "Failed to payback to MCD vault" };
+        resObj = { error: `Failed to payback an MCD vault info with error : ${err.toString()}` };
         res.status(500).send(resObj, err);
     }
 });

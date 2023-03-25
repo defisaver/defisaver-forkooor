@@ -72,8 +72,8 @@ router.post("/new-fork", async (req, res) => {
         resObj = { forkId };
         res.status(200).send(resObj);
     } catch (err) {
-        resObj = { error: "Failed to create a new fork" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to create a new fork with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -141,8 +141,8 @@ router.post("/clone-fork", async (req, res) => {
         resObj = { forkId };
         res.status(200).send(resObj);
     } catch (err) {
-        resObj = { error: "Failed to clone a fork" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to clone a fork with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -205,8 +205,8 @@ router.post("/set-bot-auth", async (req, res) => {
         resObj = { botAccounts };
         res.status(200).send(resObj);
     } catch (err) {
-        resObj = { error: "Failed to set both auth" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to set bot auth with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -272,8 +272,8 @@ router.post("/set-eth-balance", async (req, res) => {
         };
         res.status(200).send(resObj);
     } catch (err) {
-        resObj = { error: "Failed to set ETH balance" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to set eth balance with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -406,8 +406,8 @@ router.post("/time-travel", async (req, res) => {
         resObj = await timeTravel(forkId, amount);
         res.status(200).send(resObj);
     } catch (err) {
-        resObj = { error: "Failed to time travel" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to time travel with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 

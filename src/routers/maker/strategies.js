@@ -9,7 +9,7 @@ const router = express.Router();
  * @swagger
  * /maker/strategies/mcd-close-to-dai:
  *   post:
- *     summary: Fetch info about MCD vault on a fork
+ *     summary: Subscribe to MCD Close to DAI strategy
  *     tags:
  *      - Maker
  *      - Strategies
@@ -67,14 +67,14 @@ router.post("/mcd-close-to-dai", async (req, res) => {
     try {
         const { forkId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
 
         const sub = await subMcdCloseToDaiStrategy(forkId, vaultId, triggerPrice, triggerState, owner);
 
         res.status(200).send(sub);
     } catch (err) {
-        resObj = { error: "Failed to fetch vault info" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to subscribe to MCD close to DAI strategy with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
@@ -82,7 +82,7 @@ router.post("/mcd-close-to-dai", async (req, res) => {
  * @swagger
  * /maker/strategies/mcd-close-to-coll:
  *   post:
- *     summary: Fetch info about MCD vault on a fork
+ *     summary: Subscribe to a MCD Close to Coll strategy
  *     tags:
  *      - Maker
  *      - Strategies
@@ -120,7 +120,7 @@ router.post("/mcd-close-to-dai", async (req, res) => {
  *               properties:
  *                 strategySub:
  *                  type: Array
- *                  example: [    7,    false,    [      "0x0000000000000000000000007f39c581f595b53c5cb19bd0b3f8da6c935e2ca000000000000000000000000000000000000000000000000000000022ecb25c000000000000000000000000000000000000000000000000000000000000000001"    ],    [      "0x0000000000000000000000000000000000000000000000000000000000007419",      "0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f",      "0x0000000000000000000000005ef30b9986345249bc32d8928b7ee64de9435e39"    ]  ]
+ *                  example: [    9,    false,    [      "0x0000000000000000000000007f39c581f595b53c5cb19bd0b3f8da6c935e2ca000000000000000000000000000000000000000000000000000000022ecb25c000000000000000000000000000000000000000000000000000000000000000001"    ],    [      "0x0000000000000000000000000000000000000000000000000000000000007419",      "0x0000000000000000000000007f39c581f595b53c5cb19bd0b3f8da6c935e2ca0",      "0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f",      "0x0000000000000000000000005ef30b9986345249bc32d8928b7ee64de9435e39"    ]  ]
  *                 subId:
  *                  type: string
  *                  example: "230"
@@ -140,14 +140,14 @@ router.post("/mcd-close-to-coll", async (req, res) => {
     try {
         const { forkId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        await setupFork(forkId, owner);
+        await setupFork(forkId, [owner]);
 
         const sub = await subMcdCloseToCollStrategy(forkId, vaultId, triggerPrice, triggerState, owner);
 
         res.status(200).send(sub);
     } catch (err) {
-        resObj = { error: "Failed to fetch vault info" };
-        res.status(500).send(resObj, err);
+        resObj = { error: `Failed to subscribe to MCD close to coll strategy with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 

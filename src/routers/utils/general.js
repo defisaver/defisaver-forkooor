@@ -3,7 +3,7 @@
 
 const express = require("express");
 const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel } = require("../../helpers/utils/general");
-const { setBalance } = require("../../utils");
+const { setBalance, setupFork } = require("../../utils");
 
 const router = express.Router();
 
@@ -66,6 +66,7 @@ router.post("/new-fork", async (req, res) => {
 
         const forkId = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
 
+        await setupFork(forkId);
         await topUpOwner(forkId);
         await setUpBotAccounts(forkId, botAccounts);
 
@@ -136,8 +137,10 @@ router.post("/clone-fork", async (req, res) => {
 
         const forkId = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey);
 
+        await setupFork(forkId);
         await topUpOwner(forkId);
         await setUpBotAccounts(forkId, botAccounts);
+
         resObj = { forkId };
         res.status(200).send(resObj);
     } catch (err) {
@@ -199,6 +202,7 @@ router.post("/set-bot-auth", async (req, res) => {
     try {
         const { forkId, botAccounts } = req.body;
 
+        await setupFork(forkId);
         await topUpOwner(forkId);
         await setUpBotAccounts(forkId, botAccounts);
 
@@ -265,7 +269,8 @@ router.post("/set-eth-balance", async (req, res) => {
     try {
         const { forkId, account, amount } = req.body;
 
-        await topUpAccount(forkId, account, amount);
+        await setupFork(forkId);
+        await topUpAccount(account, amount);
         resObj = {
             account,
             amount
@@ -338,7 +343,8 @@ router.post("/set-token-balance", async (req, res) => {
     try {
         const { forkId, token, account, amount } = req.body;
 
-        await setBalance(forkId, token, account, amount);
+        await setupFork(forkId);
+        await setBalance(token, account, amount);
         resObj = {
             token,
             account,

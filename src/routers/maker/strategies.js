@@ -68,7 +68,6 @@ router.post("/mcd-close-to-dai", async (req, res) => {
         const { forkId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-
         const sub = await subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner);
 
         res.status(200).send(sub);
@@ -155,7 +154,7 @@ router.post("/mcd-close-to-coll", async (req, res) => {
  * @swagger
  * /maker/strategies/mcd-smart-savings-repay:
  *   post:
- *     summary: Subscribe to a MCD Repay from Yearn bundle of strategies
+ *     summary: Subscribe to a MCD Repay from smart savings bundle
  *     tags:
  *      - Maker
  *      - Strategies

@@ -2,19 +2,18 @@ const hre = require("hardhat");
 const axios = require("axios");
 
 const { botAuthAbi } = require("../../abi/general");
-const { getHeaders, addresses, getAddrFromRegistry, topUpAccount } = require("../../utils");
+const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork } = require("../../utils");
 
 /**
  * Tops up DFS Owner account on a given Tenderly fork
- * @param {string} forkId ID of the Tenderly fork
  * @returns {void}
  */
-async function topUpOwner(forkId) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+async function topUpOwner() {
     const { chainId } = await hre.ethers.provider.getNetwork();
+
     const owner = addresses[chainId].OWNER_ACC;
 
-    await topUpAccount(forkId, owner, 100);
+    await topUpAccount(owner, 100);
 }
 
 
@@ -39,15 +38,11 @@ async function addBotCaller(botAddr) {
  * @returns {void}
  */
 async function setUpBotAccounts(forkId, botAccounts = []) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    await setupFork(forkId, botAccounts);
 
     for (let i = 0; i < botAccounts.length; i++) {
-        const botAddr = botAccounts[i];
-
         // eslint-disable-next-line no-await-in-loop
-        await topUpAccount(forkId, botAddr, 1000);
-        // eslint-disable-next-line no-await-in-loop
-        await addBotCaller(botAddr);
+        await addBotCaller(botAccounts[i]);
     }
 }
 

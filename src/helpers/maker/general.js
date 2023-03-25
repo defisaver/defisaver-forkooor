@@ -6,14 +6,13 @@ const { getVaultsForUser, getVaultInfo, getMcdManagerAddr } = require("./view");
 
 /**
  * Create a MCD vault for sender on his proxy (created if he doesn't have one)
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} type ilkLabel
  * @param {number} coll amount of collateral to be supplied (whole number)
  * @param {number} debt amount of DAI to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created vault
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function createMcdVault(forkId, type, coll, debt, owner) {
+async function createMcdVault(type, coll, debt, owner) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -33,7 +32,7 @@ async function createMcdVault(forkId, type, coll, debt, owner) {
     const tokenData = getAssetInfo(asset);
 
     // set coll balance for the user
-    await setBalance(forkId, tokenData.address, owner, coll);
+    await setBalance(tokenData.address, owner, coll);
 
     // approve coll asset for proxy to pull
     await approve(tokenData.address, proxy.address, owner);
@@ -110,13 +109,12 @@ async function openEmptyMcdVault(type, owner) {
 
 /**
  * Supply collateral to an existing MCD Vault
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} sender the EOA which will be supplying collateral to the vault
  * @param {number} vaultId vault ID
  * @param {number} supplyAmount amount of collateral to be supplied (whole number)
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdSupply(forkId, sender, vaultId, supplyAmount) {
+async function mcdSupply(sender, vaultId, supplyAmount) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
@@ -140,7 +138,7 @@ async function mcdSupply(forkId, sender, vaultId, supplyAmount) {
     const tokenData = getAssetInfo(asset);
 
     // set coll balance for the user
-    await setBalance(forkId, tokenData.address, sender, supplyAmount);
+    await setBalance(tokenData.address, sender, supplyAmount);
 
     // approve coll asset for proxy to pull
     await approve(tokenData.address, proxy.address, sender);
@@ -251,13 +249,12 @@ async function mcdBorrow(owner, vaultId, borrowAmount) {
 
 /**
  * Payback DAI debt of an existing MCD Vault
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} sender the EOA of the vault owner
  * @param {number} vaultId vault ID
  * @param {number} paybackAmount amount of DAI to be paid back (whole number), -1 for whole debt payback
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdPayback(forkId, sender, vaultId, paybackAmount) {
+async function mcdPayback(sender, vaultId, paybackAmount) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
@@ -283,11 +280,11 @@ async function mcdPayback(forkId, sender, vaultId, paybackAmount) {
         amountDai = hre.ethers.utils.parseUnits((debtFloat + 1).toString(), 18);
 
         // set coll balance for the user
-        await setBalance(forkId, daiAddress, sender, amountDai);
+        await setBalance(daiAddress, sender, amountDai);
     } else {
 
         // set coll balance for the user
-        await setBalance(forkId, daiAddress, sender, paybackAmount);
+        await setBalance(daiAddress, sender, paybackAmount);
         amountDai = hre.ethers.utils.parseUnits(paybackAmount.toString(), 18);
     }
 

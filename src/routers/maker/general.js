@@ -146,7 +146,7 @@ router.post("/create-vault", async (req, res) => {
         const { forkId, owner, collType, collAmount, debtAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await createMcdVault(forkId, collType, collAmount, debtAmount, owner);
+        const vaultInfo = await createMcdVault(collType, collAmount, debtAmount, owner);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -295,7 +295,7 @@ router.post("/supply", async (req, res) => {
         const { forkId, owner, vaultId, supplyAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdSupply(forkId, owner, vaultId, supplyAmount);
+        const vaultInfo = await mcdSupply(owner, vaultId, supplyAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -523,7 +523,7 @@ router.post("/payback", async (req, res) => {
         const { forkId, owner, vaultId, paybackAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdPayback(forkId, owner, vaultId, paybackAmount);
+        const vaultInfo = await mcdPayback(owner, vaultId, paybackAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {

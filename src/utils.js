@@ -135,13 +135,11 @@ function toBytes32(bn) {
 
 /**
  * Sets ETH balance of a given address to desired amount on a tenderly fork
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} address address whose balance we want to top up
  * @param {integer} amount amount of ETH to top up the address with (whole number)
  * @returns {void}
  */
-async function topUpAccount(forkId, address, amount) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+async function topUpAccount(address, amount) {
     const weiAmount = hre.ethers.utils.parseUnits(amount.toString(), 18);
     const weiAmountInHexString = weiAmount.toHexString();
 
@@ -168,20 +166,18 @@ async function topUpAccount(forkId, address, amount) {
 async function setupFork(forkId, accounts = []) {
     hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
     for (let i = 0; i < accounts.length; i++) {
-        await topUpAccount(forkId, accounts[i], 100);
+        await topUpAccount(accounts[i], 100);
     }
 }
 
 /**
  * Grants a desired token balance to an address
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} tokenAddr address of the ERC20 token
  * @param {string} userAddr address which we want to receive the desired amount of tokens
  * @param {number} amount new balance to set
  * @returns {void}
  */
-async function setBalance(forkId, tokenAddr, userAddr, amount) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+async function setBalance(tokenAddr, userAddr, amount) {
     const { chainId } = await hre.ethers.provider.getNetwork();
 
     const [signer] = await hre.ethers.getSigners();

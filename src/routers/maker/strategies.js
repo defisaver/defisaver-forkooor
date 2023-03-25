@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const hre = require("hardhat");
 const { subMcdCloseToDaiStrategy, subMcdCloseToCollStrategy } = require("../../helpers/maker/strategies");
+const { setupFork } = require("../../utils");
 
 const router = express.Router();
 
@@ -67,9 +67,8 @@ router.post("/mcd-close-to-dai", async (req, res) => {
     try {
         const { forkId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(
-            `https://rpc.tenderly.co/fork/${forkId}`
-        );
+        await setupFork(forkId, owner);
+
         const sub = await subMcdCloseToDaiStrategy(forkId, vaultId, triggerPrice, triggerState, owner);
 
         res.status(200).send(sub);
@@ -141,9 +140,8 @@ router.post("/mcd-close-to-coll", async (req, res) => {
     try {
         const { forkId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(
-            `https://rpc.tenderly.co/fork/${forkId}`
-        );
+        await setupFork(forkId, owner);
+
         const sub = await subMcdCloseToCollStrategy(forkId, vaultId, triggerPrice, triggerState, owner);
 
         res.status(200).send(sub);

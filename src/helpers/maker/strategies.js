@@ -3,12 +3,11 @@ const hre = require("hardhat");
 const { subProxyAbi, subStorageAbi } = require("../../abi/general");
 const { getProxy, addresses, getAddrFromRegistry } = require("../../utils");
 const { getVaultInfo, getMcdManagerAddr } = require("../maker/view");
-const { topUpAccount } = require("../utils/general");
 
 const abiCoder = new hre.ethers.utils.AbiCoder();
+
 const MCD_CLOSE_TO_DAI_ID = 7;
 const MCD_CLOSE_TO_COLL_ID = 9;
-const DAI_ADDR = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 
 /**
  * Encodes three parameteres that are neeeded for subbing to DFS ChainlinkPriceTrigger
@@ -80,10 +79,6 @@ async function subToStrategy(proxy, strategySub) {
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subMcdCloseToDaiStrategy(forkId, vaultId, triggerPrice, triggerState, owner) {
-
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, owner, 100);
-
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
     senderAcc.address = senderAcc._address;
@@ -103,8 +98,11 @@ async function subMcdCloseToDaiStrategy(forkId, vaultId, triggerPrice, triggerSt
 
     const isBundle = false;
 
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const daiAddress = addresses[chainId].DAI_ADDR;
+
     const vaultIdEncoded = abiCoder.encode(["uint256"], [vaultId.toString()]);
-    const daiEncoded = abiCoder.encode(["address"], [DAI_ADDR]);
+    const daiEncoded = abiCoder.encode(["address"], [daiAddress]);
     const mcdManagerEncoded = abiCoder.encode(["address"], [mcdManager]);
 
     const triggerData = await createChainLinkPriceTrigger(
@@ -128,10 +126,6 @@ async function subMcdCloseToDaiStrategy(forkId, vaultId, triggerPrice, triggerSt
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subMcdCloseToCollStrategy(forkId, vaultId, triggerPrice, triggerState, owner) {
-
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, owner, 100);
-
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
     senderAcc.address = senderAcc._address;
@@ -150,10 +144,12 @@ async function subMcdCloseToCollStrategy(forkId, vaultId, triggerPrice, triggerS
     const ilkObj = ilks.find(i => i.ilkLabel === vault.ilkLabel);
 
     const isBundle = false;
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const daiAddress = addresses[chainId].DAI_ADDR;
 
     const vaultIdEncoded = abiCoder.encode(["uint256"], [vaultId.toString()]);
     const collEncoded = abiCoder.encode(["address"], [ilkObj.assetAddress]);
-    const daiEncoded = abiCoder.encode(["address"], [DAI_ADDR]);
+    const daiEncoded = abiCoder.encode(["address"], [daiAddress]);
     const mcdManagerEncoded = abiCoder.encode(["address"], [mcdManager]);
 
     const triggerData = await createChainLinkPriceTrigger(

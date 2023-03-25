@@ -1,9 +1,8 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
 const { getAssetInfo, ilks } = require("@defisaver/tokens");
-const { getProxy, approve, executeAction } = require("../../utils");
-const { setBalance, topUpAccount } = require("../utils/general");
-const { getVaultsForUser, getVaultInfo, getMcdManagerAddr, DAI_ADDR } = require("./view");
+const { getProxy, approve, executeAction, setBalance, addresses } = require("../../utils");
+const { getVaultsForUser, getVaultInfo, getMcdManagerAddr } = require("./view");
 
 /**
  * Create a MCD vault for sender on his proxy (created if he doesn't have one)
@@ -15,9 +14,6 @@ const { getVaultsForUser, getVaultInfo, getMcdManagerAddr, DAI_ADDR } = require(
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
 async function createMcdVault(forkId, type, coll, debt, owner) {
-
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, owner, 100);
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -78,9 +74,6 @@ async function createMcdVault(forkId, type, coll, debt, owner) {
  */
 async function openEmptyMcdVault(forkId, type, owner) {
 
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, owner, 100);
-
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
@@ -125,9 +118,6 @@ async function openEmptyMcdVault(forkId, type, owner) {
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
 async function mcdSupply(forkId, sender, vaultId, supplyAmount) {
-
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, sender, 100);
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
@@ -183,9 +173,6 @@ async function mcdSupply(forkId, sender, vaultId, supplyAmount) {
  */
 async function mcdWithdraw(forkId, owner, vaultId, withdrawAmount) {
 
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, owner, 100);
-
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
@@ -238,9 +225,6 @@ async function mcdWithdraw(forkId, owner, vaultId, withdrawAmount) {
  */
 async function mcdBorrow(forkId, owner, vaultId, borrowAmount) {
 
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, owner, 100);
-
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
@@ -278,9 +262,6 @@ async function mcdBorrow(forkId, owner, vaultId, borrowAmount) {
  */
 async function mcdPayback(forkId, sender, vaultId, paybackAmount) {
 
-    // top up sender account so it has eth balance to pay for transactions
-    await topUpAccount(forkId, sender, 100);
-
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
 
@@ -292,6 +273,8 @@ async function mcdPayback(forkId, sender, vaultId, paybackAmount) {
     const mcdManager = await getMcdManagerAddr();
 
     let amountDai;
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const daiAddress = addresses[chainId].DAI_ADDR;
 
     if (paybackAmount === -1) {
 
@@ -303,16 +286,16 @@ async function mcdPayback(forkId, sender, vaultId, paybackAmount) {
         amountDai = hre.ethers.utils.parseUnits((debtFloat + 1).toString(), 18);
 
         // set coll balance for the user
-        await setBalance(forkId, DAI_ADDR, sender, amountDai);
+        await setBalance(forkId, daiAddress, sender, amountDai);
     } else {
 
         // set coll balance for the user
-        await setBalance(forkId, DAI_ADDR, sender, paybackAmount);
+        await setBalance(forkId, daiAddress, sender, paybackAmount);
         amountDai = hre.ethers.utils.parseUnits(paybackAmount.toString(), 18);
     }
 
     // approve coll asset for proxy to pull
-    await approve(DAI_ADDR, proxy.address, sender);
+    await approve(daiAddress, proxy.address, sender);
 
     const action = new dfs.actions.maker.MakerPaybackAction(vaultId, amountDai, senderAcc.address, mcdManager);
     const functionData = action.encodeForDsProxyCall()[1];

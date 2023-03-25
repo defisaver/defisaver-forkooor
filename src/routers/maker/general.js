@@ -2,7 +2,7 @@
 const express = require("express");
 const { createMcdVault, openEmptyMcdVault, mcdSupply, mcdWithdraw, mcdBorrow, mcdPayback } = require("../../helpers/maker/general");
 const { getVaultInfo } = require("../../helpers/maker/view");
-const hre = require("hardhat");
+const { setupFork } = require("../../utils");
 
 const router = express.Router();
 
@@ -66,7 +66,7 @@ router.post("/get-vault", async (req, res) => {
     try {
         const { forkId, vaultId } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+        await setupFork(forkId);
         const vaultInfo = await getVaultInfo(vaultId);
 
         res.status(200).send(vaultInfo);
@@ -145,7 +145,7 @@ router.post("/create-vault", async (req, res) => {
     try {
         const { forkId, owner, collType, collAmount, debtAmount } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+        await setupFork(forkId, owner);
         const vaultInfo = await createMcdVault(forkId, collType, collAmount, debtAmount, owner);
 
         res.status(200).send(vaultInfo);
@@ -218,7 +218,7 @@ router.post("/open-empty-vault", async (req, res) => {
     try {
         const { forkId, owner, collType } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+        await setupFork(forkId, owner);
         const vaultInfo = await openEmptyMcdVault(forkId, collType, owner);
 
         res.status(200).send(vaultInfo);
@@ -294,7 +294,7 @@ router.post("/supply", async (req, res) => {
     try {
         const { forkId, owner, vaultId, supplyAmount } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+        await setupFork(forkId, owner);
         const vaultInfo = await mcdSupply(forkId, owner, vaultId, supplyAmount);
 
         res.status(200).send(vaultInfo);
@@ -370,7 +370,7 @@ router.post("/withdraw", async (req, res) => {
     try {
         const { forkId, owner, vaultId, withdrawAmount } = req.body;
 
-        hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+        await setupFork(forkId, owner);
         const vaultInfo = await mcdWithdraw(forkId, owner, vaultId, withdrawAmount);
 
         res.status(200).send(vaultInfo);
@@ -446,7 +446,7 @@ router.post("/borrow", async (req, res) => {
     try {
         const { forkId, owner, vaultId, borrowAmount } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+        await setupFork(forkId, owner);
         const vaultInfo = await mcdBorrow(forkId, owner, vaultId, borrowAmount);
 
         res.status(200).send(vaultInfo);
@@ -522,7 +522,7 @@ router.post("/payback", async (req, res) => {
     try {
         const { forkId, owner, vaultId, paybackAmount } = req.body;
 
-        hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+        await setupFork(forkId, owner);
         const vaultInfo = await mcdPayback(forkId, owner, vaultId, paybackAmount);
 
         res.status(200).send(vaultInfo);

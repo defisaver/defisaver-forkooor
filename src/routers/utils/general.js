@@ -2,7 +2,8 @@
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, setBalance, timeTravel } = require("../../helpers/utils/general");
+const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel } = require("../../helpers/utils/general");
+const { setBalance } = require("../../utils");
 
 const router = express.Router();
 

@@ -5,7 +5,6 @@ const { mcdViewAbi, getCDPsabi } = require("../../abi/maker/views");
 
 const GET_CDPS_ADDR = "0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573";
 const MCD_VIEW_ADDR = "0x922C795aE0be55Aaeb3FF51813B76AFc78e97C7c";
-const DAI_ADDR = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 
 
 /**
@@ -75,6 +74,5 @@ async function getVaultInfo(vaultId, mcdManager = null) {
 module.exports = {
     getVaultsForUser,
     getVaultInfo,
-    getMcdManagerAddr,
-    DAI_ADDR
+    getMcdManagerAddr
 };

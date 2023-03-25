@@ -219,7 +219,7 @@ router.post("/open-empty-vault", async (req, res) => {
         const { forkId, owner, collType } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await openEmptyMcdVault(forkId, collType, owner);
+        const vaultInfo = await openEmptyMcdVault(collType, owner);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -371,7 +371,7 @@ router.post("/withdraw", async (req, res) => {
         const { forkId, owner, vaultId, withdrawAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdWithdraw(forkId, owner, vaultId, withdrawAmount);
+        const vaultInfo = await mcdWithdraw(owner, vaultId, withdrawAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -447,7 +447,7 @@ router.post("/borrow", async (req, res) => {
         const { forkId, owner, vaultId, borrowAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdBorrow(forkId, owner, vaultId, borrowAmount);
+        const vaultInfo = await mcdBorrow(owner, vaultId, borrowAmount);
 
         res.status(200).send(vaultInfo);
     } catch (err) {

@@ -67,12 +67,11 @@ async function createMcdVault(forkId, type, coll, debt, owner) {
 
 /**
  * Open an empty MCD Vault
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} type ilkLabel
  * @param {string} owner the EOA which will be sending transactions and own the newly created vault
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function openEmptyMcdVault(forkId, type, owner) {
+async function openEmptyMcdVault(type, owner) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -165,13 +164,12 @@ async function mcdSupply(forkId, sender, vaultId, supplyAmount) {
 
 /**
  * Withdraw collateral from an existing MCD Vault
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} owner the EOA of the vault owner
  * @param {number} vaultId vault ID
  * @param {number} withdrawAmount amount of collateral to be withdrawn (whole number), -1 for whole coll withdraw
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdWithdraw(forkId, owner, vaultId, withdrawAmount) {
+async function mcdWithdraw(owner, vaultId, withdrawAmount) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -217,13 +215,12 @@ async function mcdWithdraw(forkId, owner, vaultId, withdrawAmount) {
 
 /**
  * Borrow (generate) DAI from an existing MCD Vault
- * @param {string} forkId ID of the Tenderly fork
  * @param {string} owner the EOA of the vault owner
  * @param {number} vaultId vault ID
  * @param {number} borrowAmount amount of DAI to be generated (whole number)
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdBorrow(forkId, owner, vaultId, borrowAmount) {
+async function mcdBorrow(owner, vaultId, borrowAmount) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());

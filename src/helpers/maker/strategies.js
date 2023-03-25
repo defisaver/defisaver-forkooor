@@ -71,14 +71,13 @@ async function subToStrategy(proxy, strategySub) {
 
 /**
  * Subscribes to MCD Close to Dai strategy
- * @param {forKId} forkId ID of the tenderly fork
  * @param {number} vaultId ID of the MCD vault
  * @param {number} triggerPrice Price of the asset for which price we're checking (whole number)
  * @param {string} triggerState OVER/UNDER
  * @param {string} owner EOA of the Vault owner
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subMcdCloseToDaiStrategy(forkId, vaultId, triggerPrice, triggerState, owner) {
+async function subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner) {
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
     senderAcc.address = senderAcc._address;
@@ -118,14 +117,13 @@ async function subMcdCloseToDaiStrategy(forkId, vaultId, triggerPrice, triggerSt
 
 /**
  * Subscribes to MCD Close to Coll strategy
- * @param {forKId} forkId ID of the tenderly fork
  * @param {number} vaultId ID of the MCD vault
  * @param {number} triggerPrice Price of the asset for which price we're checking (whole number)
  * @param {string} triggerState OVER/UNDER
  * @param {string} owner EOA of the Vault owner
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subMcdCloseToCollStrategy(forkId, vaultId, triggerPrice, triggerState, owner) {
+async function subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, owner) {
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
     senderAcc.address = senderAcc._address;
@@ -163,7 +161,60 @@ async function subMcdCloseToCollStrategy(forkId, vaultId, triggerPrice, triggerS
     return { strategySub, subId };
 }
 
+/**
+ * Subscribe to MCD Repay from smart savings strategy
+ * @param {number} vaultId ID of the MCD vault
+ * @param {string} protocol yearn/mstable/rari
+ * @param {number} minRatio ratio under which the strategy will trigger
+ * @param {number} targetRatio wanted ratio after execution
+ * @param {string} owner EOA of the Vault owner
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, owner) {
+
+    const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
+
+    senderAcc.address = senderAcc._address;
+
+    const proxy = await getProxy(senderAcc.address);
+
+    const minRatioWei = hre.ethers.utils.parseUnits(minRatio.toString(), "16");
+    const targetRatioWei = hre.ethers.utils.parseUnits(targetRatio.toString(), "16");
+
+    let bundleId;
+
+    if (protocol.toLowerCase() === "yearn") {
+        bundleId = 0;
+    }
+
+    if (protocol.toLowerCase() === "mstable") {
+        bundleId = 1;
+    }
+
+    if (protocol.toLowerCase() === "rari") {
+        bundleId = 2;
+    }
+
+    const mcdManager = await getMcdManagerAddr();
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const daiAddress = addresses[chainId].DAI_ADDR;
+
+    const vaultIdEncoded = abiCoder.encode(["uint256"], [vaultId.toString()]);
+    const targetRatioEncoded = abiCoder.encode(["uint256"], [targetRatioWei.toString()]);
+    const daiAddrEncoded = abiCoder.encode(["address"], [daiAddress]);
+    const mcdManagerAddrEncoded = abiCoder.encode(["address"], [mcdManager]);
+
+    const triggerData = abiCoder.encode(["uint256", "uint256", "uint8"], [vaultId, minRatioWei, 1]);
+
+    const strategySub = [bundleId, true, [triggerData], [vaultIdEncoded, targetRatioEncoded, daiAddrEncoded, mcdManagerAddrEncoded]];
+
+    const subId = await subToStrategy(proxy, strategySub);
+
+    return { subId, strategySub };
+}
+
 module.exports = {
     subMcdCloseToDaiStrategy,
-    subMcdCloseToCollStrategy
+    subMcdCloseToCollStrategy,
+    subMCDSmartSavingsRepayStrategy
 };

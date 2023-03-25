@@ -1,0 +1,12 @@
+{
+    "extends": "eslint",
+    "parserOptions": {
+        "sourceType": "module"
+    },
+    "rules": {
+        "no-console": "off",
+        "node/no-unpublished-require": "off",
+        "no-underscore-dangle": "off",
+        "new-cap" : "off"
+    }
+}

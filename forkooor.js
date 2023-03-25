@@ -1,19 +1,26 @@
-const express = require('express')
-const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('./swagger');
+const express = require("express");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./swagger");
 
-require('dotenv-safe').config();
-
-const generalRouter = require("./src/routers/general");
+const generalRouter = require("./src/routers/utils/index");
+const makerRouter = require("./src/routers/maker/index");
 
 const app = express();
-app.use(express.json({extended: true}))
 
-app.use("/general", generalRouter);
+app.use(express.json({ extended: true }));
 
-app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/utils", generalRouter);
+app.use("/maker", makerRouter);
 
+app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-const port = process.env.PORT || 3000;
+const port = 3000;
 
-app.listen(port, () => console.log('App listening on port ' + port));
+app.listen(port, () => {
+    console.log(`App listening on port ${port}`);
+});
+
+// / TODO: folder and files for util functions
+// / TODO: split helpers utils into view (getters), strategy sub specifics, and state changing
+// / TODO: README file for adding new routers/functions/endpoints etc.
+// / TODO: Throw error and 500 when tx fails

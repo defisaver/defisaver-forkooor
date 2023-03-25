@@ -1,21 +1,19 @@
+/* eslint-disable jsdoc/check-tag-names */
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, setBalance, timeTravel } = require("../helpers/general");
+const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel } = require("../../helpers/utils/general");
+const { setBalance, setupFork } = require("../../utils");
 
 const router = express.Router();
 
-// TODO: folder and files for util functions
-// TODO: split helpers utils into view (getters), strategy sub specifics, and state changing
-// TODO: README file for adding new routers/functions/endpoints etc.
-
 /**
  * @swagger
- * /general/new-fork:
+ * /utils/general/new-fork:
  *   post:
  *     summary: Returns forkId of the Tenderly fork created using given parameters
  *     tags:
- *      - general
+ *      - Utils
  *     description: Creates a Tenderly fork in a desired tenderly project, using provided access key, on network matching given chainId and sets up bot accounts if given
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -49,6 +47,7 @@ const router = express.Router();
  *               properties:
  *                 forkId:
  *                   type: string
+ *                   example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -61,28 +60,31 @@ const router = express.Router();
  */
 router.post("/new-fork", async (req, res) => {
     let resObj;
+
     try {
-        const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts} = req.body;
+        const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts } = req.body;
 
         const forkId = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
-        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+
+        await setupFork(forkId);
+        await topUpOwner(forkId);
+        await setUpBotAccounts(forkId, botAccounts);
 
         resObj = { forkId };
         res.status(200).send(resObj);
-    } catch(err){
-        resObj = { "error" : "Failed to create a new fork" };
-        res.status(500).send(resObj); 
+    } catch (err) {
+        resObj = { error: `Failed to create a new fork with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
 /**
  * @swagger
- * /general/clone-fork:
+ * /utils/general/clone-fork:
  *   post:
  *     summary: Returns forkId of the Tenderly fork cloned from an existing fork
  *     tags:
- *      - general
+ *      - Utils
  *     description: Creates a Tenderly fork by cloning an already existing fork in the same project as provided, using the same access key and sets up bot accounts if given
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -116,6 +118,7 @@ router.post("/new-fork", async (req, res) => {
  *               properties:
  *                 forkId:
  *                   type: string
+ *                   example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -127,28 +130,32 @@ router.post("/new-fork", async (req, res) => {
  *                   type: string
  */
 router.post("/clone-fork", async (req, res) => {
-    let respObj;
-    try {
-        const { cloningForkId, tenderlyProject, tenderlyAccessKey, botAccounts} = req.body;
+    let resObj;
 
-        const forkId = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey)
-        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+    try {
+        const { cloningForkId, tenderlyProject, tenderlyAccessKey, botAccounts } = req.body;
+
+        const forkId = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey);
+
+        await setupFork(forkId);
+        await topUpOwner(forkId);
+        await setUpBotAccounts(forkId, botAccounts);
+
         resObj = { forkId };
         res.status(200).send(resObj);
-    } catch(err){
-        resObj = { "error" : "Failed to clone a fork" };
-        res.status(500).send(resObj);  
+    } catch (err) {
+        resObj = { error: `Failed to clone a fork with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
 /**
  * @swagger
- * /general/set-bot-auth:
+ * /utils/general/set-bot-auth:
  *   post:
- *     summary: Sets up bot accounts 
+ *     summary: Sets up bot accounts
  *     tags:
- *      - general
+ *      - Utils
  *     description: Sets up bot accounts by  iving them ETH and adding them as bot caller on BotAuth contract
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -161,12 +168,6 @@ router.post("/clone-fork", async (req, res) => {
  *              forkId:
  *                type: string
  *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
  *              botAccounts:
  *                type: array
  *                items:
@@ -197,26 +198,29 @@ router.post("/clone-fork", async (req, res) => {
  */
 router.post("/set-bot-auth", async (req, res) => {
     let resObj;
-    try {
-        const { forkId, tenderlyProject, tenderlyAccessKey, botAccounts} = req.body;
 
-        await topUpOwner(forkId, tenderlyProject, tenderlyAccessKey);
-        await setUpBotAccounts(forkId, tenderlyProject, tenderlyAccessKey, botAccounts);
+    try {
+        const { forkId, botAccounts } = req.body;
+
+        await setupFork(forkId);
+        await topUpOwner(forkId);
+        await setUpBotAccounts(forkId, botAccounts);
+
         resObj = { botAccounts };
         res.status(200).send(resObj);
-    } catch(err){
-        resObj = { "error" : "Failed to set both auth" };
-        res.status(500).send(resObj);  
+    } catch (err) {
+        resObj = { error: `Failed to set bot auth with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
 /**
  * @swagger
- * /general/set-eth-balance:
+ * /utils/general/set-eth-balance:
  *   post:
  *     summary: Sets eth balance of a given address to requested amount
  *     tags:
- *      - general
+ *      - Utils
  *     description: Sets eth balance of a given address to requested amount
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -229,12 +233,6 @@ router.post("/set-bot-auth", async (req, res) => {
  *              forkId:
  *                type: string
  *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
  *              account:
  *                type: string
  *                example: "0x000000000000000000000000000000000000dEaD"
@@ -267,28 +265,30 @@ router.post("/set-bot-auth", async (req, res) => {
  */
 router.post("/set-eth-balance", async (req, res) => {
     let resObj;
-    try{
-        const { forkId, tenderlyProject, tenderlyAccessKey, account, amount} = req.body;
 
-        await topUpAccount(forkId, tenderlyProject, tenderlyAccessKey, account, amount);
-        resObj = { 
+    try {
+        const { forkId, account, amount } = req.body;
+
+        await setupFork(forkId);
+        await topUpAccount(account, amount);
+        resObj = {
             account,
-            amount 
+            amount
         };
         res.status(200).send(resObj);
-    } catch(err){
-        resObj = { "error" : "Failed to set ETH balance" };
-        res.status(500).send(resObj);  
+    } catch (err) {
+        resObj = { error: `Failed to set eth balance with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 
 /**
  * @swagger
- * /general/set-token-balance:
+ * /utils/general/set-token-balance:
  *   post:
  *     summary: Sets token balance of a given address to requested amount
  *     tags:
- *      - general
+ *      - Utils
  *     description: Sets token balance (ERC20) of a given address to requested amount
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -301,12 +301,6 @@ router.post("/set-eth-balance", async (req, res) => {
  *              forkId:
  *                type: string
  *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
  *              token:
  *                type: string
  *                example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
@@ -345,29 +339,31 @@ router.post("/set-eth-balance", async (req, res) => {
  */
 router.post("/set-token-balance", async (req, res) => {
     let resObj;
-    try{
-        const { forkId, tenderlyProject, tenderlyAccessKey, token, account, amount} = req.body;
 
-        await setBalance(forkId, tenderlyProject, tenderlyAccessKey, token, account, amount);
-        resObj = { 
+    try {
+        const { forkId, token, account, amount } = req.body;
+
+        await setupFork(forkId);
+        await setBalance(token, account, amount);
+        resObj = {
             token,
             account,
-            amount 
+            amount
         };
         res.status(200).send(resObj);
-    } catch(err){
-        resObj = { "error" : err.toString() };
-        res.status(500).send(resObj);  
+    } catch (err) {
+        resObj = { error: err.toString() };
+        res.status(500).send(resObj);
     }
 });
 
 /**
  * @swagger
- * /general/time-travel:
+ * /utils/general/time-travel:
  *   post:
  *     summary: Increases the timestamp on a fork by a given amount
  *     tags:
- *      - general
+ *      - Utils
  *     description: Increases the timestamp on a fork by a given amount
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -409,14 +405,15 @@ router.post("/set-token-balance", async (req, res) => {
  */
 router.post("/time-travel", async (req, res) => {
     let resObj;
-    try{
-        const { forkId, amount} = req.body;
+
+    try {
+        const { forkId, amount } = req.body;
 
         resObj = await timeTravel(forkId, amount);
         res.status(200).send(resObj);
-    } catch(err){
-        resObj = { "error" : "Failed to time travel"};
-        res.status(500).send(resObj);  
+    } catch (err) {
+        resObj = { error: `Failed to time travel with error : ${err.toString()}` };
+        res.status(500).send(resObj);
     }
 });
 

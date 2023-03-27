@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 
-const { dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi } = require("./abi/general");
+const { dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi } = require("./abi/general");
 
 const storageSlots = require("../src/storageSlots.json");
 
@@ -228,6 +228,50 @@ async function setBalance(tokenAddr, userAddr, amount) {
     await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
 }
 
+/**
+ * Get latest Subscription ID from SubStorage
+ * @returns {number} ID of the latest subscription
+ */
+async function getLatestSubId() {
+    const subStorageAddr = await getAddrFromRegistry("SubStorage");
+
+    const [signer] = await hre.ethers.getSigners();
+    const subStorage = new hre.ethers.Contract(subStorageAddr, subStorageAbi, signer);
+
+    let latestSubId = await subStorage.getSubsCount();
+
+    latestSubId = (latestSubId - 1).toString();
+
+    return latestSubId;
+}
+
+/**
+ * Subscribe to a strategy using SubProxy
+ * @param {Object} proxy proxy Object which we want to use for sub
+ * @param {Object} strategySub strategySub properly encoded
+ * @returns {number} ID of the strategy subscription
+ */
+async function subToStrategy(proxy, strategySub) {
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const subProxyAddr = addresses[chainId].SUB_PROXY;
+
+    const [signer] = await hre.ethers.getSigners();
+    const subProxy = new hre.ethers.Contract(subProxyAddr, subProxyAbi, signer);
+
+    const functionData = subProxy.interface.encodeFunctionData(
+        "subscribeToStrategy",
+        [strategySub]
+    );
+
+    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
+        gasLimit: 5000000
+    });
+
+    const latestSubId = await getLatestSubId();
+
+    return latestSubId;
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -239,5 +283,7 @@ module.exports = {
     executeAction,
     topUpAccount,
     setupFork,
-    setBalance
+    setBalance,
+    subToStrategy,
+    getLatestSubId
 };

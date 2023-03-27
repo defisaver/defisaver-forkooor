@@ -1,72 +1,8 @@
 const { ilks } = require("@defisaver/tokens");
 const hre = require("hardhat");
-const { subProxyAbi, subStorageAbi } = require("../../abi/general");
-const { getProxy, addresses, getAddrFromRegistry } = require("../../utils");
+const automationSdk = require("@defisaver/automation-sdk");
+const { getProxy, addresses, subToStrategy } = require("../../utils");
 const { getVaultInfo, getMcdManagerAddr } = require("../maker/view");
-
-const abiCoder = new hre.ethers.utils.AbiCoder();
-
-const MCD_CLOSE_TO_DAI_ID = 7;
-const MCD_CLOSE_TO_COLL_ID = 9;
-
-/**
- * Encodes three parameteres that are neeeded for subbing to DFS ChainlinkPriceTrigger
- * @param {string} tokenAddr address of the token which price we're checking
- * @param {number} price price in whole number - 1500
- * @param {number} state 0/1 for over/under
- * @returns {string} abi encoded trigger data
- */
-async function createChainLinkPriceTrigger(tokenAddr, price, state) {
-
-    const formattedPrice = (price * 1e8).toString();
-    const triggerData = abiCoder.encode(["address", "uint256", "uint8"], [tokenAddr, formattedPrice, state]);
-
-    return triggerData;
-}
-
-/**
- * Get latest Subscription ID from SubStorage
- * @returns {number} ID of the latest subscription
- */
-async function getLatestSubId() {
-    const subStorageAddr = await getAddrFromRegistry("SubStorage");
-
-    const [signer] = await hre.ethers.getSigners();
-    const subStorage = new hre.ethers.Contract(subStorageAddr, subStorageAbi, signer);
-
-    let latestSubId = await subStorage.getSubsCount();
-
-    latestSubId = (latestSubId - 1).toString();
-
-    return latestSubId;
-}
-
-/**
- * Subscribe to a strategy using SubProxy
- * @param {Object} proxy proxy Object which we want to use for sub
- * @param {Object} strategySub strategySub properly encoded
- * @returns {number} ID of the strategy subscription
- */
-async function subToStrategy(proxy, strategySub) {
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const subProxyAddr = addresses[chainId].SUB_PROXY;
-
-    const [signer] = await hre.ethers.getSigners();
-    const subProxy = new hre.ethers.Contract(subProxyAddr, subProxyAbi, signer);
-
-    const functionData = subProxy.interface.encodeFunctionData(
-        "subscribeToStrategy",
-        [strategySub]
-    );
-
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    });
-
-    const latestSubId = await getLatestSubId();
-
-    return latestSubId;
-}
 
 
 /**
@@ -95,20 +31,12 @@ async function subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, own
     const vault = await getVaultInfo(vaultId, mcdManager);
     const ilkObj = ilks.find(i => i.ilkLabel === vault.ilkLabel);
 
-    const isBundle = false;
-
     const { chainId } = await hre.ethers.provider.getNetwork();
     const daiAddress = addresses[chainId].DAI_ADDR;
 
-    const vaultIdEncoded = abiCoder.encode(["uint256"], [vaultId.toString()]);
-    const daiEncoded = abiCoder.encode(["address"], [daiAddress]);
-    const mcdManagerEncoded = abiCoder.encode(["address"], [mcdManager]);
-
-    const triggerData = await createChainLinkPriceTrigger(
-        ilkObj.assetAddress, triggerPrice, formattedPriceState
+    const strategySub = automationSdk.strategySubService.makerEncode.closeOnPrice(
+        vaultId, formattedPriceState, triggerPrice.toString(), daiAddress, ilkObj.assetAddress
     );
-
-    const strategySub = [MCD_CLOSE_TO_DAI_ID, isBundle, [triggerData], [vaultIdEncoded, daiEncoded, mcdManagerEncoded]];
     const subId = await subToStrategy(proxy, strategySub);
 
 
@@ -141,20 +69,10 @@ async function subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, ow
     const vault = await getVaultInfo(vaultId, mcdManager);
     const ilkObj = ilks.find(i => i.ilkLabel === vault.ilkLabel);
 
-    const isBundle = false;
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const daiAddress = addresses[chainId].DAI_ADDR;
 
-    const vaultIdEncoded = abiCoder.encode(["uint256"], [vaultId.toString()]);
-    const collEncoded = abiCoder.encode(["address"], [ilkObj.assetAddress]);
-    const daiEncoded = abiCoder.encode(["address"], [daiAddress]);
-    const mcdManagerEncoded = abiCoder.encode(["address"], [mcdManager]);
-
-    const triggerData = await createChainLinkPriceTrigger(
-        ilkObj.assetAddress, triggerPrice, formattedPriceState
+    const strategySub = automationSdk.strategySubService.makerEncode.closeOnPrice(
+        vaultId, formattedPriceState, triggerPrice.toString(), ilkObj.assetAddress, ilkObj.assetAddress
     );
-
-    const strategySub = [MCD_CLOSE_TO_COLL_ID, isBundle, [triggerData], [vaultIdEncoded, collEncoded, daiEncoded, mcdManagerEncoded]];
     const subId = await subToStrategy(proxy, strategySub);
 
 
@@ -178,9 +96,6 @@ async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targ
 
     const proxy = await getProxy(senderAcc.address);
 
-    const minRatioWei = hre.ethers.utils.parseUnits(minRatio.toString(), "16");
-    const targetRatioWei = hre.ethers.utils.parseUnits(targetRatio.toString(), "16");
-
     let bundleId;
 
     if (protocol.toLowerCase() === "yearn") {
@@ -195,18 +110,8 @@ async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targ
         bundleId = 2;
     }
 
-    const mcdManager = await getMcdManagerAddr();
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const daiAddress = addresses[chainId].DAI_ADDR;
 
-    const vaultIdEncoded = abiCoder.encode(["uint256"], [vaultId.toString()]);
-    const targetRatioEncoded = abiCoder.encode(["uint256"], [targetRatioWei.toString()]);
-    const daiAddrEncoded = abiCoder.encode(["address"], [daiAddress]);
-    const mcdManagerAddrEncoded = abiCoder.encode(["address"], [mcdManager]);
-
-    const triggerData = abiCoder.encode(["uint256", "uint256", "uint8"], [vaultId, minRatioWei, 1]);
-
-    const strategySub = [bundleId, true, [triggerData], [vaultIdEncoded, targetRatioEncoded, daiAddrEncoded, mcdManagerAddrEncoded]];
+    const strategySub = automationSdk.strategySubService.makerEncode.repayFromSavings(bundleId, vaultId, minRatio, targetRatio);
 
     const subId = await subToStrategy(proxy, strategySub);
 

@@ -7,7 +7,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /maker/strategies/mcd-close-to-dai:
+ * /maker/strategies/close-to-dai:
  *   post:
  *     summary: Subscribe to MCD Close to DAI strategy
  *     tags:
@@ -61,7 +61,7 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/mcd-close-to-dai", async (req, res) => {
+router.post("/close-to-dai", async (req, res) => {
     let resObj;
 
     try {
@@ -79,7 +79,7 @@ router.post("/mcd-close-to-dai", async (req, res) => {
 
 /**
  * @swagger
- * /maker/strategies/mcd-close-to-coll:
+ * /maker/strategies/close-to-coll:
  *   post:
  *     summary: Subscribe to a MCD Close to Coll strategy
  *     tags:
@@ -133,7 +133,7 @@ router.post("/mcd-close-to-dai", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/mcd-close-to-coll", async (req, res) => {
+router.post("/close-to-coll", async (req, res) => {
     let resObj;
 
     try {
@@ -152,7 +152,7 @@ router.post("/mcd-close-to-coll", async (req, res) => {
 
 /**
  * @swagger
- * /maker/strategies/mcd-smart-savings-repay:
+ * /maker/strategies/smart-savings-repay:
  *   post:
  *     summary: Subscribe to a MCD Repay from smart savings bundle
  *     tags:
@@ -209,7 +209,7 @@ router.post("/mcd-close-to-coll", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/mcd-smart-savings-repay", async (req, res) => {
+router.post("/smart-savings-repay", async (req, res) => {
     let resObj;
 
     try {

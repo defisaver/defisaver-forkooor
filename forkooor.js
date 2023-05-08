@@ -1,12 +1,14 @@
 const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
+const cors = require('cors')
 
 const generalRouter = require("./src/routers/utils/index");
 const makerRouter = require("./src/routers/maker/index");
 
 const app = express();
 
+app.use(cors());
 app.use(express.json({ extended: true }));
 
 app.use("/utils", generalRouter);

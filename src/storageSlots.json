@@ -766,7 +766,7 @@
          "isVyper":false,
          "num":0
       },
-      "0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb":{
+      "0x1f32b1c2345538c0c6f582fcb022739c4a194ebb":{
          "isVyper":false,
          "num":1
       },
@@ -811,6 +811,30 @@
       "0xd22a58f79e9481d1a88e00c343885a588b34b68b":{
          "isVyper":false,
          "num":2
+      },
+      "0x912ce59144191c1204e64559fe8253a0e49e6548":{
+         "isVyper":false,
+         "num":51
+      },
+      "0xfc5a1a6eb076a2c7ad06ed22c90d7e710e35ad0a":{
+         "isVyper":false,
+         "num":5
+      },
+      "0x93b346b6bc2548da6a1e7d98e9a421b42541425b":{
+         "isVyper":false,
+         "num":51
+      },
+      "0x3f56e0c36d275367b8c502090edf38289b3dea0d":{
+         "isVyper":false,
+         "num":1
+      },
+      "0xec70dcb4a1efa46b8f2d97c310c9c4790ba5ffa8":{
+         "isVyper":false,
+         "num":51
+      },
+      "0x5979d7b546e38e414f7e9822514be443a4800529":{
+         "isVyper":false,
+         "num":1
       }
    }
 }

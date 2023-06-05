@@ -220,10 +220,6 @@ async function setBalance(tokenAddr, userAddr, amount) {
             [userAddr, slotInfo.num] // key, slot
         );
     }
-    while (index.startsWith("0x0")) {
-        index = `0x${index.slice(3)}`;
-    }
-
     await hre.ethers.provider.send("tenderly_setStorageAt", [tokenAddr, index.toString(), toBytes32(value).toString()]);
     await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
 }

@@ -765,6 +765,18 @@
       "0x4200000000000000000000000000000000000042":{
          "isVyper":false,
          "num":0
+      },
+      "0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb":{
+         "isVyper":false,
+         "num":1
+      },
+      "0x9bcef72be871e61ed4fbbc7630889bee758eb81d":{
+         "isVyper":false,
+         "num":0
+      },
+      "0xdfa46478f9e5ea86d57387849598dbfb2e964b02":{
+         "isVyper":false,
+         "num":0
       }
    },
    "42161":{

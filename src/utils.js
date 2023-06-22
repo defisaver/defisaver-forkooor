@@ -202,7 +202,8 @@ async function setBalance(tokenAddr, userAddr, amount) {
     } catch (error) {
     }
     const slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
-
+    console.log(chainId);
+    console.log(tokenAddr.toString());
     if (!slotObj) {
         throw new Error(`Token balance not changeable : ${inputTokenAddr} - ${chainId}`);
     }

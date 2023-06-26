@@ -449,7 +449,7 @@ router.get("/new-address", async (req, res) => {
         resObj = await newAddress();
         res.status(200).send(resObj);
     } catch (err) {
-        resObj = { error: `Failed to time travel with error : ${err.toString()}` };
+        resObj = { error: `Failed to create new address with error : ${err.toString()}` };
         res.status(500).send(resObj);
     }
 });

@@ -432,6 +432,7 @@ router.post("/time-travel", async (req, res) => {
  *           application/json:
  *             schema:
  *               type: string
+ *               example: "0xc78E09653fb412264321653468bF56244D00153E"
  *       '500':
  *         description: Internal Server Error
  *         content:

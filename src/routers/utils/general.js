@@ -420,7 +420,7 @@ router.post("/time-travel", async (req, res) => {
 /**
  * @swagger
  * /utils/general/new-address:
- *   post:
+ *   get:
  *     summary: Returns new Ethereum address.
  *     tags:
  *      - Utils

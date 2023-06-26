@@ -1,8 +1,10 @@
 const hre = require("hardhat");
 const axios = require("axios");
+const { toChecksumAddress } = require("ethereum-checksum-address");
 
 const { botAuthAbi } = require("../../abi/general");
 const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork } = require("../../utils");
+const crypto = require("crypto");
 
 /**
  * Tops up DFS Owner account on a given Tenderly fork
@@ -98,11 +100,20 @@ async function cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey) {
     return forkRes.data.simulation_fork.id;
 }
 
+/**
+ * Creates a new checksum Ethereum address
+ * @returns {string} Newly created checksum Ethereum address
+ */
+async function newAddress() {
+    return toChecksumAddress(crypto.randomBytes(20).toString("hex"));
+}
+
 module.exports = {
     createNewFork,
     cloneFork,
     topUpOwner,
     topUpAccount,
     setUpBotAccounts,
-    timeTravel
+    timeTravel,
+    newAddress
 };

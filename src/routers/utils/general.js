@@ -421,10 +421,10 @@ router.post("/time-travel", async (req, res) => {
  * @swagger
  * /utils/general/new-address:
  *   post:
- *     summary: Returns new checksum Ethereum address.
+ *     summary: Returns new Ethereum address.
  *     tags:
  *      - Utils
- *     description: Returns new checksum Ethereum address.
+ *     description: Returns new Ethereum address.
  *     responses:
  *       '200':
  *         description: OK

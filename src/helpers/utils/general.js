@@ -99,8 +99,8 @@ async function cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey) {
 }
 
 /**
- * Creates a new checksum Ethereum address
- * @returns {string} Newly created checksum Ethereum address
+ * Creates a new Ethereum address
+ * @returns {string} Newly created Ethereum address
  */
 async function newAddress() {
     return hre.ethers.Wallet.createRandom().address;

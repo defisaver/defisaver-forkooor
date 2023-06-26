@@ -2,7 +2,7 @@
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel } = require("../../helpers/utils/general");
+const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress } = require("../../helpers/utils/general");
 const { setBalance, setupFork } = require("../../utils");
 
 const router = express.Router();
@@ -413,6 +413,44 @@ router.post("/time-travel", async (req, res) => {
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to time travel with error : ${err.toString()}` };
+        res.status(500).send(resObj);
+    }
+});
+
+/**
+ * @swagger
+ * /utils/general/new-address:
+ *   get:
+ *     summary: Returns new Ethereum address.
+ *     tags:
+ *      - Utils
+ *     description: Returns new Ethereum address.
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: "0xc78E09653fb412264321653468bF56244D00153E"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.get("/new-address", async (req, res) => {
+    let resObj;
+
+    try {
+        resObj = await newAddress();
+        res.status(200).send(resObj);
+    } catch (err) {
+        resObj = { error: `Failed to create new address with error : ${err.toString()}` };
         res.status(500).send(resObj);
     }
 });

@@ -98,11 +98,20 @@ async function cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey) {
     return forkRes.data.simulation_fork.id;
 }
 
+/**
+ * Creates a new Ethereum address
+ * @returns {string} Newly created Ethereum address
+ */
+async function newAddress() {
+    return hre.ethers.Wallet.createRandom().address;
+}
+
 module.exports = {
     createNewFork,
     cloneFork,
     topUpOwner,
     topUpAccount,
     setUpBotAccounts,
-    timeTravel
+    timeTravel,
+    newAddress
 };

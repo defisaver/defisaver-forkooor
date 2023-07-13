@@ -1,10 +1,11 @@
 const express = require("express");
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./swagger");
-const cors = require('cors')
+const cors = require("cors");
 
 const generalRouter = require("./src/routers/utils/index");
 const makerRouter = require("./src/routers/maker/index");
+const sparkRouter = require("./src/routers/spark/index");
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json({ extended: true }));
 
 app.use("/utils", generalRouter);
 app.use("/maker", makerRouter);
+app.use("/spark", sparkRouter);
 
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 

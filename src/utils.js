@@ -174,7 +174,7 @@ async function setupFork(forkId, accounts = []) {
  * Grants a desired token balance to an address
  * @param {string} tokenAddr address of the ERC20 token
  * @param {string} userAddr address which we want to receive the desired amount of tokens
- * @param {number} amount new balance to set
+ * @param {number} amount new balance to set in decimal numbers (not wei)
  * @returns {void}
  */
 async function setBalance(tokenAddr, userAddr, amount) {

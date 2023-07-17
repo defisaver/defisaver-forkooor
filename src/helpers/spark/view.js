@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 
-const { sparkViewAbi } = require("../../abi/spark/views");
+const { sparkViewAbi } = require("../../abi/spark/abis");
 
 const SPARK_VIEW = "0x030f0B8BE72f7Fd73D336Fca4cD501FF26325b7c";
 

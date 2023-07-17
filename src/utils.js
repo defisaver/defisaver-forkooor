@@ -2,8 +2,8 @@ const hre = require("hardhat");
 
 const {
     dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi,
-    sparkSubProxyAbi
 } = require("./abi/general");
+const { sparkSubProxyAbi } = require("./abi/spark/abis");
 
 const storageSlots = require("../src/storageSlots.json");
 
@@ -16,7 +16,7 @@ const addresses = {
         PROXY_REGISTRY: "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
         SUB_PROXY: "0xd18d4756bbf848674cc35f1a0b86afef20787382",
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        OPTIMIZED_SUB_PROXY: "0x0055f98B4545eC4Fa8b423C2Cf34bD02AcB571f0"
+        SPARK_SUB_PROXY: "0x0055f98B4545eC4Fa8b423C2Cf34bD02AcB571f0"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -299,7 +299,7 @@ async function subToStrategy(proxy, strategySub) {
  */
 async function subToSparkStrategy(proxy, strategySub) {
     const { chainId } = await hre.ethers.provider.getNetwork();
-    const subProxyAddr = addresses[chainId].OPTIMIZED_SUB_PROXY;
+    const subProxyAddr = addresses[chainId].SPARK_SUB_PROXY;
 
     const [signer] = await hre.ethers.getSigners();
     const subProxy = new hre.ethers.Contract(subProxyAddr, sparkSubProxyAbi, signer);

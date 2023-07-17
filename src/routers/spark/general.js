@@ -833,7 +833,7 @@ router.post("/payback", async (req, res) => {
         res.status(200).send(pos);
     } catch (err) {
         resObj = { error: `Failed to payback an Spark info with error : ${err.toString()}` };
-        res.status(500).send(resObj, err);
+        res.status(500).send(resObj);
     }
 });
 

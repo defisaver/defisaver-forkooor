@@ -20,7 +20,7 @@ async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRe
         );
         const subId = await subToSparkStrategy(proxy, strategySub);
 
-        return { strategySub, subId };
+        return { strategySub, boostSubId: subId, repaySubId: (subId - 1).toString() };
     } catch (err) {
         console.log(err);
         throw err;

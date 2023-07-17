@@ -1,52 +1,8 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
 const { getAssetInfo } = require("@defisaver/tokens");
-const { getProxy, approve, executeAction, setBalance } = require("../../utils");
+const { getSender, approve, executeAction, setBalance } = require("../../utils");
 const { getFullTokensInfo, getLoanData } = require("./view");
-
-// /**
-//  * Convert loan data to Spark position with key names
-//  * @param loanData {Object} object that has all the data needed to create a Spark position
-//  * @returns {Object} object that has all the data needed to create a Spark position with key names
-//  */
-// async function convertToJson(loanData) {
-//     return {
-//         user: loanData.user,
-//         ratio: loanData.ratio.toString(),
-//         eMode: loanData.eMode.toString(),
-//         collAddr: loanData.collAddr,
-//         borrowAddr: loanData.borrowAddr,
-//         collAmounts: loanData.collAmounts.map(amount => amount.toString()),
-//         borrowStableAmounts: loanData.borrowStableAmounts.map(amount =>
-//             amount.toString()),
-//         borrowVariableAmounts: loanData.borrowVariableAmounts.map(amount =>
-//             amount.toString()),
-//         ltv: loanData.ltv,
-//         liquidationThreshold: loanData.liquidationThreshold,
-//         liquidationBonus: loanData.liquidationBonus,
-//         priceSource: loanData.priceSource,
-//         label: loanData.label
-//     };
-// }
-
-/**
- * Get sender account and his proxy
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
- * @returns {Object} object that has sender account and his proxy
- */
-async function getSender(owner) {
-    const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
-
-    senderAcc.address = senderAcc._address;
-
-    // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
-
-    return [
-        senderAcc,
-        proxy
-    ];
-}
 
 /**
  * Create a Spark position for sender on his proxy (created if he doesn't have one)

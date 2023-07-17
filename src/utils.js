@@ -1,6 +1,9 @@
 const hre = require("hardhat");
 
-const { dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi } = require("./abi/general");
+const {
+    dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi,
+    sparkSubProxyAbi
+} = require("./abi/general");
 
 const storageSlots = require("../src/storageSlots.json");
 
@@ -12,7 +15,8 @@ const addresses = {
         OWNER_ACC: "0xBc841B0dE0b93205e912CFBBd1D0c160A1ec6F00",
         PROXY_REGISTRY: "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
         SUB_PROXY: "0xd18d4756bbf848674cc35f1a0b86afef20787382",
-        DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        OPTIMIZED_SUB_PROXY: "0x0055f98B4545eC4Fa8b423C2Cf34bD02AcB571f0"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -89,6 +93,25 @@ async function getProxy(account) {
     const dsProxy = new hre.ethers.Contract(proxyAddr, proxyAbi, accSigner);
 
     return dsProxy;
+}
+
+/**
+ * Get sender account and his proxy
+ * @param {string} owner the EOA which will be sending transactions and own the newly created vault
+ * @returns {Object} object that has sender account and his proxy
+ */
+async function getSender(owner) {
+    const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
+
+    senderAcc.address = senderAcc._address;
+
+    // create Proxy if the sender doesn't already have one
+    const proxy = await getProxy(senderAcc.address);
+
+    return [
+        senderAcc,
+        proxy
+    ];
 }
 
 /**
@@ -268,6 +291,33 @@ async function subToStrategy(proxy, strategySub) {
     return latestSubId;
 }
 
+/**
+ * Subscribe to a strategy using SparkSubProxy
+ * @param {string} proxy proxy Object which we want to use for sub
+ * @param {string} strategySub strategySub properly encoded
+ * @returns {number} ID of the strategy subscription
+ */
+async function subToSparkStrategy(proxy, strategySub) {
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const subProxyAddr = addresses[chainId].OPTIMIZED_SUB_PROXY;
+
+    const [signer] = await hre.ethers.getSigners();
+    const subProxy = new hre.ethers.Contract(subProxyAddr, sparkSubProxyAbi, signer);
+
+    const functionData = subProxy.interface.encodeFunctionData(
+        "subToSparkAutomation",
+        [strategySub]
+    );
+
+    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
+        gasLimit: 5000000
+    });
+
+    const latestSubId = await getLatestSubId();
+
+    return latestSubId;
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -281,5 +331,7 @@ module.exports = {
     setupFork,
     setBalance,
     subToStrategy,
-    getLatestSubId
+    getLatestSubId,
+    getSender,
+    subToSparkStrategy
 };

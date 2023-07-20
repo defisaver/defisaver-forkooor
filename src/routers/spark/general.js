@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupFork, getProxy, isContract} = require("../../utils");
 const { getLoanData } = require("../../helpers/spark/view");
 const { createSparkPosition, sparkSupply, sparkWithdraw, sparkBorrow, sparkPayback } = require("../../helpers/spark/general");
 
@@ -127,8 +127,20 @@ router.post("/get-position", async (req, res) => {
     try {
         const { forkId, market, owner } = req.body;
 
-        await setupFork(forkId);
-        const pos = await getLoanData(market, owner);
+        let proxy = owner;
+
+        const isContractResp = await isContract(owner);
+
+        await setupFork(forkId); // Needs to set up fork before fetching proxy
+
+        if (!isContractResp) {
+            console.log("Owner is not a contract, fetching proxy");
+            const proxyContract = await getProxy(owner);
+
+            proxy = proxyContract.address;
+        }
+
+        const pos = await getLoanData(market, proxy);
 
         res.status(200).send(pos);
     } catch (err) {

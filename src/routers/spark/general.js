@@ -290,7 +290,7 @@ router.post("/create", async (req, res) => {
 
         res.status(200).send(pos);
     } catch (err) {
-        resObj = { error: `Failed to create vault info with error : ${err.toString()}` };
+        resObj = { error: `Failed to create spark position info with error : ${err.toString()}` };
         res.status(500).send(resObj);
     }
 });

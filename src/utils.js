@@ -96,6 +96,17 @@ async function getProxy(account) {
 }
 
 /**
+ * Check if an address is a contract
+ * @param {string} address proxy owner
+ * @returns {Object} true if address is a contract
+ */
+async function isContract(address) {
+    const code = await hre.ethers.provider.getCode(address);
+
+    return code !== "0x";
+}
+
+/**
  * Get sender account and his proxy
  * @param {string} owner the EOA which will be sending transactions and own the newly created vault
  * @returns {Object} object that has sender account and his proxy
@@ -333,5 +344,6 @@ module.exports = {
     subToStrategy,
     getLatestSubId,
     getSender,
-    subToSparkStrategy
+    subToSparkStrategy,
+    isContract
 };

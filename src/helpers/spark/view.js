@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 const { sparkViewAbi } = require("../../abi/spark/abis");
 
-const SPARK_VIEW = "0x030f0B8BE72f7Fd73D336Fca4cD501FF26325b7c";
+const SPARK_VIEW = "0x29d01EF37514912ab874D51fEc76c8f5d4d6712e";
 
 /**
  * Convert loan data to Spark position with key names

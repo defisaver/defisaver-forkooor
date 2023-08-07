@@ -1,5 +1,5 @@
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToSparkStrategy} = require("../../utils");
+const { getSender, subToSparkStrategy } = require("../../utils");
 
 /**
  * Subscribes to DfsAutomation strategy
@@ -16,7 +16,7 @@ async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRe
 
     try {
         const strategySub = automationSdk.strategySubService.sparkEncode.leverageManagement(
-            minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled
+            minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
         );
         const subId = await subToSparkStrategy(proxy, strategySub);
 

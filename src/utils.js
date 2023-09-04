@@ -155,7 +155,8 @@ async function approve(tokenAddr, to, owner) {
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 10000000 });
+    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 10000000 })
+        .then(e => e.wait());
 }
 
 /**
@@ -295,7 +296,7 @@ async function subToStrategy(proxy, strategySub) {
 
     await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
         gasLimit: 5000000
-    });
+    }).then(e => e.wait());
 
     const latestSubId = await getLatestSubId();
 
@@ -322,7 +323,7 @@ async function subToSparkStrategy(proxy, strategySub) {
 
     await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
         gasLimit: 5000000
-    });
+    }).then(e => e.wait());
 
     const latestSubId = await getLatestSubId();
 

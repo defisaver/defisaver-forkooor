@@ -12,8 +12,9 @@ const aaveSubProxy = {
     abi: aaveV3SubProxyAbi
 };
 
-async function getFullTokensInfo(provider, market, assets) {
-    const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, provider);
+async function getFullTokensInfo(market, assets) {
+    const [signer] = await hre.ethers.getSigners();
+    const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, signer);
 
     return await view.getFullTokensInfo(market, assets);
 }

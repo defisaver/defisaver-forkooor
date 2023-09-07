@@ -1,6 +1,6 @@
 const express = require("express");
 const { setupFork } = require("../../utils");
-const { subLiqutityDsrPaybackStrategy } = require("../../helpers/liquity/strategies");
+const { subLiqutityDsrPaybackStrategy, subLiqutityDsrSupplyStrategy } = require("../../helpers/liquity/strategies");
 
 const router = express.Router();
 

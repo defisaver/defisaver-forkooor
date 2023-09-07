@@ -1,6 +1,6 @@
 const express = require("express");
 const { setupFork } = require("../../utils");
-const { subLiqutityDsrPaybackStrategy } = require("../../helpers/liquity/strategies");
+const { subLiqutityDsrPaybackStrategy, subLiqutityDsrSupplyStrategy } = require("../../helpers/liquity/strategies");
 
 const router = express.Router();
 
@@ -135,7 +135,7 @@ router.post("/dsr-supply", async (req, res) => {
 
         await setupFork(forkId, [sender]);
 
-        const sub = await subLiqutityDsrPaybackStrategy({ sender, triggerRatio, targetRatio });
+        const sub = await subLiqutityDsrSupplyStrategy({ sender, triggerRatio, targetRatio });
 
         res.status(200).send(sub);
     } catch (err) {

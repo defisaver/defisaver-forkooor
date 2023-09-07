@@ -105,11 +105,11 @@ router.post("/get-trove", async (req, res) => {
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
  *              collAmount:
- *                type: string
- *                example: "30912412406464135865"
+ *                type: integer
+ *                example: 5
  *              debtAmount:
- *                type: string
- *                example: "26288199435463558516521"
+ *                type: integer
+ *                example: 4000
  *     responses:
  *       '200':
  *         description: OK
@@ -191,14 +191,14 @@ router.post("/open-trove", async (req, res) => {
  *                type: string
  *                example: "withdraw"
  *              collAmount:
- *                type: string
- *                example: "20912412406464135865"
+ *                type: integer
+ *                example: 1.5
  *              debtAction:
  *                type: string
  *                example: "payback"
  *              debtAmount:
- *                type: string
- *                example: "56288199435463558516521"
+ *                type: integer
+ *                example: 2000
  *     responses:
  *       '200':
  *         description: OK

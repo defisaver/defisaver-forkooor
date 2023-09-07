@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { createMcdVault, openEmptyMcdVault, mcdSupply, mcdWithdraw, mcdBorrow, mcdPayback } = require("../../helpers/maker/general");
+const { createMcdVault, openEmptyMcdVault, mcdSupply, mcdWithdraw, mcdBorrow, mcdPayback, mcdDsrWithdraw, mcdDsrDeposit } = require("../../helpers/maker/general");
 const { getVaultInfo } = require("../../helpers/maker/view");
 const { setupFork } = require("../../utils");
 
@@ -24,7 +24,7 @@ const router = express.Router();
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              vaultId:
  *                type: integer
  *                example: 29721
@@ -94,7 +94,7 @@ router.post("/get-vault", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -173,7 +173,7 @@ router.post("/create-vault", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -246,7 +246,7 @@ router.post("/open-empty-vault", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -322,7 +322,7 @@ router.post("/supply", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -398,7 +398,7 @@ router.post("/withdraw", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -474,7 +474,7 @@ router.post("/borrow", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -528,6 +528,126 @@ router.post("/payback", async (req, res) => {
         res.status(200).send(vaultInfo);
     } catch (err) {
         resObj = { error: `Failed to payback an MCD vault info with error : ${err.toString()}` };
+        res.status(500).send(resObj, err);
+    }
+});
+
+/**
+ * @swagger
+ * /maker/general/dsr-deposit:
+ *   post:
+ *     summary: Deposit certain amount of DAI into Maker DSR
+ *     tags:
+ *      - Maker
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *              sender:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              amount:
+ *                type: integer
+ *                example: 2000
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: integer
+ *               example: 2000
+ *               descripition: "Amount of dai in DSR"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/dsr-deposit", async (req, res) => {
+    let resObj;
+
+    try {
+        const { forkId, sender, amount } = req.body;
+
+        await setupFork(forkId, [sender]);
+        const vaultInfo = await mcdDsrDeposit(sender, amount);
+
+        res.status(200).send(vaultInfo);
+    } catch (err) {
+        resObj = { error: `Failed to deposit into Maker DSR with error : ${err.toString()}` };
+        res.status(500).send(resObj, err);
+    }
+});
+
+/**
+ * @swagger
+ * /maker/general/dsr-withdraw:
+ *   post:
+ *     summary: Withdraw certain amount of DAI from Maker DSR
+ *     tags:
+ *      - Maker
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *              sender:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              amount:
+ *                type: integer
+ *                example: 2000
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: integer
+ *               example: 2000
+ *               descripition: "Amount of dai in DSR"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/dsr-withdraw", async (req, res) => {
+    let resObj;
+
+    try {
+        const { forkId, sender, amount } = req.body;
+
+        await setupFork(forkId, [sender]);
+        const vaultInfo = await mcdDsrWithdraw(sender, amount);
+
+        res.status(200).send(vaultInfo);
+    } catch (err) {
+        resObj = { error: `Failed to withdraw from Maker DSR with error : ${err.toString()}` };
         res.status(500).send(resObj, err);
     }
 });

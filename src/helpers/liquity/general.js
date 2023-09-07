@@ -10,8 +10,8 @@ const MAX_FEE_PERCENTAGE = ethers.utils.parseUnits("0.05");
  * Function that opens a liquity trove
  * @param {Object} params function parameters with keys
  * @param {string} params.sender eoa of proxy that will own the trove
- * @param {string} params.collAmount collateral amount in the position
- * @param {string} params.debtAmount debt amount in the position
+ * @param {number} params.collAmount collateral amount in the position
+ * @param {number} params.debtAmount debt amount in the position
  * @returns {Object} Obj that contains trove info
  */
 async function openTrove({ sender, collAmount, debtAmount }) {
@@ -19,10 +19,14 @@ async function openTrove({ sender, collAmount, debtAmount }) {
 
     senderAcc.address = senderAcc._address;
 
+    // lusd vault coll and debt assets are both 18 decimals
+    const collAmountInWei = ethers.utils.parseUnits(collAmount.toString());
+    const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString());
+
     const proxy = await getProxy(senderAcc.address);
     const { upperHint, lowerHint } = await getInsertPosition(
-        collAmount,
-        debtAmount
+        collAmountInWei,
+        debtAmountInWei
     );
 
     await setBalance(getAssetInfo("WETH").address, senderAcc.address, collAmount);
@@ -30,8 +34,8 @@ async function openTrove({ sender, collAmount, debtAmount }) {
 
     const liquityOpenAction = new dfs.actions.liquity.LiquityOpenAction(
         MAX_FEE_PERCENTAGE,
-        collAmount,
-        debtAmount,
+        collAmountInWei,
+        debtAmountInWei,
         senderAcc.address,
         senderAcc.address,
         upperHint,
@@ -49,9 +53,9 @@ async function openTrove({ sender, collAmount, debtAmount }) {
  * @param {Object} params function parameters with keys
  * @param {string} params.sender eoa of proxy that owns the trove
  * @param {string} params.collAction "supply" | "withdraw"
- * @param {string} params.collAmount amount of collateral to supply/withdraw
+ * @param {number} params.collAmount amount of collateral to supply/withdraw
  * @param {string} params.debtAction "payback" | "borrow"
- * @param {string} params.debtAmount amount of debt to payback/borrow
+ * @param {number} params.debtAmount amount of debt to payback/borrow
  * @returns {Object} Obj that contains trove info
  */
 async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount }) {
@@ -59,13 +63,17 @@ async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmo
 
     senderAcc.address = senderAcc._address;
 
+    // lusd vault coll and debt assets are both 18 decimals
+    const collAmountInWei = ethers.utils.parseUnits(collAmount.toString());
+    const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString());
+
     const proxy = await getProxy(senderAcc.address);
     const { upperHint, lowerHint } = await getHintsForAdjust(
         proxy.address,
         collAction,
-        collAmount,
+        collAmountInWei,
         debtAction,
-        debtAmount
+        debtAmountInWei
     );
 
     let collActionId;
@@ -88,8 +96,8 @@ async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmo
 
     const liquityAdjustAction = new dfs.actions.liquity.LiquityAdjustAction(
         MAX_FEE_PERCENTAGE,
-        collAmount,
-        debtAmount,
+        collAmountInWei,
+        debtAmountInWei,
         collActionId,
         debtActionId,
         senderAcc.address,

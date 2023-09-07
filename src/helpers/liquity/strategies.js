@@ -7,8 +7,8 @@ const automationSdk = require("@defisaver/automation-sdk");
  * Function that subscribes user to liquity dsr payback strategy
  * @param {Object} params function parameters with keys
  * @param {string} params.sender eoa of proxy that owns the trove
- * @param {string} params.triggerRatio ratio below which the sub will be triggered
- * @param {string} params.targetRatio ratio to payback the trove to
+ * @param {number} params.triggerRatio ratio below which the sub will be triggered
+ * @param {number} params.targetRatio ratio to payback the trove to
  * @returns {Object} Obj that contains subId and strategySub
  */
 async function subLiqutityDsrPaybackStrategy({
@@ -31,8 +31,8 @@ async function subLiqutityDsrPaybackStrategy({
  * Function that subscribes user to liquity dsr supply strategy
  * @param {Object} params function parameters with keys
  * @param {string} params.sender eoa of proxy that owns the trove
- * @param {string} params.triggerRatio ratio below which the sub will be triggered
- * @param {string} params.targetRatio ratio to supply the trove to
+ * @param {number} params.triggerRatio ratio below which the sub will be triggered
+ * @param {number} params.targetRatio ratio to supply the trove to
  * @returns {Object} Obj that contains subId and strategySub
  */
 async function subLiqutityDsrSupplyStrategy({

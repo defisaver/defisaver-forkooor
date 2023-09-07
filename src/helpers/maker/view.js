@@ -71,8 +71,31 @@ async function getVaultInfo(vaultId, mcdManager = null) {
     };
 }
 
+/**
+ * Fetch Maker Dsr balance for specific user
+ * @dev temporary solution until McdView is redeployed
+ * @param {string} owner address for which to check dsr balance
+ * @returns {number} amount of dai in dsr
+ */
+async function getDsrBalance(owner) {
+    const POT_ADDRESS = "0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7";
+    const dripSelector = hre.ethers.utils.id("drip()").slice(0, 10);
+    const pieSelector = hre.ethers.utils.id("pie(address)").slice(0, 10);
+
+    const ownerEncoded = hre.ethers.utils.defaultAbiCoder.encode(["address"], [owner]);
+
+    const [drip] = await hre.ethers.provider.call({ to: POT_ADDRESS, data: dripSelector })
+        .then(e => hre.ethers.utils.defaultAbiCoder.decode(["uint256"], e));
+    const [pie] = await hre.ethers.provider.call({ to: POT_ADDRESS, data: pieSelector.concat(ownerEncoded.slice(2)) })
+        .then(e => hre.ethers.utils.defaultAbiCoder.decode(["uint256"], e));
+    const ray = hre.ethers.BigNumber.from("0x33b2e3c9fd0803ce8000000"); // 1e27 BN
+
+    return hre.ethers.utils.formatUnits(pie.mul(drip).div(ray));
+}
+
 module.exports = {
     getVaultsForUser,
     getVaultInfo,
-    getMcdManagerAddr
+    getMcdManagerAddr,
+    getDsrBalance
 };

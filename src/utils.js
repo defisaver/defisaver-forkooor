@@ -199,9 +199,9 @@ async function topUpAccount(address, amount) {
  */
 async function setupFork(forkId, accounts = []) {
     hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-    for (let i = 0; i < accounts.length; i++) {
-        await topUpAccount(accounts[i], 100);
-    }
+    await Promise.all(accounts.map(async (account) => {
+        await topUpAccount(account, 100);
+    }));
 }
 
 /**

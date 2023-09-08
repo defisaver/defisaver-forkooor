@@ -172,7 +172,7 @@ router.post("/get-position", async (req, res) => {
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
- *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
@@ -327,7 +327,7 @@ router.post("/create", async (req, res) => {
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
- *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
@@ -470,7 +470,7 @@ router.post("/supply", async (req, res) => {
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
- *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
@@ -611,7 +611,7 @@ router.post("/withdraw", async (req, res) => {
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
- *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
@@ -755,7 +755,7 @@ router.post("/borrow", async (req, res) => {
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
- *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"

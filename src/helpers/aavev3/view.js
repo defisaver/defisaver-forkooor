@@ -18,8 +18,9 @@ async function getFullTokensInfo(market, assets) {
 
     return await view.getFullTokensInfo(market, assets);
 }
-async function getLoanData(provider, market, user) {
-    const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, provider);
+async function getLoanData(market, user) {
+    const [signer] = await hre.ethers.getSigners();
+    const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, signer);
 
     return await view.getLoanData(market, user);
 }

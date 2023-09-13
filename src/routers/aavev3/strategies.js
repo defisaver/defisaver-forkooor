@@ -2,6 +2,7 @@
 const express = require("express");
 const {setupFork} = require("../../utils");
 const {subAaveV3CloseWithMaximumGasPriceStrategy} = require("../../helpers/aavev3/strategies");
+const {checkSchema, body, validationResult} = require("express-validator");
 
 const router = express.Router();
 
@@ -91,25 +92,28 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/close-with-maximum-gasprice", async (req, res) => {
+router.post("/close-with-maximum-gasprice", body(
+    [
+        "forkId",
+        "owner",
+        "strategyOrBundleId",
+        "triggerData.baseTokenAddress",
+        "triggerData.quoteTokenAddress",
+        "triggerData.price",
+        "triggerData.maximumGasPrice",
+        "triggerData.ratioState",
+        "subData.collAsset",
+        "subData.collAssetId",
+        "subData.debtAsset",
+        "subData.debtAssetId"
+    ]).notEmpty(),
+    async (req, res) => {
+    const validationErrors = validationResult(req);
+    if (!validationErrors.isEmpty()) {
+        return res.status(400).send({error: validationErrors.array()});
+    }
     // TODO update response example when finished
     const {forkId, owner, strategyOrBundleId, triggerData, subData} = req.body;
-
-    if (typeof forkId === 'undefined' ||
-        typeof owner === 'undefined' ||
-        typeof strategyOrBundleId === 'undefined' ||
-        typeof triggerData.baseTokenAddress === 'undefined' ||
-        typeof triggerData.quoteTokenAddress === 'undefined' ||
-        typeof triggerData.price === 'undefined' ||
-        typeof triggerData.maximumGasPrice === 'undefined' ||
-        typeof triggerData.ratioState === 'undefined' ||
-        typeof subData.collAsset === 'undefined' ||
-        typeof subData.collAssetId === 'undefined' ||
-        typeof subData.debtAsset === 'undefined' ||
-        typeof subData.debtAssetId === 'undefined'
-    ) {
-        res.status(400).send({error: "Invalid request body"});
-    }
 
     await setupFork(forkId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(

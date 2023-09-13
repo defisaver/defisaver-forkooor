@@ -20,8 +20,8 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
             ratioState: triggerRatioState,
         },
         {
-            collateralAsset: subCollAsset,
-            collateralAssetId: subCollAssetId,
+            collAsset: subCollAsset,
+            collAssetId: subCollAssetId,
             debtAsset: subDebtAsset,
             debtAssetId: subDebtAssetId,
         }

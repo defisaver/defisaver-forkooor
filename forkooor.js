@@ -18,6 +18,10 @@ app.use("/maker", makerRouter);
 app.use("/spark", sparkRouter);
 app.use("/aave/v3", aaveV3Router);
 
+app.use("/swagger.json", (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+});
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const port = 3000;

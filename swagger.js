@@ -17,7 +17,11 @@ const options = {
                 url: "http://localhost:3000",
                 description: "Development server"
             }
-        ]
+        ],
+        externalDocs: {
+            description: "swagger.json",
+            url: "/swagger.json"
+        },
     },
     apis: ["src/routers/**/*.js"]
 };

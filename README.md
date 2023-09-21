@@ -10,8 +10,8 @@ To run this project:
 
 ```bash
   npm i
-  change port variable in forkooor.js 
-  node forkooor.js
+  # change port variable in forkooor.js 
+  npm run dev
 ```
 At '/' endpoint there's Swagger docs for each available endpoint
 ## Contributing

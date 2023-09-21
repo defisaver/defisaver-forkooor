@@ -1,5 +1,11 @@
 {
-  "name": "hardhat-project",
+  "name": "defisaver-forkooor",
+  "version": "0.0.1",
+  "author": "@defisaver",
+  "private": true,
+  "scripts": {
+    "dev": "node forkooor.js"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
     "eslint": "^8.36.0",
@@ -14,6 +20,7 @@
     "cors": "^2.8.5",
     "dotenv-safe": "^8.2.0",
     "express": "^4.18.2",
+    "express-validator": "^7.0.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.2"
   }

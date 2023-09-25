@@ -801,39 +801,39 @@
    },
    "8453":{
       "0x4200000000000000000000000000000000000006":{
-         "isVyper":false,
+         "isvyper":false,
          "num":3
       },
-      "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb":{
-         "isVyper":false,
+      "0x50c5725949a6f0c72e6c4a641f24049a917db0cb":{
+         "isvyper":false,
          "num":0
       },
-      "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913":{
-         "isVyper":false,
+      "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913":{
+         "isvyper":false,
          "num":9
       },
-      "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA":{
-         "isVyper":false,
+      "0xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca":{
+         "isvyper":false,
          "num":51
       },
-      "0x9e1028F5F1D5eDE59748FFceE5532509976840E0":{
-         "isVyper":false,
+      "0x9e1028f5f1d5ede59748ffcee5532509976840e0":{
+         "isvyper":false,
          "num":0
       },
-      "0x8Ee73c484A26e0A5df2Ee2a4960B789967dd0415":{
-         "isVyper":false,
+      "0x8ee73c484a26e0a5df2ee2a4960b789967dd0415":{
+         "isvyper":false,
          "num":0
       },
-      "0x4158734D47Fc9692176B5085E0F52ee0Da5d47F1":{
-         "isVyper":false,
+      "0x4158734d47fc9692176b5085e0f52ee0da5d47f1":{
+         "isvyper":false,
          "num":0
       },
-      "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22":{
-         "isVyper":false,
+      "0x2ae3f1ec7f1f5012cfeab0185bfc7aa3cf0dec22":{
+         "isvyper":false,
          "num":51
       },
-      "0xc5fecC3a29Fb57B5024eEc8a2239d4621e111CBE":{
-         "isVyper":false,
+      "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe":{
+         "isvyper":false,
          "num":0
       }
    },

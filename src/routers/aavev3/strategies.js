@@ -46,7 +46,7 @@ const router = express.Router();
  *                         example: 1000000000000000000
  *                     maximumGasPrice:
  *                         type: integer
- *                         example: 300000000000
+ *                         example: 100
  *                     ratioState:
  *                         type: integer
  *                         example: 0

@@ -93,7 +93,6 @@ router.post("/close-with-maximum-gasprice", body(
     [
         "forkId",
         "owner",
-        "strategyOrBundleId",
         "triggerData.baseTokenAddress",
         "triggerData.quoteTokenAddress",
         "triggerData.price",
@@ -109,7 +108,9 @@ router.post("/close-with-maximum-gasprice", body(
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({error: validationErrors.array()});
     }
-    const {forkId, owner, strategyOrBundleId, triggerData, subData} = req.body;
+    const {forkId, owner, triggerData, subData} = req.body;
+
+    const strategyOrBundleId = 27; // TODO change this when deployed
 
     await setupFork(forkId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(

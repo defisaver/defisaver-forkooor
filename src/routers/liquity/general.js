@@ -119,8 +119,8 @@ router.post("/get-trove", async (req, res) => {
  *               type: object
  *               properties:
  *                 troveStatus:
- *                  type: integer
- *                  example: 1
+ *                  type: string
+ *                  example: "1"
  *                 collAmount:
  *                  type: string
  *                  example: "30912412406464135865"
@@ -137,8 +137,8 @@ router.post("/get-trove", async (req, res) => {
  *                  type: string
  *                  example: "5225679392036015"
  *                 recoveryMode:
- *                  type: boolean
- *                  example: false
+ *                  type: string
+ *                  example: "false"
  *       '500':
  *         description: Internal Server Error
  *         content:

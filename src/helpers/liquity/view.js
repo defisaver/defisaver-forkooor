@@ -13,13 +13,13 @@ const randomSeed = 42;
  */
 async function convertToJson(toveData) {
     return {
-        troveStatus: toveData.troveStatus.toString(),
+        troveStatus: toveData.troveStatus.toNumber(),
         collAmount: toveData.collAmount.toString(),
         debtAmount: toveData.debtAmount.toString(),
         collPrice: toveData.collPrice.toString(),
         TCRatio: toveData.TCRatio.toString(),
         borrowingFeeWithDecay: toveData.borrowingFeeWithDecay.toString(),
-        recoveryMode: toveData.recoveryMode.toString()
+        recoveryMode: toveData.recoveryMode
     };
 }
 

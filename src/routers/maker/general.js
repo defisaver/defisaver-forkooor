@@ -565,7 +565,7 @@ router.post("/payback", async (req, res) => {
  *             schema:
  *               type: integer
  *               example: 2000
- *               descripition: "Amount of dai in DSR"
+ *               descripition: "Amount of DAI in DSR after deposit"
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -625,7 +625,7 @@ router.post("/dsr-deposit", async (req, res) => {
  *             schema:
  *               type: integer
  *               example: 2000
- *               descripition: "Amount of dai in DSR"
+ *               descripition: "Amount of DAI in DSR after withdraw"
  *       '500':
  *         description: Internal Server Error
  *         content:

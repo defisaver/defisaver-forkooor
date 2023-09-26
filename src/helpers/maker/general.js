@@ -310,7 +310,7 @@ async function mcdPayback(sender, vaultId, paybackAmount) {
  * Deposit DAI into Maker DSR
  * @param {string} sender the EOA of the vault owner
  * @param {number} amount amount of DAI to be deposited
- * @returns {number} amount of dai in DSR
+ * @returns {number} amount of dai in DSR, after deposit
  */
 async function mcdDsrDeposit(sender, amount) {
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
@@ -331,7 +331,11 @@ async function mcdDsrDeposit(sender, amount) {
     const action = new dfs.actions.maker.MakerDsrDepositAction(amountInWei, senderAcc.address);
     const functionData = action.encodeForDsProxyCall()[1];
 
-    await executeAction("McdDsrDeposit", functionData, proxy);
+    try {
+        await executeAction("McdDsrDeposit", functionData, proxy);
+    } catch (err) {
+        throw new Error(`McdDsrDeposit = ${err}`);
+    }
 
     return getDsrBalance(proxy.address);
 }
@@ -339,8 +343,8 @@ async function mcdDsrDeposit(sender, amount) {
 /**
  * Deposit DAI into Maker DSR
  * @param {string} sender the EOA of the vault owner
- * @param {number} amount amount of DAI to be deposited
- * @returns {number} amount of dai in DSR
+ * @param {number} amount amount of DAI to be withdrawn
+ * @returns {number} amount of dai in DSR, after withdraw
  */
 async function mcdDsrWithdraw(sender, amount) {
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
@@ -354,7 +358,11 @@ async function mcdDsrWithdraw(sender, amount) {
     const action = new dfs.actions.maker.MakerDsrWithdrawAction(amountInWei, senderAcc.address);
     const functionData = action.encodeForDsProxyCall()[1];
 
-    await executeAction("McdDsrWithdraw", functionData, proxy);
+    try {
+        await executeAction("McdDsrWithdraw", functionData, proxy);
+    } catch (err) {
+        throw new Error(`McdDsrWithdraw = ${err}`);
+    }
 
     return getDsrBalance(proxy.address);
 }

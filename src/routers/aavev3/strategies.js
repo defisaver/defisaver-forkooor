@@ -115,7 +115,7 @@ router.post("/close-with-maximum-gasprice", body(
     await setupFork(forkId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
         owner, strategyOrBundleId,
-        triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.maximumGasPrice, triggerData.ratioState,
+        triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
         subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId
     ).then((sub) => {
         res.status(201).send(sub);

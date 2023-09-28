@@ -31,7 +31,7 @@ const router = express.Router();
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              strategyOrBundleId:
  *                  type: integer
- *                  example: 68
+ *                  example: 24
  *              triggerData:
  *                  type: object
  *                  properties:
@@ -93,6 +93,7 @@ router.post("/close-with-maximum-gasprice", body(
     [
         "forkId",
         "owner",
+        "strategyOrBundleId",
         "triggerData.baseTokenAddress",
         "triggerData.quoteTokenAddress",
         "triggerData.price",
@@ -108,9 +109,7 @@ router.post("/close-with-maximum-gasprice", body(
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({error: validationErrors.array()});
     }
-    const {forkId, owner, triggerData, subData} = req.body;
-
-    const strategyOrBundleId = 27; // TODO change this when deployed
+    const {forkId, strategyOrBundleId, owner, triggerData, subData} = req.body;
 
     await setupFork(forkId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(

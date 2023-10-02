@@ -2,7 +2,7 @@ const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
 const { getAssetInfo, ilks } = require("@defisaver/tokens");
 const { getProxy, approve, executeAction, setBalance, addresses } = require("../../utils");
-const { getVaultsForUser, getVaultInfo, getMcdManagerAddr } = require("./view");
+const { getVaultsForUser, getVaultInfo, getMcdManagerAddr, getDsrBalance } = require("./view");
 
 /**
  * Create a MCD vault for sender on his proxy (created if he doesn't have one)
@@ -306,11 +306,74 @@ async function mcdPayback(sender, vaultId, paybackAmount) {
     return updatedVault;
 }
 
+/**
+ * Deposit DAI into Maker DSR
+ * @param {string} sender the EOA of the vault owner
+ * @param {number} amount amount of DAI to be deposited
+ * @returns {number} amount of dai in DSR, after deposit
+ */
+async function mcdDsrDeposit(sender, amount) {
+    const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
+
+    senderAcc.address = senderAcc._address;
+
+    // create Proxy if the sender doesn't already have one
+    const proxy = await getProxy(senderAcc.address);
+
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const daiAddress = addresses[chainId].DAI_ADDR;
+
+    const amountInWei = hre.ethers.utils.parseUnits(amount.toString(), 18);
+
+    await setBalance(daiAddress, senderAcc.address, amount);
+    await approve(daiAddress, proxy.address, senderAcc.address);
+
+    const action = new dfs.actions.maker.MakerDsrDepositAction(amountInWei, senderAcc.address);
+    const functionData = action.encodeForDsProxyCall()[1];
+
+    try {
+        await executeAction("McdDsrDeposit", functionData, proxy);
+    } catch (err) {
+        throw new Error(`McdDsrDeposit = ${err}`);
+    }
+
+    return getDsrBalance(proxy.address);
+}
+
+/**
+ * Deposit DAI into Maker DSR
+ * @param {string} sender the EOA of the vault owner
+ * @param {number} amount amount of DAI to be withdrawn
+ * @returns {number} amount of dai in DSR, after withdraw
+ */
+async function mcdDsrWithdraw(sender, amount) {
+    const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
+
+    senderAcc.address = senderAcc._address;
+
+    // create Proxy if the sender doesn't already have one
+    const proxy = await getProxy(senderAcc.address);
+    const amountInWei = hre.ethers.utils.parseUnits(amount.toString(), 18);
+
+    const action = new dfs.actions.maker.MakerDsrWithdrawAction(amountInWei, senderAcc.address);
+    const functionData = action.encodeForDsProxyCall()[1];
+
+    try {
+        await executeAction("McdDsrWithdraw", functionData, proxy);
+    } catch (err) {
+        throw new Error(`McdDsrWithdraw = ${err}`);
+    }
+
+    return getDsrBalance(proxy.address);
+}
+
 module.exports = {
     createMcdVault,
     openEmptyMcdVault,
     mcdSupply,
     mcdWithdraw,
     mcdBorrow,
-    mcdPayback
+    mcdPayback,
+    mcdDsrDeposit,
+    mcdDsrWithdraw
 };

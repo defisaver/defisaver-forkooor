@@ -4,7 +4,7 @@ const {getSender, subToStrategy} = require("../../utils");
 async function subAaveV3CloseWithMaximumGasPriceStrategy(
     owner,
     strategyOrBundleId,
-    triggerBaseTokenAddress, triggerQuoteTokenAddress, triggerPrice, triggerMaximumGasPrice, triggerRatioState,
+    triggerBaseTokenAddress, triggerQuoteTokenAddress, triggerPrice, triggerRatioState, triggerMaximumGasPrice,
     subCollAsset, subCollAssetId, subDebtAsset, subDebtAssetId
 ) {
     const [, proxy] = await getSender(owner);
@@ -16,8 +16,8 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
             baseTokenAddress: triggerBaseTokenAddress,
             quoteTokenAddress: triggerQuoteTokenAddress,
             price: triggerPrice,
-            maximumGasPrice: triggerMaximumGasPrice,
             ratioState: triggerRatioState,
+            maximumGasPrice: triggerMaximumGasPrice,
         },
         {
             collAsset: subCollAsset,

@@ -31,7 +31,7 @@ const router = express.Router();
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              strategyOrBundleId:
  *                  type: integer
- *                  example: 68
+ *                  example: 24
  *              triggerData:
  *                  type: object
  *                  properties:
@@ -46,7 +46,7 @@ const router = express.Router();
  *                         example: 1000000000000000000
  *                     maximumGasPrice:
  *                         type: integer
- *                         example: 300000000000
+ *                         example: 100
  *                     ratioState:
  *                         type: integer
  *                         example: 0
@@ -109,12 +109,12 @@ router.post("/close-with-maximum-gasprice", body(
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({error: validationErrors.array()});
     }
-    const {forkId, owner, strategyOrBundleId, triggerData, subData} = req.body;
+    const {forkId, strategyOrBundleId, owner, triggerData, subData} = req.body;
 
     await setupFork(forkId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
         owner, strategyOrBundleId,
-        triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.maximumGasPrice, triggerData.ratioState,
+        triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
         subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId
     ).then((sub) => {
         res.status(201).send(sub);

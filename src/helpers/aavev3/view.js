@@ -22,7 +22,25 @@ async function getLoanData(market, user) {
     const [signer] = await hre.ethers.getSigners();
     const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, signer);
 
-    return await view.getLoanData(market, user);
+    const loanData = await view.getLoanData(market, user);
+
+    return {
+        user: loanData.user,
+        ratio: loanData.ratio.toString(),
+        eMode: loanData.eMode.toString(),
+        collAddr: loanData.collAddr,
+        borrowAddr: loanData.borrowAddr,
+        collAmounts: loanData.collAmounts.map(amount => amount.toString()),
+        borrowStableAmounts: loanData.borrowStableAmounts.map(amount =>
+            amount.toString()),
+        borrowVariableAmounts: loanData.borrowVariableAmounts.map(amount =>
+            amount.toString()),
+        ltv: loanData.ltv,
+        liquidationThreshold: loanData.liquidationThreshold,
+        liquidationBonus: loanData.liquidationBonus,
+        priceSource: loanData.priceSource,
+        label: loanData.label
+    };
 }
 
 module.exports = {

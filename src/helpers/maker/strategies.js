@@ -135,7 +135,7 @@ async function subMcdAutomationStrategy(vaultId, owner, minRatio, maxRatio, targ
         const [, proxy] = await getSender(owner);
 
         const strategySub = automationSdk.strategySubService.makerEncode.leverageManagement(
-            vaultId, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled
+            vaultId, minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
         );
 
         const subId = await subToMcdAutomation(proxy, strategySub);

@@ -201,8 +201,6 @@ router.post("/dfs-automation", async (req, res) => {
 
         await setupFork(forkId, [owner]);
 
-        console.log("forkId: ", forkId, "owner: ", owner, "minRatio: ", minRatio, "maxRatio: ", maxRatio, "targetRepayRatio: ", targetRepayRatio, "targetBoostRatio: ", targetBoostRatio, "boostEnabled: ", boostEnabled);
-
         const sub = await subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled);
 
         res.status(200).send(sub);

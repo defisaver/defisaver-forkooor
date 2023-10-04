@@ -1,7 +1,7 @@
 const { ilks } = require("@defisaver/tokens");
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getProxy, addresses, subToStrategy } = require("../../utils");
+const { getProxy, addresses, subToStrategy, getSender } = require("../../utils");
 const { getVaultInfo, getMcdManagerAddr } = require("../maker/view");
 
 
@@ -118,8 +118,41 @@ async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targ
     return { subId, strategySub };
 }
 
+/**
+ * Subscribes to MCD Automation strategy
+ * @param {number} vaultId ID of the MCD vault
+ * @param {string} owner EOA of the Vault owner
+ * @param {string} minRatio ratio under which the strategy will trigger
+ * @param {string} maxRatio ratio over which the strategy will trigger
+ * @param {string} targetRepayRatio wanted ratio after repay
+ * @param {string} targetBoostRatio wanted ratio after boost
+ * @param {boolean} boostEnabled enable boost
+ * @returns {boolean} StrategySub object and ID of the subscription
+ */
+async function subMcdAutomationStrategy(vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled) {
+
+    // console.log("forkId: ", "vaultId: ", vaultId, "owner: ", owner, "minRatio: ", minRatio, "maxRatio: ", maxRatio, "targetRepayRatio: ", targetRepayRatio, "targetBoostRatio: ", targetBoostRatio, "boostEnabled: ", boostEnabled);
+
+    try {
+        const [, proxy] = await getSender(owner);
+
+        const strategySub = automationSdk.strategySubService.makerEncode.leverageManagement(
+            vaultId, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
+
 module.exports = {
     subMcdCloseToDaiStrategy,
     subMcdCloseToCollStrategy,
-    subMCDSmartSavingsRepayStrategy
+    subMCDSmartSavingsRepayStrategy,
+    subMcdAutomationStrategy
 };

@@ -6,6 +6,7 @@ const {
 const { sparkSubProxyAbi } = require("./abi/spark/abis");
 
 const storageSlots = require("../src/storageSlots.json");
+const {aaveV3SubProxyAbi} = require("./abi/aaveV3/abis");
 
 const nullAddress = "0x0000000000000000000000000000000000000000";
 
@@ -16,7 +17,8 @@ const addresses = {
         PROXY_REGISTRY: "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
         SUB_PROXY: "0xd18d4756bbf848674cc35f1a0b86afef20787382",
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        SPARK_SUB_PROXY: "0x3730bb1f58087D02Ccf7E0B6696755f588E17A03"
+        SPARK_SUB_PROXY: "0x3730bb1f58087D02Ccf7E0B6696755f588E17A03",
+        AAVE_V3_SUB_PROXY: "0xb9F73625AA64D46A9b2f0331712e9bEE19e4C3f7"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -330,6 +332,33 @@ async function subToSparkStrategy(proxy, strategySub) {
     return latestSubId;
 }
 
+/**
+ * Subscribe to a strategy using AaveV3SubProxy
+ * @param {string} proxy owner's proxy address
+ * @param {string} strategySub strategySub properly encoded
+ * @returns {number} ID of the subscription
+ */
+async function subToAaveV3Automation(proxy, strategySub) {
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const subProxyAddr = addresses[chainId].AAVE_V3_SUB_PROXY;
+
+    const [signer] = await hre.ethers.getSigners();
+    const subProxy = new hre.ethers.Contract(subProxyAddr, aaveV3SubProxyAbi, signer);
+
+    const functionData = subProxy.interface.encodeFunctionData(
+        "subToAaveAutomation",
+        [strategySub]
+    );
+
+    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
+        gasLimit: 5000000
+    }).then(e => e.wait());
+
+    const latestSubId = await getLatestSubId();
+
+    return latestSubId;
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -346,5 +375,6 @@ module.exports = {
     getLatestSubId,
     getSender,
     subToSparkStrategy,
+    subToAaveV3Automation,
     isContract
 };

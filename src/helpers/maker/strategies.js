@@ -1,7 +1,7 @@
 const { ilks } = require("@defisaver/tokens");
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getProxy, addresses, subToStrategy, getSender } = require("../../utils");
+const { getProxy, addresses, subToStrategy, getSender, subToMcdAutomation} = require("../../utils");
 const { getVaultInfo, getMcdManagerAddr } = require("../maker/view");
 
 
@@ -131,8 +131,6 @@ async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targ
  */
 async function subMcdAutomationStrategy(vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled) {
 
-    // console.log("forkId: ", "vaultId: ", vaultId, "owner: ", owner, "minRatio: ", minRatio, "maxRatio: ", maxRatio, "targetRepayRatio: ", targetRepayRatio, "targetBoostRatio: ", targetBoostRatio, "boostEnabled: ", boostEnabled);
-
     try {
         const [, proxy] = await getSender(owner);
 
@@ -140,7 +138,7 @@ async function subMcdAutomationStrategy(vaultId, owner, minRatio, maxRatio, targ
             vaultId, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled
         );
 
-        const subId = await subToStrategy(proxy, strategySub);
+        const subId = await subToMcdAutomation(proxy, strategySub);
 
         return { subId, strategySub };
     } catch (err) {

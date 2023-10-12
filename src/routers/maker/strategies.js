@@ -1,7 +1,8 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { subMcdCloseToDaiStrategy, subMcdCloseToCollStrategy, subMCDSmartSavingsRepayStrategy } = require("../../helpers/maker/strategies");
+const { subMcdCloseToDaiStrategy, subMcdCloseToCollStrategy, subMCDSmartSavingsRepayStrategy, subMcdAutomationStrategy } = require("../../helpers/maker/strategies");
 const { setupFork } = require("../../utils");
+const { body } = require("express-validator");
 
 const router = express.Router();
 
@@ -225,5 +226,107 @@ router.post("/smart-savings-repay", async (req, res) => {
         res.status(500).send(resObj);
     }
 });
+
+/**
+ * @swagger
+ * /maker/strategies/dfs-automation:
+ *   post:
+ *     summary: Subscribe to a MCD Automation strategy
+ *     tags:
+ *      - Maker
+ *      - Strategies
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *              vaultId:
+ *                type: integer
+ *                example: 29721
+ *              owner:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              minRatio:
+ *                type: integer
+ *                example: 200
+ *              maxRatio:
+ *                 type: integer
+ *                 example: 300
+ *              targetRepayRatio:
+ *                 type: integer
+ *                 example: 220
+ *              targetBoostRatio:
+ *                 type: integer
+ *                 example: 250
+ *              boostEnabled:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 strategySub:
+ *                  type: Array
+ *                  example: {  "subId": "561",
+ *                              "strategySub": [
+ *                              31048,
+ *                              "1500000000000000000",
+ *                              "2000000000000000000",
+ *                              "1800000000000000000",
+ *                              "1800000000000000000",
+ *                              true
+ *                             ]}
+ *                 subId:
+ *                  type: string
+ *                  example: "230"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/dfs-automation", body(
+    [
+        "forkId",
+        "vaultId",
+        "owner",
+        "minRatio",
+        "maxRatio",
+        "targetRepayRatio",
+        "targetBoostRatio",
+        "boostEnabled"
+    ]).notEmpty(),
+    async (req, res) => {
+    let resObj;
+
+    try {
+        const { forkId, vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+
+        await setupFork(forkId, [owner]);
+
+        const sub = await subMcdAutomationStrategy(vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled);
+
+        res.status(200).send(sub);
+    } catch (err) {
+        resObj = { error: `Failed to subscribe to MCD automation strategy with error : ${err.toString()}` };
+        res.status(500).send(resObj);
+    }
+});
+
 
 module.exports = router;

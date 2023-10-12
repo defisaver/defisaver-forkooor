@@ -1,5 +1,5 @@
 const automationSdk = require("@defisaver/automation-sdk");
-const {getSender, subToStrategy} = require("../../utils");
+const {getSender, subToStrategy, subToAaveV3Automation} = require("../../utils");
 
 async function subAaveV3CloseWithMaximumGasPriceStrategy(
     owner,
@@ -31,6 +31,35 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
     return { strategySub, subId };
 }
 
+/**
+ * Subscribes to Aave V3 Automation strategy
+ * @param {string} owner proxy owner
+ * @param {int} minRatio ratio under which the strategy will trigger
+ * @param {int} maxRatio ratio over which the strategy will trigger
+ * @param {int} targetRepayRatio wanted ratio after repay
+ * @param {int} targetBoostRatio wanted ratio after boost
+ * @param {boolean} boostEnabled enable boost
+ * @returns {boolean} StrategySub object and ID of the subscription
+ */
+async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled) {
+
+    try {
+        const [, proxy] = await getSender(owner);
+
+        const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagement(
+            minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
+        );
+
+        const subId = await subToAaveV3Automation(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
 module.exports = {
     subAaveV3CloseWithMaximumGasPriceStrategy,
+    subAaveAutomationStrategy
 };

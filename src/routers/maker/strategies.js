@@ -2,6 +2,7 @@
 const express = require("express");
 const { subMcdCloseToDaiStrategy, subMcdCloseToCollStrategy, subMCDSmartSavingsRepayStrategy, subMcdAutomationStrategy } = require("../../helpers/maker/strategies");
 const { setupFork } = require("../../utils");
+const { body } = require("express-validator");
 
 const router = express.Router();
 
@@ -299,7 +300,18 @@ router.post("/smart-savings-repay", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/dfs-automation", async (req, res) => {
+router.post("/dfs-automation", body(
+    [
+        "forkId",
+        "vaultId",
+        "owner",
+        "minRatio",
+        "maxRatio",
+        "targetRepayRatio",
+        "targetBoostRatio",
+        "boostEnabled"
+    ]).notEmpty(),
+    async (req, res) => {
     let resObj;
 
     try {

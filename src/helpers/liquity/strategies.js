@@ -55,12 +55,12 @@ async function subLiquityDsrSupplyStrategy({
  * Function that subscribes user to liquity debt in front repay strategy
  * @param {Object} params function parameters with keys
  * @param {string} params.sender eoa of proxy that owns the trove
- * @param {number} params.debtInFrontMin minimum amount of debt in front where if below that amount we repay
+ * @param {number} params.debtInFront minimum amount of debt in front where if below that amount we repay
  * @param {number} params.targetRatioIncrease percentage to increase the current ratio by
  * @returns {Object} Obj that contains subId and strategySub
  */
 async function subLiquityDebtInFrontRepayStrategy({
-    sender, debtInFrontMin, targetRatioIncrease
+    sender, debtInFront, targetRatioIncrease
 }) {
     const senderAcc = await ethers.provider.getSigner(sender.toString());
 
@@ -68,7 +68,7 @@ async function subLiquityDebtInFrontRepayStrategy({
 
     const proxy = await getProxy(senderAcc.address);
     const strategySub = automationSdk.strategySubService.liquityEncode.debtInFrontRepay(
-        proxy.address, debtInFrontMin, targetRatioIncrease
+        proxy.address, debtInFront, targetRatioIncrease
     );
     const subId = await subToStrategy(proxy, strategySub);
 

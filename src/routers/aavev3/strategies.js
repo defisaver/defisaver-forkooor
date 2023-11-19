@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const {setupFork} = require("../../utils");
-const {subAaveV3CloseWithMaximumGasPriceStrategy} = require("../../helpers/aavev3/strategies");
+const {subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy} = require("../../helpers/aavev3/strategies");
 const {checkSchema, body, validationResult} = require("express-validator");
 
 const router = express.Router();
@@ -121,6 +121,93 @@ router.post("/close-with-maximum-gasprice", body(
     }).catch((err) => {
         res.status(500).send({error: `Failed to subscribe to Aave V3 Close With Maximum Gas Price Strategy with error : ${err.toString()}`});
     });
+});
+
+/**
+ * @swagger
+ * /aave/v3/strategies/dfs-automation:
+ *   post:
+ *     summary: Subscribe to a Aave Automation strategy
+ *     tags:
+ *      - AaveV3
+ *      - Strategies
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *              owner:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              minRatio:
+ *                type: integer
+ *                example: 200
+ *              maxRatio:
+ *                 type: integer
+ *                 example: 300
+ *              targetRepayRatio:
+ *                 type: integer
+ *                 example: 220
+ *              targetBoostRatio:
+ *                 type: integer
+ *                 example: 250
+ *              boostEnabled:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 strategySub:
+ *                  type: Array
+ *                  example: {  "subId": "561",
+ *                              "strategySub": [
+ *                              31048,
+ *                              "1500000000000000000",
+ *                              "2000000000000000000",
+ *                              "1800000000000000000",
+ *                              "1800000000000000000",
+ *                              true
+ *                             ]}
+ *                 subId:
+ *                  type: string
+ *                  example: "230"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/dfs-automation", async (req, res) => {
+    let resObj;
+
+    try {
+        const { forkId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+
+        await setupFork(forkId, [owner]);
+
+        const sub = await subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled);
+
+        res.status(200).send(sub);
+    } catch (err) {
+        resObj = { error: `Failed to subscribe to Aave V3 automation strategy with error : ${err.toString()}` };
+        res.status(500).send(resObj);
+    }
 });
 
 module.exports = router;

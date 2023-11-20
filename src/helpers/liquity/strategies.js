@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const { subToStrategy, getProxy } = require("../../utils");
+const { subToStrategy, getProxy, subToLiquityLeverageManagementAutomation } = require("../../utils");
 const automationSdk = require("@defisaver/automation-sdk");
 
 
@@ -75,8 +75,36 @@ async function subLiquityDebtInFrontRepayStrategy({
     return { subId, strategySub };
 }
 
+/**
+ * Function that subscribes user to Liquity trove leverage management strategies
+ * @param {Object} params function parameters with keys
+ * @param {string} params.sender eoa of proxy that owns the trove
+ * @param {number} params.minRatio ratio below which the sub will be triggered, for repay strategy
+ * @param {number} params.maxRatio ratio above which the sub will be triggered, for boost strategy
+ * @param {number} params.targetRatioRepay ratio to repay the trove to
+ * @param {number} params.targetRatioBoost ratio to boost the trove to
+ * @param {number} params.boostEnabled is boost strategy enabled
+ * @returns {Object} Obj that contains subId and strategySub
+ */
+async function subLiquityLeverageManagementStrategies({
+    sender, minRatio, maxRatio, targetRatioRepay, targetRatioBoost, boostEnabled
+}) {
+    const senderAcc = await ethers.provider.getSigner(sender.toString());
+
+    senderAcc.address = senderAcc._address;
+
+    const proxy = await getProxy(senderAcc.address);
+    const strategySub = automationSdk.strategySubService.liquityEncode.leverageManagement(
+        minRatio, maxRatio, targetRatioBoost, targetRatioRepay, boostEnabled
+    );
+    const subId = await subToLiquityLeverageManagementAutomation(proxy, strategySub);
+
+    return { subId, strategySub };
+}
+
 module.exports = {
     subLiquityDsrPaybackStrategy,
     subLiquityDsrSupplyStrategy,
-    subLiquityDebtInFrontRepayStrategy
+    subLiquityDebtInFrontRepayStrategy,
+    subLiquityLeverageManagementStrategies
 };

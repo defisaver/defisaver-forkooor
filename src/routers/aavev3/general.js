@@ -1,7 +1,8 @@
+/* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const {setupFork, getProxy, isContract} = require("../../utils");
-const {getLoanData} = require("../../helpers/aavev3/view");
+const { setupFork, getProxy, isContract } = require("../../utils");
+const { getLoanData } = require("../../helpers/aavev3/view");
 const {
     aaveV3Supply,
     aaveV3Withdraw,
@@ -9,7 +10,7 @@ const {
     aaveV3Payback,
     createAaveV3Position
 } = require("../../helpers/aavev3/general");
-const {body, validationResult} = require("express-validator");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -132,11 +133,12 @@ router.post("/get-position",
     body(["forkId", "market", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
+
         if (!validationErrors.isEmpty()) {
-            return res.status(400).send({error: validationErrors.array()});
+            return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const {forkId, market, owner} = req.body;
+        const { forkId, market, owner } = req.body;
         let proxy = owner;
 
         const isContractPromise = isContract(owner);
@@ -145,6 +147,7 @@ router.post("/get-position",
 
         if (!await isContractPromise) {
             const proxyContract = await getProxy(owner);
+
             proxy = proxyContract.address;
         }
 
@@ -152,8 +155,8 @@ router.post("/get-position",
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {
-            res.status(500).send({error: `Failed to fetch position info with error : ${err.toString()}`});
-        });
+                res.status(500).send({ error: `Failed to fetch position info with error : ${err.toString()}` });
+            });
     });
 
 /**
@@ -290,11 +293,12 @@ router.post("/create",
     body(["forkId", "market", "collToken", "debtToken", "rateMode", "coll", "debt", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
+
         if (!validationErrors.isEmpty()) {
-            return res.status(400).send({error: validationErrors.array()});
+            return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const {forkId, market, collToken, debtToken, rateMode, coll, debt, owner} = req.body;
+        const { forkId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
 
         await setupFork(forkId, [owner]);
 
@@ -303,7 +307,7 @@ router.post("/create",
                 res.status(200).send(pos);
             })
             .catch(err => {
-                res.status(500).send({error: `Failed to create position info with error : ${err.toString()}`});
+                res.status(500).send({ error: `Failed to create position info with error : ${err.toString()}` });
             });
 
     });
@@ -433,11 +437,12 @@ router.post("/supply",
     body(["forkId", "market", "collToken", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
+
         if (!validationErrors.isEmpty()) {
-            return res.status(400).send({error: validationErrors.array()});
+            return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const {forkId, market, collToken, amount, owner} = req.body;
+        const { forkId, market, collToken, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
 
@@ -446,12 +451,10 @@ router.post("/supply",
                 res.status(200).send(pos);
             })
             .catch(err => {
-                res.status(500).send({error: `Failed to supply to an AaveV3 position info with error : ${err.toString()}`});
+                res.status(500).send({ error: `Failed to supply to an AaveV3 position info with error : ${err.toString()}` });
             });
 
-    }
-)
-;
+    });
 
 /**
  * @swagger
@@ -578,10 +581,11 @@ router.post("/withdraw",
     body(["forkId", "market", "collToken", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
+
         if (!validationErrors.isEmpty()) {
-            return res.status(400).send({error: validationErrors.array()});
+            return res.status(400).send({ error: validationErrors.array() });
         }
-        const {forkId, market, collToken, amount, owner} = req.body;
+        const { forkId, market, collToken, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
 
@@ -590,7 +594,7 @@ router.post("/withdraw",
                 res.status(200).send(pos);
             })
             .catch(err => {
-                res.status(500).send({error: `Failed to withdraw from an AaveV3 position info with error : ${err.toString()}`});
+                res.status(500).send({ error: `Failed to withdraw from an AaveV3 position info with error : ${err.toString()}` });
             });
     });
 
@@ -722,10 +726,11 @@ router.post("/borrow",
     body(["forkId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
+
         if (!validationErrors.isEmpty()) {
-            return res.status(400).send({error: validationErrors.array()});
+            return res.status(400).send({ error: validationErrors.array() });
         }
-        const {forkId, market, debtToken, rateMode, amount, owner} = req.body;
+        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
         aaveV3Borrow(market, debtToken, rateMode, amount, owner)
@@ -733,7 +738,7 @@ router.post("/borrow",
                 res.status(200).send(pos);
             })
             .catch(err => {
-                res.status(500).send({error: `Failed to borrow from an AaveV3 position info with error : ${err.toString()}`});
+                res.status(500).send({ error: `Failed to borrow from an AaveV3 position info with error : ${err.toString()}` });
             });
     });
 
@@ -865,11 +870,12 @@ router.post("/payback",
     body(["forkId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
+
         if (!validationErrors.isEmpty()) {
-            return res.status(400).send({error: validationErrors.array()});
+            return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const {forkId, market, debtToken, rateMode, amount, owner} = req.body;
+        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
         aaveV3Payback(market, debtToken, rateMode, amount, owner)
@@ -877,7 +883,7 @@ router.post("/payback",
                 res.status(200).send(pos);
             })
             .catch(err => {
-                res.status(500).send({error: `Failed to payback an AaveV3 position info with error : ${err.toString()}`});
+                res.status(500).send({ error: `Failed to payback an AaveV3 position info with error : ${err.toString()}` });
             });
     });
 

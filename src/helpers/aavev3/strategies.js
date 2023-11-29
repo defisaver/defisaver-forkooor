@@ -1,6 +1,20 @@
 const automationSdk = require("@defisaver/automation-sdk");
-const {getSender, subToStrategy, subToAaveV3Automation} = require("../../utils");
+const { getSender, subToStrategy, subToAaveV3Automation } = require("../../utils");
 
+/**
+ *
+ * @param owner
+ * @param strategyOrBundleId
+ * @param triggerBaseTokenAddress
+ * @param triggerQuoteTokenAddress
+ * @param triggerPrice
+ * @param triggerRatioState
+ * @param triggerMaximumGasPrice
+ * @param subCollAsset
+ * @param subCollAssetId
+ * @param subDebtAsset
+ * @param subDebtAssetId
+ */
 async function subAaveV3CloseWithMaximumGasPriceStrategy(
     owner,
     strategyOrBundleId,
@@ -17,13 +31,13 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
             quoteTokenAddress: triggerQuoteTokenAddress,
             price: triggerPrice,
             ratioState: triggerRatioState,
-            maximumGasPrice: triggerMaximumGasPrice,
+            maximumGasPrice: triggerMaximumGasPrice
         },
         {
             collAsset: subCollAsset,
             collAssetId: subCollAssetId,
             debtAsset: subDebtAsset,
-            debtAssetId: subDebtAssetId,
+            debtAssetId: subDebtAssetId
         }
     );
     const subId = await subToStrategy(proxy, strategySub);

@@ -1,8 +1,9 @@
+/* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const {setupFork} = require("../../utils");
-const {subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy} = require("../../helpers/aavev3/strategies");
-const {checkSchema, body, validationResult} = require("express-validator");
+const { setupFork } = require("../../utils");
+const { subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy } = require("../../helpers/aavev3/strategies");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -103,23 +104,25 @@ router.post("/close-with-maximum-gasprice", body(
         "subData.collAssetId",
         "subData.debtAsset",
         "subData.debtAssetId"
-    ]).notEmpty(),
-    async (req, res) => {
+    ]
+).notEmpty(),
+async (req, res) => {
     const validationErrors = validationResult(req);
+
     if (!validationErrors.isEmpty()) {
-        return res.status(400).send({error: validationErrors.array()});
+        return res.status(400).send({ error: validationErrors.array() });
     }
-    const {forkId, strategyOrBundleId, owner, triggerData, subData} = req.body;
+    const { forkId, strategyOrBundleId, owner, triggerData, subData } = req.body;
 
     await setupFork(forkId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
         owner, strategyOrBundleId,
         triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
         subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId
-    ).then((sub) => {
+    ).then(sub => {
         res.status(201).send(sub);
-    }).catch((err) => {
-        res.status(500).send({error: `Failed to subscribe to Aave V3 Close With Maximum Gas Price Strategy with error : ${err.toString()}`});
+    }).catch(err => {
+        res.status(500).send({ error: `Failed to subscribe to Aave V3 Close With Maximum Gas Price Strategy with error : ${err.toString()}` });
     });
 });
 

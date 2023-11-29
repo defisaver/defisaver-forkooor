@@ -310,8 +310,9 @@ router.post("/dfs-automation", body(
         "targetRepayRatio",
         "targetBoostRatio",
         "boostEnabled"
-    ]).notEmpty(),
-    async (req, res) => {
+    ]
+).notEmpty(),
+async (req, res) => {
     let resObj;
 
     try {

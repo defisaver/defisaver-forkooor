@@ -134,7 +134,6 @@ router.post("/get-position", async (req, res) => {
         await setupFork(forkId); // Needs to set up fork before fetching proxy
 
         if (!isContractResp) {
-            console.log("Owner is not a contract, fetching proxy");
             const proxyContract = await getProxy(owner);
 
             proxy = proxyContract.address;

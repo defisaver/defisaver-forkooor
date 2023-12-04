@@ -23,7 +23,7 @@ const addresses = {
         MCD_SUB_PROXY: "0xDED2752728227c502E08e51023b1cE0a37F907A2",
 
         // replace this with new sub proxy once it's tested and deployed
-        COMP_V3_SUB_PROXY: "0x7b1cDd08E0C5F6Dc293262b6f12AD18954c85e49"
+        COMP_V3_SUB_PROXY: "0x19e3b5D89ab3f54e48b43686d507cB573a073771"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",

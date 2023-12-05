@@ -32,7 +32,7 @@ async function getUserData(controller, user) {
         bandRange: userData.bandRange,
         usersBands: userData.usersBands,
         collRatio: userData.collRatio.toString(),
-        isInSoftLiquidation: userData.isInSoftLiquidation.toString()
+        isInSoftLiquidation: userData.isInSoftLiquidation
     };
 }
 

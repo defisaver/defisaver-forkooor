@@ -31,7 +31,7 @@ const router = express.Router();
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              controllerAddr:
+ *              controller:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              bundleId:
@@ -72,7 +72,7 @@ router.post("/repay", body(
         "forkId",
         "owner",
         "bundleId",
-        "controllerAddr",
+        "controller",
         "minRatio",
         "targetRatio"
     ]
@@ -83,11 +83,11 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, bundleId, controllerAddr, minRatio, targetRatio } = req.body;
+    const { forkId, owner, bundleId, controller, minRatio, targetRatio } = req.body;
 
     await setupFork(forkId, [owner]);
     subCurveUsdRepayBundle(
-        owner, bundleId, controllerAddr, minRatio, targetRatio
+        owner, bundleId, controller, minRatio, targetRatio
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -119,7 +119,7 @@ async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              controllerAddr:
+ *              controller:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              bundleId:
@@ -160,7 +160,7 @@ router.post("/boost", body(
         "forkId",
         "owner",
         "bundleId",
-        "controllerAddr",
+        "controller",
         "maxRatio",
         "targetRatio"
     ]
@@ -171,11 +171,11 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, bundleId, controllerAddr, maxRatio, targetRatio } = req.body;
+    const { forkId, owner, bundleId, controller, maxRatio, targetRatio } = req.body;
 
     await setupFork(forkId, [owner]);
     subCurveUsdBoostBundle(
-        owner, bundleId, controllerAddr, maxRatio, targetRatio
+        owner, bundleId, controller, maxRatio, targetRatio
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {

@@ -801,6 +801,10 @@
       "0xdfa46478f9e5ea86d57387849598dbfb2e964b02":{
          "isVyper":false,
          "num":1
+      },
+      "0x0b2c639c533813f4aa9d7837caf62653d097ff85": {
+         "isVyper": false,
+         "num": 9
       }
    },
    "8453":{
@@ -839,6 +843,10 @@
       "0xc5fecc3a29fb57b5024eec8a2239d4621e111cbe":{
          "isVyper":false,
          "num":0
+      },
+      "0xc1cba3fcea344f92d9239c08c0568f6f2f0ee452": {
+         "isVyper": false,
+         "num": 1
       }
    },
    "42161":{

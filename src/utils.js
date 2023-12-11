@@ -1,14 +1,14 @@
 const hre = require("hardhat");
 
 const {
-    dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi,
+    dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi
 } = require("./abi/general");
-const {sparkSubProxyAbi} = require("./abi/spark/abis");
+const { sparkSubProxyAbi } = require("./abi/spark/abis");
 
 const storageSlots = require("../src/storageSlots.json");
-const {aaveV3SubProxyAbi} = require("./abi/aaveV3/abis");
-const {mcdSubProxyAbi} = require("./abi/maker/views");
-const {liquityLeverageManagementSubProxyAbi} = require("./abi/liquity/abis");
+const { aaveV3SubProxyAbi } = require("./abi/aaveV3/abis");
+const { mcdSubProxyAbi } = require("./abi/maker/views");
+const { liquityLeverageManagementSubProxyAbi } = require("./abi/liquity/abis");
 
 const nullAddress = "0x0000000000000000000000000000000000000000";
 
@@ -70,7 +70,7 @@ function getNameId(name) {
  */
 async function getAddrFromRegistry(name) {
     const [signer] = await hre.ethers.getSigners();
-    const {chainId} = await hre.ethers.provider.getNetwork();
+    const { chainId } = await hre.ethers.provider.getNetwork();
     const registry = new hre.ethers.Contract(addresses[chainId].REGISTRY_ADDR, dfsRegistryAbi, signer);
     const addr = await registry.getAddr(
         getNameId(name)
@@ -86,7 +86,7 @@ async function getAddrFromRegistry(name) {
  */
 async function getProxy(account) {
     const accSigner = await hre.ethers.getSigner(account);
-    const {chainId} = await hre.ethers.provider.getNetwork();
+    const { chainId } = await hre.ethers.provider.getNetwork();
     const [signer] = await hre.ethers.getSigners();
     let proxyRegistryContract = new hre.ethers.Contract(addresses[chainId].PROXY_REGISTRY, proxyRegistryAbi, signer);
     let proxyAddr = await proxyRegistryContract.proxies(account);
@@ -147,7 +147,7 @@ async function approve(tokenAddr, to, owner) {
     if (allowance.toString() === "0") {
         const tokenContractSigner = tokenContract.connect(accSigner);
 
-        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, {gasLimit: 1000000});
+        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, { gasLimit: 1000000 });
     }
 }
 
@@ -161,7 +161,7 @@ async function approve(tokenAddr, to, owner) {
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    await proxy["execute(address,bytes)"](actionAddr, functionData, {gasLimit: 10000000})
+    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 10000000 })
         .then(e => e.wait());
 }
 
@@ -206,7 +206,7 @@ async function topUpAccount(address, amount) {
  */
 async function setupFork(forkId, accounts = []) {
     hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
-    await Promise.all(accounts.map(async (account) => {
+    await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
     }));
 }
@@ -219,7 +219,7 @@ async function setupFork(forkId, accounts = []) {
  * @returns {void}
  */
 async function setBalance(tokenAddr, userAddr, amount) {
-    const {chainId} = await hre.ethers.provider.getNetwork();
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
     const [signer] = await hre.ethers.getSigners();
 
@@ -241,13 +241,15 @@ async function setBalance(tokenAddr, userAddr, amount) {
         tokenAddr = tokenState;
         // eslint-disable-next-line no-empty, no-unused-vars
     } catch (error) {
+
+        // bojsa pls
     }
     const slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
 
     if (!slotObj) {
         throw new Error(`Token balance not changeable : ${inputTokenAddr} - ${chainId}`);
     }
-    const slotInfo = {isVyper: slotObj.isVyper, num: slotObj.num};
+    const slotInfo = { isVyper: slotObj.isVyper, num: slotObj.num };
     let index;
 
     if (slotInfo.isVyper) {
@@ -263,6 +265,34 @@ async function setBalance(tokenAddr, userAddr, amount) {
     }
     await hre.ethers.provider.send("tenderly_setStorageAt", [tokenAddr, index.toString(), toBytes32(value).toString()]);
     await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
+
+    /**
+     * @description
+     * Use this to find slot for a token
+     */
+    // const prevBalance = await erc20.balanceOf(userAddr);
+    // for (let i = 0; i < 20; i++) {
+    //     const slotInfo = { isVyper: slotObj.isVyper, num: i };
+    //     let index;
+    //
+    //     if (slotInfo.isVyper) {
+    //         index = hre.ethers.utils.solidityKeccak256(
+    //             ["uint256", "uint256"],
+    //             [slotInfo.num, userAddr] // key, slot
+    //         );
+    //     } else {
+    //         index = hre.ethers.utils.solidityKeccak256(
+    //             ["uint256", "uint256"],
+    //             [userAddr, slotInfo.num] // key, slot
+    //         );
+    //     }
+    //     await hre.ethers.provider.send("tenderly_setStorageAt", [tokenAddr, index.toString(), toBytes32(value).toString()]);
+    //     await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
+    //     if ((await erc20.balanceOf(userAddr)).toString() !== prevBalance.toString()) {
+    //         console.log(i);
+    //         break;
+    //     }
+    // }
 }
 
 /**
@@ -289,7 +319,7 @@ async function getLatestSubId() {
  * @returns {number} ID of the strategy subscription
  */
 async function subToStrategy(proxy, strategySub) {
-    const {chainId} = await hre.ethers.provider.getNetwork();
+    const { chainId } = await hre.ethers.provider.getNetwork();
     const subProxyAddr = addresses[chainId].SUB_PROXY;
 
     const [signer] = await hre.ethers.getSigners();
@@ -316,7 +346,7 @@ async function subToStrategy(proxy, strategySub) {
  * @returns {number} ID of the strategy subscription
  */
 async function subToSparkStrategy(proxy, strategySub) {
-    const {chainId} = await hre.ethers.provider.getNetwork();
+    const { chainId } = await hre.ethers.provider.getNetwork();
     const subProxyAddr = addresses[chainId].SPARK_SUB_PROXY;
 
     const [signer] = await hre.ethers.getSigners();
@@ -378,7 +408,7 @@ async function subToMcdAutomation(proxy, strategySub) {
 
     const functionData = subProxy.interface.encodeFunctionData(
         "subToMcdAutomation",
-        [strategySub, false],
+        [strategySub, false]
     );
 
     await proxy["execute(address,bytes)"](subProxyAddr, functionData, {

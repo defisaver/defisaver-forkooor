@@ -16,9 +16,10 @@ const { getLoanData } = require("./view");
  */
 async function createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner) {
     const [senderAcc, proxy] = await getSender(owner);
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
-    const borrowTokenData = getAssetInfo(borrowToken === "ETH" ? "WETH" : borrowToken);
+    const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken, chainId);
+    const borrowTokenData = getAssetInfo(borrowToken === "ETH" ? "WETH" : borrowToken, chainId);
 
     // set balance will parse the amount according to token decimals
     await setBalance(collTokenData.address, owner, collAmount);

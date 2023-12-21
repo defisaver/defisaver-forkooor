@@ -1,10 +1,6 @@
 const hre = require("hardhat");
 const { compoundV3ViewAbi } = require("../../abi/compoundV3/abis");
-
-const compoundV3View = {
-    address: "0xf522b1588688b9887623b9C666175684d284D363",
-    abi: compoundV3ViewAbi
-};
+const { addresses } = require("../../utils");
 
 /**
  * returns Compound V3 position data
@@ -14,8 +10,11 @@ const compoundV3View = {
  */
 async function getLoanData(market, user) {
     const [signer] = await hre.ethers.getSigners();
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const view = new hre.ethers.Contract(compoundV3View.address, compoundV3View.abi, signer);
+    const compV3ViewAddress = addresses[chainId].COMP_V3_VIEW;
+
+    const view = new hre.ethers.Contract(compV3ViewAddress, compoundV3ViewAbi, signer);
 
     const loanData = await view.getLoanData(market, user);
 

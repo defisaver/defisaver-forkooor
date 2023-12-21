@@ -21,6 +21,7 @@ const addresses = {
         SPARK_SUB_PROXY: "0x3730bb1f58087D02Ccf7E0B6696755f588E17A03",
         AAVE_V3_SUB_PROXY: "0xb9F73625AA64D46A9b2f0331712e9bEE19e4C3f7",
         MCD_SUB_PROXY: "0xDED2752728227c502E08e51023b1cE0a37F907A2",
+        COMP_V3_VIEW: "0xf522b1588688b9887623b9C666175684d284D363",
 
         // replace this with new sub proxy once it's tested and deployed
         COMP_V3_SUB_PROXY: "0xFcA470b9c904AbedbB0c57ABf92edF6649251F83"
@@ -37,7 +38,11 @@ const addresses = {
         OWNER_ACC: "0x926516E60521556F4ab5e7BF16A4d41a8539c7d1",
         PROXY_REGISTRY: "0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895",
         SUB_PROXY: "0x275A8f98dBA07Ad6380D3ea3F36B665DD6E02F25",
-        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+
+        // replace once deployed
+        COMP_V3_VIEW: "0xAA517dD0d8379AEDf3F40A64871D2E1baa9EA256",
+        COMP_V3_SUB_PROXY: "0x980Cf47d88daECF292a0D4e7Ab1fa7395cDAD637"
     }
 };
 
@@ -148,7 +153,7 @@ async function approve(tokenAddr, to, owner) {
     if (allowance.toString() === "0") {
         const tokenContractSigner = tokenContract.connect(accSigner);
 
-        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, {gasLimit: 1000000});
+        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, { gasLimit: 30000000 });
     }
 }
 
@@ -162,7 +167,7 @@ async function approve(tokenAddr, to, owner) {
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    await proxy["execute(address,bytes)"](actionAddr, functionData, {gasLimit: 10000000})
+    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 30000000 })
         .then(e => e.wait());
 }
 
@@ -379,7 +384,7 @@ async function subToMcdAutomation(proxy, strategySub) {
 
     const functionData = subProxy.interface.encodeFunctionData(
         "subToMcdAutomation",
-        [strategySub, false],
+        [strategySub, false]
     );
 
     await proxy["execute(address,bytes)"](subProxyAddr, functionData, {

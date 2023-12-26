@@ -22,6 +22,10 @@ const addresses = {
         SPARK_SUB_PROXY: "0x3730bb1f58087D02Ccf7E0B6696755f588E17A03",
         AAVE_V3_SUB_PROXY: "0xb9F73625AA64D46A9b2f0331712e9bEE19e4C3f7",
         MCD_SUB_PROXY: "0xDED2752728227c502E08e51023b1cE0a37F907A2",
+
+        // replace this with new sub proxy once it's tested and deployed
+        COMP_V3_SUB_PROXY: "0xFcA470b9c904AbedbB0c57ABf92edF6649251F83",
+
         LIQUITY_LEVERAGE_MANAGEMENT_SUB_PROXY: "0xE2f4A4629FbbC444964A16438329288C66551c30"
     },
     10: {
@@ -36,7 +40,9 @@ const addresses = {
         OWNER_ACC: "0x926516E60521556F4ab5e7BF16A4d41a8539c7d1",
         PROXY_REGISTRY: "0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895",
         SUB_PROXY: "0x275A8f98dBA07Ad6380D3ea3F36B665DD6E02F25",
-        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        COMP_V3_VIEW: "0x3A07Bb9eb0d71bf03295a84655d82b00A1450CD6",
+        COMP_V3_SUB_PROXY: "0x2F368325C53656BBEE6BDE1C04a39eEd717F1E43"
     }
 };
 
@@ -147,7 +153,7 @@ async function approve(tokenAddr, to, owner) {
     if (allowance.toString() === "0") {
         const tokenContractSigner = tokenContract.connect(accSigner);
 
-        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, { gasLimit: 1000000 });
+        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, { gasLimit: 30000000 });
     }
 }
 
@@ -161,7 +167,7 @@ async function approve(tokenAddr, to, owner) {
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 10000000 })
+    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 30000000 })
         .then(e => e.wait());
 }
 

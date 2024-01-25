@@ -9,6 +9,7 @@ const sparkRouter = require("./src/routers/spark/index");
 const liquityRouter = require("./src/routers/liquity/index");
 const aaveV3Router = require("./src/routers/aavev3/index");
 const curveusdRouter = require("./src/routers/curveusd/index");
+const compoundV3Router = require("./src/routers/compoundV3/index");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use("/spark", sparkRouter);
 app.use("/liquity", liquityRouter);
 app.use("/aave/v3", aaveV3Router);
 app.use("/curveusd", curveusdRouter);
+app.use("/compound/v3", compoundV3Router);
 
 app.use("/swagger.json", (req, res) => {
     res.setHeader("Content-Type", "application/json");

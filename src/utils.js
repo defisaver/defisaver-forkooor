@@ -22,6 +22,8 @@ const addresses = {
         SPARK_SUB_PROXY: "0x3730bb1f58087D02Ccf7E0B6696755f588E17A03",
         AAVE_V3_SUB_PROXY: "0xb9F73625AA64D46A9b2f0331712e9bEE19e4C3f7",
         MCD_SUB_PROXY: "0xDED2752728227c502E08e51023b1cE0a37F907A2",
+        COMP_V3_VIEW: "0xf522b1588688b9887623b9C666175684d284D363",
+        COMP_V3_SUB_PROXY: "0x39Fce916C420320138dBc1947784667b5Ad88df5",
         LIQUITY_LEVERAGE_MANAGEMENT_SUB_PROXY: "0xE2f4A4629FbbC444964A16438329288C66551c30"
     },
     10: {
@@ -36,7 +38,9 @@ const addresses = {
         OWNER_ACC: "0x926516E60521556F4ab5e7BF16A4d41a8539c7d1",
         PROXY_REGISTRY: "0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895",
         SUB_PROXY: "0x275A8f98dBA07Ad6380D3ea3F36B665DD6E02F25",
-        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        COMP_V3_VIEW: "0x3A07Bb9eb0d71bf03295a84655d82b00A1450CD6",
+        COMP_V3_SUB_PROXY: "0x2F368325C53656BBEE6BDE1C04a39eEd717F1E43"
     }
 };
 
@@ -147,7 +151,7 @@ async function approve(tokenAddr, to, owner) {
     if (allowance.toString() === "0") {
         const tokenContractSigner = tokenContract.connect(accSigner);
 
-        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, { gasLimit: 1000000 });
+        await tokenContractSigner.approve(to, hre.ethers.constants.MaxUint256, { gasLimit: 30000000 });
     }
 }
 
@@ -161,7 +165,7 @@ async function approve(tokenAddr, to, owner) {
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 10000000 })
+    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 30000000 })
         .then(e => e.wait());
 }
 
@@ -241,6 +245,8 @@ async function setBalance(tokenAddr, userAddr, amount) {
         tokenAddr = tokenState;
         // eslint-disable-next-line no-empty, no-unused-vars
     } catch (error) {
+
+        // bojsa pls
     }
     const slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
 
@@ -263,6 +269,34 @@ async function setBalance(tokenAddr, userAddr, amount) {
     }
     await hre.ethers.provider.send("tenderly_setStorageAt", [tokenAddr, index.toString(), toBytes32(value).toString()]);
     await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
+
+    /**
+     * @description
+     * Use this to find slot for a token
+     */
+    // const prevBalance = await erc20.balanceOf(userAddr);
+    // for (let i = 0; i < 20; i++) {
+    //     const slotInfo = { isVyper: slotObj.isVyper, num: i };
+    //     let index;
+    //
+    //     if (slotInfo.isVyper) {
+    //         index = hre.ethers.utils.solidityKeccak256(
+    //             ["uint256", "uint256"],
+    //             [slotInfo.num, userAddr] // key, slot
+    //         );
+    //     } else {
+    //         index = hre.ethers.utils.solidityKeccak256(
+    //             ["uint256", "uint256"],
+    //             [userAddr, slotInfo.num] // key, slot
+    //         );
+    //     }
+    //     await hre.ethers.provider.send("tenderly_setStorageAt", [tokenAddr, index.toString(), toBytes32(value).toString()]);
+    //     await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
+    //     if ((await erc20.balanceOf(userAddr)).toString() !== prevBalance.toString()) {
+    //         console.log(i);
+    //         break;
+    //     }
+    // }
 }
 
 /**

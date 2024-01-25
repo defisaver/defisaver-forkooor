@@ -28,7 +28,7 @@ async function addBotCaller(botAddr) {
     const botAuthAddr = await getAddrFromRegistry("BotAuth");
     const botAuth = new hre.ethers.Contract(botAuthAddr, botAuthAbi, signer);
 
-    await botAuth.addCaller(botAddr, { gasLimit: 800000 });
+    await botAuth.addCaller(botAddr, { gasLimit: 30000000 });
 }
 
 /**

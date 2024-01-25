@@ -1,5 +1,5 @@
 const hre = require("hardhat");
-const { aaveV3ViewAbi, aaveV3SubProxyAbi } = require("../../abi/aaveV3/abis");
+const { aaveV3ViewAbi } = require("../../abi/aaveV3/abis");
 
 
 const aaveView = {
@@ -7,17 +7,25 @@ const aaveView = {
     abi: aaveV3ViewAbi
 };
 
-const aaveSubProxy = {
-    address: "0xb9F73625AA64D46A9b2f0331712e9bEE19e4C3f7",
-    abi: aaveV3SubProxyAbi
-};
-
+/**
+ * returns market data for a list of tokens
+ * @param {string} market address of the Aave market
+ * @param {string[]} assets array of asset addresses
+ * @returns {Object} object that has market data for each token used as input
+ */
 async function getFullTokensInfo(market, assets) {
     const [signer] = await hre.ethers.getSigners();
     const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, signer);
 
     return await view.getFullTokensInfo(market, assets);
 }
+
+/**
+ * return data about a particular users position in Aave
+ * @param {string} market address of aave market
+ * @param {string} user address of the user
+ * @returns {Object} information about users position from view contract
+ */
 async function getLoanData(market, user) {
     const [signer] = await hre.ethers.getSigners();
     const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, signer);

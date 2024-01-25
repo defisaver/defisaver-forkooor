@@ -8,6 +8,7 @@ const makerRouter = require("./src/routers/maker/index");
 const sparkRouter = require("./src/routers/spark/index");
 const liquityRouter = require("./src/routers/liquity/index");
 const aaveV3Router = require("./src/routers/aavev3/index");
+const curveusdRouter = require("./src/routers/curveusd/index");
 const compoundV3Router = require("./src/routers/compoundV3/index");
 
 const app = express();
@@ -20,6 +21,7 @@ app.use("/maker", makerRouter);
 app.use("/spark", sparkRouter);
 app.use("/liquity", liquityRouter);
 app.use("/aave/v3", aaveV3Router);
+app.use("/curveusd", curveusdRouter);
 app.use("/compound/v3", compoundV3Router);
 
 app.use("/swagger.json", (req, res) => {
@@ -27,6 +29,7 @@ app.use("/swagger.json", (req, res) => {
     res.send(swaggerSpec);
 });
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 
 const port = 3000;
 

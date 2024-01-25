@@ -1,9 +1,20 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
-const {getAssetInfo} = require("@defisaver/tokens");
-const {getSender, approve, executeAction, setBalance} = require("../../utils");
-const {getFullTokensInfo, getLoanData} = require("./view");
+const { getAssetInfo } = require("@defisaver/tokens");
+const { getSender, approve, executeAction, setBalance } = require("../../utils");
+const { getFullTokensInfo, getLoanData } = require("./view");
 
+/**
+ * Create a Aave position for sender on his proxy (created if he doesn't have one)
+ * @param {string} market market address
+ * @param {string} collToken collateral token symbol
+ * @param {string} debtToken debt token symbol
+ * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
+ * @param {number} coll amount of collateral to be supplied (whole number)
+ * @param {number} debt amount of debt to be generated (whole number)
+ * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @returns {Object} object that has users position data in it
+ */
 async function createAaveV3Position(market, collToken, debtToken, rateMode, coll, debt, owner) {
     const [senderAcc, proxy] = await getSender(owner);
 
@@ -37,6 +48,14 @@ async function createAaveV3Position(market, collToken, debtToken, rateMode, coll
     return await getLoanData(market, proxy.address);
 }
 
+/**
+ * Supplies token to a Aave position on DSProxy
+ * @param {string} market market address
+ * @param {string} collToken collateral token symbol
+ * @param {number} amount amount of collateral to be supplied (whole number)
+ * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @returns {Object} object that has users position data in it
+ */
 async function aaveV3Supply(market, collToken, amount, owner) {
     const [senderAcc, proxy] = await getSender(owner);
 
@@ -62,6 +81,14 @@ async function aaveV3Supply(market, collToken, amount, owner) {
     return await getLoanData(market, proxy.address);
 }
 
+/**
+ * Withdraw token from a Aave position on DSProxy
+ * @param {string} market market address
+ * @param {string} collToken collateral token symbol
+ * @param {number} amount amount of collateral to be withdrawnw (whole number)
+ * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @returns {Object} object that has users position data in it
+ */
 async function aaveV3Withdraw(market, collToken, amount, owner) {
     const [senderAcc, proxy] = await getSender(owner);
 
@@ -79,6 +106,15 @@ async function aaveV3Withdraw(market, collToken, amount, owner) {
     return await getLoanData(market, proxy.address);
 }
 
+/**
+ * Borrows a token from Aave
+ * @param {string} market market address
+ * @param {string} debtToken debt token symbol
+ * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
+ * @param {number} amount amount of debt to be generated (whole number)
+ * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @returns {Object} object that has users position data in it
+ */
 async function aaveV3Borrow(market, debtToken, rateMode, amount, owner) {
     const [senderAcc, proxy] = await getSender(owner);
 
@@ -98,6 +134,15 @@ async function aaveV3Borrow(market, debtToken, rateMode, amount, owner) {
     return await getLoanData(market, proxy.address);
 }
 
+/**
+ * Payback a token to Aave
+ * @param {string} market market address
+ * @param {string} debtToken debt token symbol
+ * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
+ * @param {number} amount amount of debt to be payed back (whole number)
+ * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @returns {Object} object that has users position data in it
+ */
 async function aaveV3Payback(market, debtToken, rateMode, amount, owner) {
     const [senderAcc, proxy] = await getSender(owner);
 
@@ -128,5 +173,5 @@ module.exports = {
     aaveV3Supply,
     aaveV3Withdraw,
     aaveV3Borrow,
-    aaveV3Payback,
+    aaveV3Payback
 };

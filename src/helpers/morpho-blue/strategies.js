@@ -72,6 +72,11 @@ async function subMorphoBlueBoostBundle(
     const lltvEncoded = abiCoder.encode(["uint256"], [marketParams[4]]);
     const ratioStateEncoded = abiCoder.encode(["uint8"], [0]);
     const targetRatioEncoded = abiCoder.encode(["uint256"], [hre.ethers.utils.parseUnits(targetRatio.toString(), 16).toString()]);
+
+    if (user === "0x0000000000000000000000000000000000000000") {
+        // eslint-disable-next-line no-param-reassign
+        user = proxy.address;
+    }
     const userEncoded = abiCoder.encode(["address"], [user]);
     const strategySub = [bundleId, true, [triggerData],
         [

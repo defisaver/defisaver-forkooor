@@ -23,7 +23,8 @@ async function getUserData(marketParams, user) {
         suppliedInAssets: userData.suppliedInAssets.toString(),
         borrowShares: userData.borrowShares.toString(),
         borrowedInAssets: userData.borrowedInAssets.toString(),
-        collateral: userData.collateral.toString()
+        collateral: userData.collateral.toString(),
+        owner: user
     };
 }
 

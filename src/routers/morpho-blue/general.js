@@ -80,6 +80,10 @@ const router = express.Router();
  *                   type: string
  *                   example: "2000000000000000000"
  *                   description: "Amount of collateral supplied"
+ *                 owner:
+ *                   type: string
+ *                   example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+ *                   description: "Owner of position"
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -146,8 +150,9 @@ router.post("/create",
  *                type: string
  *                example: "860000000000000000"
  *              owner:
- *                type: string
- *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                   type: string
+ *                   example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+ *                   description: "Owner of position"
  *     responses:
  *       '200':
  *         description: OK

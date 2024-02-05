@@ -18,6 +18,12 @@ async function subMorphoBlueRepayBundle(
     owner, bundleId, marketParams, marketId, minRatio, targetRatio, user
 ) {
     const [, proxy] = await getSender(owner);
+
+    if (user === "0x0000000000000000000000000000000000000000") {
+        // eslint-disable-next-line no-param-reassign
+        user = proxy.address;
+    }
+
     const triggerData = abiCoder.encode(["bytes32", "address", "uint256", "uint8"], [marketId, user, hre.ethers.utils.parseUnits(minRatio.toString(), 16).toString(), 1]);
     const loanTokenEncoded = abiCoder.encode(["address"], [marketParams[0]]);
     const collateralTokenEncoded = abiCoder.encode(["address"], [marketParams[1]]);
@@ -27,10 +33,6 @@ async function subMorphoBlueRepayBundle(
     const ratioStateEncoded = abiCoder.encode(["uint8"], [1]);
     const targetRatioEncoded = abiCoder.encode(["uint256"], [hre.ethers.utils.parseUnits(targetRatio.toString(), 16).toString()]);
 
-    if (user === "0x0000000000000000000000000000000000000000") {
-        // eslint-disable-next-line no-param-reassign
-        user = proxy.address;
-    }
     const userEncoded = abiCoder.encode(["address"], [user]);
     const strategySub = [bundleId, true, [triggerData],
         [

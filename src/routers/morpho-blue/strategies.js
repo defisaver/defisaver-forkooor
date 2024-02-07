@@ -217,7 +217,7 @@ async (req, res) => {
 
     await setupFork(forkId, [owner]);
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
-    console.log(owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, maxRatio, targetRatio, user);
+
     subMorphoBlueBoostBundle(
         owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, maxRatio, targetRatio, user
     ).then(sub => {

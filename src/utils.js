@@ -31,7 +31,8 @@ const addresses = {
         OWNER_ACC: "0xC9a956923bfb5F141F1cd4467126b3ae91E5CC33",
         PROXY_REGISTRY: "0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895",
         SUB_PROXY: "0x163c08d3F6d916AD6Af55b37728D547e968103F8",
-        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1"
+        DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
+        AAVE_V3_SUB_PROXY: "0x9E8aE909Af8A391b58f45819f0d36e4256991D19"
     },
     42161: {
         REGISTRY_ADDR: "0xBF1CaC12DB60819Bfa71A328282ecbc1D40443aA",
@@ -40,7 +41,8 @@ const addresses = {
         SUB_PROXY: "0x275A8f98dBA07Ad6380D3ea3F36B665DD6E02F25",
         DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
         COMP_V3_VIEW: "0x3A07Bb9eb0d71bf03295a84655d82b00A1450CD6",
-        COMP_V3_SUB_PROXY: "0x2F368325C53656BBEE6BDE1C04a39eEd717F1E43"
+        COMP_V3_SUB_PROXY: "0x2F368325C53656BBEE6BDE1C04a39eEd717F1E43",
+        AAVE_V3_SUB_PROXY: "0x29a172f04CF9C6a79EdF4dD2744F2d260b8b8FE4"
     }
 };
 
@@ -379,7 +381,6 @@ async function subToSparkStrategy(proxy, strategySub) {
 async function subToAaveV3Automation(proxy, strategySub) {
     const { chainId } = await hre.ethers.provider.getNetwork();
     const subProxyAddr = addresses[chainId].AAVE_V3_SUB_PROXY;
-
     const [signer] = await hre.ethers.getSigners();
     const subProxy = new hre.ethers.Contract(subProxyAddr, aaveV3SubProxyAbi, signer);
 

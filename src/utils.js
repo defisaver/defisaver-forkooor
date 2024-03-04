@@ -218,6 +218,24 @@ async function setupFork(forkId, accounts = []) {
 }
 
 /**
+ * Lowers safe threshold to 1
+ * @param {string} forkId ID of the tenderly fork
+ * @param {Array<string>} safes  all the accounts that will be sending transactions}
+ * @param {Array<number>} thresholds new threshold value that will be set for matching safe
+ * @returns {void}
+ */
+async function lowerSafesThreshold(forkId, safes, thresholds) {
+    const provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    const thresholdSlot = toBytes32(hre.ethers.utils.parseUnits("4", 0)).toString();
+
+    for (let i = 0; i < safes.length; i++) {
+        const thresholdValue = toBytes32(hre.ethers.utils.parseUnits(thresholds[i].toString(), 0)).toString();
+
+        provider.send("tenderly_setStorageAt", [safes[i], thresholdSlot, thresholdValue]);
+    }
+}
+
+/**
  * Grants a desired token balance to an address
  * @param {string} tokenAddr address of the ERC20 token
  * @param {string} userAddr address which we want to receive the desired amount of tokens
@@ -471,5 +489,6 @@ module.exports = {
     subToAaveV3Automation,
     subToMcdAutomation,
     subToLiquityLeverageManagementAutomation,
-    isContract
+    isContract,
+    lowerSafesThreshold
 };

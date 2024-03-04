@@ -3,7 +3,7 @@
 
 const express = require("express");
 const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress } = require("../../helpers/utils/general");
-const { setBalance, setupFork } = require("../../utils");
+const { setBalance, setupFork, lowerSafesThreshold } = require("../../utils");
 
 const router = express.Router();
 
@@ -210,6 +210,77 @@ router.post("/set-bot-auth", async (req, res) => {
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to set bot auth with error : ${err.toString()}` };
+        res.status(500).send(resObj);
+    }
+});
+
+/**
+ * @swagger
+ * /utils/general/set-safe-thresholds:
+ *   post:
+ *     summary: Lowers safe threshold to 1 for a list of safes
+ *     tags:
+ *      - Utils
+ *     description: Lowers safe threshold to 1 for a list of safes
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              safes:
+ *                type: array
+ *                items:
+ *                 type: string
+ *                 example: "0x000000000000000000000000000000000000dEaD"
+ *              thresholds:
+ *                type: array
+ *                items:
+ *                 type: number
+ *                 example: 1
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 safes:
+ *                   type: array
+ *                   items:
+ *                    type: string
+ *                    example: "0x000000000000000000000000000000000000dEaD"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/set-safe-thresholds", async (req, res) => {
+    let resObj;
+    try {
+        const { forkId, safes, thresholds } = req.body;
+
+        if (safes.length !== thresholds.length) {
+            throw new Error("Arrays not the same size");
+        }
+
+        await lowerSafesThreshold(forkId, safes, thresholds);
+
+        resObj = { safes };
+        res.status(200).send(resObj);
+    } catch (err) {
+        resObj = { error: `Failed to set threshold auth with error : ${err.toString()}` };
         res.status(500).send(resObj);
     }
 });

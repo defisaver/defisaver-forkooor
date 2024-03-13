@@ -3,7 +3,7 @@ const { curveusdViewAbi } = require("../../abi/curveusd/abis");
 
 
 const curveusdView = {
-    address: "0xe1cd0cec94cdf239be7b3320d301bea5875fa84b",
+    address: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701",
     abi: curveusdViewAbi
 };
 

@@ -69,11 +69,10 @@ async function subCurveUsdBoostBundle(
  * @param {string} controllerAddr address of the curveusd controller
  * @param {number} minHealthRatio below this ratio strategy will trigger
  * @param {number} amountToPayback amount of crvusd to payback
- * @param {boolean} useBalanceFrom whether to use whole balance from owner when paying back
  * @returns {Object} subId and strategySub
  */
 async function subCurveUsdPaybackStrategy(
-    owner, strategyId, controllerAddr, minHealthRatio, amountToPayback, useBalanceFrom
+    owner, strategyId, controllerAddr, minHealthRatio, amountToPayback
 ) {
     const [, proxy] = await getSender(owner);
 
@@ -81,17 +80,12 @@ async function subCurveUsdPaybackStrategy(
     const amountToPaybackFormatted = hre.ethers.utils.parseUnits(amountToPayback.toString(), 18);
     const minHealthRatioFormatted = hre.ethers.utils.parseUnits(minHealthRatio.toString(), 16);
 
-    const balanceAndAllowanceTriggerData = abiCoder.encode(
-        ["address", "address", "address", "uint256", "bool"],
-        [owner, proxy.address, curveUsdAddress, amountToPaybackFormatted, useBalanceFrom]
-    );
-
     const crvUsdHealthRatioTriggerData = abiCoder.encode(
         ["address", "address", "uint256"],
         [proxy.address, controllerAddr, minHealthRatioFormatted]
     );
 
-    const triggerData = [balanceAndAllowanceTriggerData, crvUsdHealthRatioTriggerData];
+    const triggerData = [crvUsdHealthRatioTriggerData];
 
     const controllerAddressEncoded = abiCoder.encode(["address"], [controllerAddr]);
     const minHealthRatioEncoded = abiCoder.encode(["uint256"], [minHealthRatio.toString()]);

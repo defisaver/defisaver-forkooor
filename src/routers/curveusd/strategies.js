@@ -218,9 +218,6 @@ async (req, res) => {
  *              amountToPayback:
  *                  type: integer
  *                  example: 20000
- *              useBalanceFrom:
- *                  type: boolean
- *                  example: true
  *     responses:
  *       '200':
  *         description: OK
@@ -252,8 +249,7 @@ router.post("/payback", body(
         "strategyId",
         "controller",
         "minHealthRatio",
-        "amountToPayback",
-        "useBalanceFrom"
+        "amountToPayback"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -262,11 +258,11 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, strategyId, controller, minHealthRatio, amountToPayback, useBalanceFrom } = req.body;
+    const { forkId, owner, strategyId, controller, minHealthRatio, amountToPayback } = req.body;
 
     await setupFork(forkId, [owner]);
     subCurveUsdPaybackStrategy(
-        owner, strategyId, controller, minHealthRatio, amountToPayback, useBalanceFrom
+        owner, strategyId, controller, minHealthRatio, amountToPayback
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {

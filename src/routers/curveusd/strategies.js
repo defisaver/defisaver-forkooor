@@ -206,9 +206,9 @@ async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              strategyId:
- *                type: integer
- *                example: 90
+ *              addressToPullTokensFrom:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              controller:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -246,7 +246,7 @@ router.post("/payback", body(
     [
         "forkId",
         "owner",
-        "strategyId",
+        "addressToPullTokensFrom",
         "controller",
         "minHealthRatio",
         "amountToPayback"
@@ -258,11 +258,11 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, strategyId, controller, minHealthRatio, amountToPayback } = req.body;
+    const { forkId, owner, addressToPullTokensFrom, controller, minHealthRatio, amountToPayback } = req.body;
 
     await setupFork(forkId, [owner]);
     subCurveUsdPaybackStrategy(
-        owner, strategyId, controller, minHealthRatio, amountToPayback
+        owner, addressToPullTokensFrom, controller, minHealthRatio, amountToPayback
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {

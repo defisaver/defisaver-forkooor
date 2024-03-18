@@ -67,6 +67,7 @@ async function subCurveUsdBoostBundle(
  * Subscribes to CurveUsd Payback Strategy
  * @param {Object} owner eoa
  * @param {string} addressToPullTokensFrom address to pull crvUsd tokens from
+ * @param {string} positionOwner address which holds curve usd position. Zero address defaults to wallet
  * @param {string} controllerAddr address of the curveusd controller
  * @param {number} minHealthRatio below this ratio strategy will trigger
  * @param {number} amountToPayback amount of crvusd to payback
@@ -75,6 +76,7 @@ async function subCurveUsdBoostBundle(
 async function subCurveUsdPaybackStrategy(
     owner,
     addressToPullTokensFrom,
+    positionOwner,
     controllerAddr,
     minHealthRatio,
     amountToPayback
@@ -85,6 +87,7 @@ async function subCurveUsdPaybackStrategy(
     const strategySub = automationSdk.strategySubService.crvUSDEncode.payback(
         proxy.address,
         addressToPullTokensFrom,
+        positionOwner,
         amountToPayback.toString(),
         curveUsdAddress,
         controllerAddr,

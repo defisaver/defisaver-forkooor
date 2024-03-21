@@ -13,7 +13,7 @@
     "hardhat": "^2.16.1"
   },
   "dependencies": {
-    "@defisaver/automation-sdk": "^2.1.0",
+    "@defisaver/automation-sdk": "^3.0.3",
     "@defisaver/sdk": "^1.0.63",
     "@defisaver/tokens": "^1.5.5",
     "axios": "^1.3.4",

@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const automationSdk = require("@defisaver/automation-sdk");
 const { subToStrategy, getSender } = require("../../utils");
 const abiCoder = new hre.ethers.utils.AbiCoder();
 
@@ -62,7 +63,44 @@ async function subCurveUsdBoostBundle(
     return { subId, strategySub };
 }
 
+/**
+ * Subscribes to CurveUsd Payback Strategy
+ * @param {Object} owner eoa
+ * @param {string} addressToPullTokensFrom address to pull crvUsd tokens from
+ * @param {string} positionOwner address which holds curve usd position. Zero address defaults to wallet
+ * @param {string} controllerAddr address of the curveusd controller
+ * @param {number} minHealthRatio below this ratio strategy will trigger
+ * @param {number} amountToPayback amount of crvusd to payback
+ * @returns {Object} subId and strategySub
+ */
+async function subCurveUsdPaybackStrategy(
+    owner,
+    addressToPullTokensFrom,
+    positionOwner,
+    controllerAddr,
+    minHealthRatio,
+    amountToPayback
+) {
+    const [, proxy] = await getSender(owner);
+
+    const curveUsdAddress = "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E";
+    const strategySub = automationSdk.strategySubService.crvUSDEncode.payback(
+        proxy.address,
+        addressToPullTokensFrom,
+        positionOwner,
+        amountToPayback.toString(),
+        curveUsdAddress,
+        controllerAddr,
+        minHealthRatio
+    );
+
+    const subId = await subToStrategy(proxy, strategySub);
+
+    return { subId, strategySub };
+}
+
 module.exports = {
     subCurveUsdRepayBundle,
-    subCurveUsdBoostBundle
+    subCurveUsdBoostBundle,
+    subCurveUsdPaybackStrategy
 };

@@ -3,7 +3,7 @@
 
 const express = require("express");
 const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress } = require("../../helpers/utils/general");
-const { setBalance, setupFork, lowerSafesThreshold } = require("../../utils");
+const { setBalance, setupFork, lowerSafesThreshold, approve, getProxy } = require("../../utils");
 
 const router = express.Router();
 
@@ -420,6 +420,97 @@ router.post("/set-token-balance", async (req, res) => {
             token,
             account,
             amount
+        };
+        res.status(200).send(resObj);
+    } catch (err) {
+        resObj = { error: err.toString() };
+        res.status(500).send(resObj);
+    }
+});
+
+/**
+ * @swagger
+ * /utils/general/give-approval:
+ *   post:
+ *     summary: Give token approval from owner to given address
+ *     tags:
+ *      - Utils
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              token:
+ *                type: string
+ *                example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+ *              owner:
+ *                type: string
+ *                example: "0x000000000000000000000000000000000000dEaD"
+ *              to:
+ *                type: string
+ *                example: "0x000000000000000000000000000000000000dEaD"
+ *              isProxyApproval:
+ *                type: boolean
+ *                example: true
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+ *                 owner:
+ *                   type: string
+ *                   example: "0x000000000000000000000000000000000000dEaD"
+ *                 giveApprovalTo:
+ *                   type: string
+ *                   example: "0x000000000000000000000000000000000000dEaD"
+ *                 isProxyApproval:
+ *                   type: boolean
+ *                   example: true
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/give-approval", async (req, res) => {
+    let resObj;
+
+    try {
+        const { forkId, token, owner, to, isProxyApproval } = req.body;
+
+        await setupFork(forkId);
+
+        let giveApprovalTo = to;
+
+        if (isProxyApproval) {
+            const proxyContract = await getProxy(owner);
+
+            giveApprovalTo = proxyContract.address;
+        }
+
+        await approve(token, giveApprovalTo, owner);
+
+        resObj = {
+            token,
+            owner,
+            giveApprovalTo,
+            isProxyApproval
         };
         res.status(200).send(resObj);
     } catch (err) {

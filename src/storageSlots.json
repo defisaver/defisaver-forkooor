@@ -695,7 +695,19 @@
       "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e":{
          "isVyper":true,
          "num":1
-      }
+      },
+      "0x6c3ea9036406852006290770bedfcaba0e23a0e8": {
+         "isVyper": false,
+         "num": 1
+     },
+     "0x9d39a5de30e57443bff2a8307a4256c8797a3497": {
+         "isVyper": false,
+         "num": 4
+     },
+     "0x4c9edd5852cd905f086c759e8383e09bff1e68b3": {
+         "isVyper": false,
+         "num": 2
+     }
    },
    "10":{
       "0x4200000000000000000000000000000000000006":{

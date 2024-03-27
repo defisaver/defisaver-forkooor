@@ -231,7 +231,7 @@ async function lowerSafesThreshold(forkId, safes, thresholds) {
     for (let i = 0; i < safes.length; i++) {
         const thresholdValue = toBytes32(hre.ethers.utils.parseUnits(thresholds[i].toString(), 0)).toString();
 
-        provider.send("tenderly_setStorageAt", [safes[i], thresholdSlot, thresholdValue]);
+        await provider.send("tenderly_setStorageAt", [safes[i], thresholdSlot, thresholdValue]);
     }
 }
 

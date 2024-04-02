@@ -79,7 +79,6 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
  * Subscribes to Aave V3 Close To Coll strategy
  * @param {string} market aaveV3 market address
  * @param {string} owner proxy owner
- * @param {number} bundleId bundle id
  * @param {string} triggerBaseAsset trigger base asset
  * @param {string} triggerQuoteAsset trigger quote asset
  * @param {number} targetPrice trigger price
@@ -91,7 +90,6 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
 async function subAaveCloseToCollStrategy(
     market,
     owner,
-    bundleId,
     triggerBaseAsset,
     triggerQuoteAsset,
     targetPrice,
@@ -122,6 +120,9 @@ async function subAaveCloseToCollStrategy(
             debtAsset: debtTokenData.address,
             debtAssetId: aaveDebtInfo.assetId
         };
+
+        // TODO: mainent bundle hardcoded for now, add support for other networks
+        const bundleId = 13;
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAsset(
             bundleId,

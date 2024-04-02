@@ -152,9 +152,6 @@ async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              bundleId:
- *                  type: integer
- *                  example: 13
  *              triggerData:
  *                  type: object
  *                  properties:
@@ -166,7 +163,7 @@ async (req, res) => {
  *                         example: "0x6b175474e89094c44da98b954eedeac495271d0f"
  *                     price:
  *                         type: integer
- *                         example: 1000000000000000000
+ *                         example: 2000
  *                     ratioState:
  *                         type: integer
  *                         description: 0 for OVER, 1 for UNDER
@@ -208,7 +205,6 @@ router.post("/close-with-coll", body(
         "forkId",
         "market",
         "owner",
-        "bundleId",
         "triggerData.baseTokenAddress",
         "triggerData.quoteTokenAddress",
         "triggerData.price",
@@ -223,14 +219,13 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, market, owner, bundleId, triggerData, subData } = req.body;
+    const { forkId, market, owner, triggerData, subData } = req.body;
 
     await setupFork(forkId, [owner]);
 
     subAaveCloseToCollStrategy(
         market,
         owner,
-        bundleId,
         triggerData.baseTokenAddress,
         triggerData.quoteTokenAddress,
         triggerData.price,

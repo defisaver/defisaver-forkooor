@@ -1,5 +1,7 @@
 const automationSdk = require("@defisaver/automation-sdk");
 const { getSender, subToStrategy, subToAaveV3Automation } = require("../../utils");
+const { getFullTokensInfo } = require("./view");
+const { getAssetInfo } = require("@defisaver/tokens");
 
 /**
  *
@@ -75,29 +77,27 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
 
 /**
  * Subscribes to Aave V3 Close To Coll strategy
+ * @param {string} market aaveV3 market address
  * @param {string} owner proxy owner
  * @param {number} bundleId bundle id
  * @param {string} triggerBaseAsset trigger base asset
  * @param {string} triggerQuoteAsset trigger quote asset
  * @param {number} targetPrice trigger price
  * @param {number} priceState 1 for UNDER, 0 for OVER
- * @param {string} collAddress address of the collateral asset
- * @param {number} collId ID of the collateral asset
- * @param {string} debtAddress address of the debt asset
- * @param {number} debtId ID of the debt asset
+ * @param {string} collAssetSymbol symbol of the collateral asset
+ * @param {string} debtAssetSymbol symbol of the debt asset
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveCloseToCollStrategy(
+    market,
     owner,
     bundleId,
     triggerBaseAsset,
     triggerQuoteAsset,
     targetPrice,
     priceState,
-    collAddress,
-    collId,
-    debtAddress,
-    debtId
+    collAssetSymbol,
+    debtAssetSymbol
 ) {
     try {
         const [, proxy] = await getSender(owner);
@@ -109,11 +109,18 @@ async function subAaveCloseToCollStrategy(
             ratioState: (priceState === 1) ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER
         };
 
+        const collTokenData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol);
+        const debtTokenData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol);
+
+        const infos = await getFullTokensInfo(market, [collTokenData.address, debtTokenData.address]);
+        const aaveCollInfo = infos[0];
+        const aaveDebtInfo = infos[1];
+
         const subData = {
-            collAsset: collAddress,
-            collAssetId: collId,
-            debtAsset: debtAddress,
-            debtAssetId: debtId
+            collAsset: collTokenData.address,
+            collAssetId: aaveCollInfo.assetId,
+            debtAsset: debtTokenData.address,
+            debtAssetId: aaveDebtInfo.assetId
         };
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAsset(

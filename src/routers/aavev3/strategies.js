@@ -146,6 +146,9 @@ async (req, res) => {
  *              forkId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -166,22 +169,17 @@ async (req, res) => {
  *                         example: 1000000000000000000
  *                     ratioState:
  *                         type: integer
+ *                         description: 0 for OVER, 1 for UNDER
  *                         example: 0
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAsset:
+ *                      collAssetSymbol:
  *                          type: string
- *                          example: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
- *                      collAssetId:
- *                          type: integer
- *                          example: 0
- *                      debtAsset:
+ *                          example: "ETH"
+ *                      debtAssetSymbol:
  *                          type: string
- *                          example: "0x6b175474e89094c44da98b954eedeac495271d0f"
- *                      debtAssetId:
- *                          type: integer
- *                          example: 4
+ *                          example: "DAI"
  *     responses:
  *       '201':
  *         description: OK
@@ -208,16 +206,15 @@ async (req, res) => {
 router.post("/close-with-coll", body(
     [
         "forkId",
+        "market",
         "owner",
         "bundleId",
         "triggerData.baseTokenAddress",
         "triggerData.quoteTokenAddress",
         "triggerData.price",
         "triggerData.ratioState",
-        "subData.collAsset",
-        "subData.collAssetId",
-        "subData.debtAsset",
-        "subData.debtAssetId"
+        "subData.collAssetSymbol",
+        "subData.debtAssetSymbol"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -226,21 +223,20 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, bundleId, triggerData, subData } = req.body;
+    const { forkId, market, owner, bundleId, triggerData, subData } = req.body;
 
     await setupFork(forkId, [owner]);
 
     subAaveCloseToCollStrategy(
+        market,
         owner,
         bundleId,
         triggerData.baseTokenAddress,
         triggerData.quoteTokenAddress,
         triggerData.price,
         triggerData.ratioState,
-        subData.collAsset,
-        subData.collAssetId,
-        subData.debtAsset,
-        subData.debtAssetId
+        subData.collAssetSymbol,
+        subData.debtAssetSymbol
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {

@@ -73,7 +73,67 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
     }
 }
 
+/**
+ * Subscribes to Aave V3 Close To Coll strategy
+ * @param {string} owner proxy owner
+ * @param {number} bundleId bundle id
+ * @param {string} triggerBaseAsset trigger base asset
+ * @param {string} triggerQuoteAsset trigger quote asset
+ * @param {number} targetPrice trigger price
+ * @param {number} priceState 1 for UNDER, 0 for OVER
+ * @param {string} collAddress address of the collateral asset
+ * @param {number} collId ID of the collateral asset
+ * @param {string} debtAddress address of the debt asset
+ * @param {number} debtId ID of the debt asset
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subAaveCloseToCollStrategy(
+    owner,
+    bundleId,
+    triggerBaseAsset,
+    triggerQuoteAsset,
+    targetPrice,
+    priceState,
+    collAddress,
+    collId,
+    debtAddress,
+    debtId
+) {
+    try {
+        const [, proxy] = await getSender(owner);
+
+        const triggerData = {
+            baseTokenAddress: triggerBaseAsset,
+            quoteTokenAddress: triggerQuoteAsset,
+            price: targetPrice,
+            ratioState: (priceState === 1) ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER
+        };
+
+        const subData = {
+            collAsset: collAddress,
+            collAssetId: collId,
+            debtAsset: debtAddress,
+            debtAssetId: debtId
+        };
+
+        const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAsset(
+            bundleId,
+            true,
+            triggerData,
+            subData
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
 module.exports = {
     subAaveV3CloseWithMaximumGasPriceStrategy,
-    subAaveAutomationStrategy
+    subAaveAutomationStrategy,
+    subAaveCloseToCollStrategy
 };

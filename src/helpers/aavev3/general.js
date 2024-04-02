@@ -34,13 +34,34 @@ async function createAaveV3Position(market, collToken, debtToken, rateMode, coll
     const aaveCollInfo = infos[0];
     const aaveDebtInfo = infos[1];
 
-    const nullAddr = "0x0000000000000000000000000000000000000000";
+    const supplyAction = new dfs.actions.aaveV3.AaveV3SupplyAction(
+        false,
+        market,
+        amountColl.toString(),
+        senderAcc._address,
+        collTokenData.address,
+        aaveCollInfo.assetId,
+        true,
+        false,
+        proxy.address
+    );
+
+    const borrowAction = new dfs.actions.aaveV3.AaveV3BorrowAction(
+        false,
+        market,
+        amountDebt.toString(),
+        senderAcc._address,
+        rateMode.toString(),
+        aaveDebtInfo.assetId,
+        false,
+        proxy.address
+    );
+
     const createPositionRecipe = new dfs.Recipe("CreateAaveV3PositionRecipe", [
-        // eslint-disable-next-line max-len
-        new dfs.actions.spark.SparkSupplyAction(false, market, amountColl.toString(), senderAcc._address, collTokenData.address, aaveCollInfo.assetId, true, false, nullAddr),
-        // eslint-disable-next-line max-len
-        new dfs.actions.spark.SparkBorrowAction(false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr)
+        supplyAction,
+        borrowAction
     ]);
+
     const functionData = createPositionRecipe.encodeForDsProxyCall()[1];
 
     await executeAction("RecipeExecutor", functionData, proxy);

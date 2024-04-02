@@ -3,7 +3,7 @@ const { aaveV3ViewAbi } = require("../../abi/aaveV3/abis");
 
 
 const aaveView = {
-    address: "0x8095fFFC3cDdE58C4F537D39f9795A40a103e633",
+    address: "0x485416D87B6B6B98259c32E789D4f7Ce4CD2959c",
     abi: aaveV3ViewAbi
 };
 

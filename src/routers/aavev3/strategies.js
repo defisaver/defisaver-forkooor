@@ -146,6 +146,10 @@ async (req, res) => {
  *              forkId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *              useDefaultMarket:
+ *                type: boolean
+ *                example: true
+ *                description: "If true, the default market will be used, ignoring the value of market parameter"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -155,19 +159,19 @@ async (req, res) => {
  *              triggerData:
  *                  type: object
  *                  properties:
- *                     baseTokenAddress:
+ *                     triggerBaseAssetSymbol:
  *                         type: string
- *                         example: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
- *                     quoteTokenAddress:
+ *                         example: "ETH"
+ *                     triggerQuoteAssetSymbol:
  *                         type: string
- *                         example: "0x6b175474e89094c44da98b954eedeac495271d0f"
+ *                         example: "DAI"
  *                     price:
  *                         type: integer
  *                         example: 2000
  *                     ratioState:
- *                         type: integer
- *                         description: 0 for OVER, 1 for UNDER
- *                         example: 0
+ *                         type: string
+ *                         description: "'OVER' or 'UNDER'"
+ *                         example: "OVER"
  *              subData:
  *                  type: object
  *                  properties:
@@ -203,10 +207,11 @@ async (req, res) => {
 router.post("/close-with-coll", body(
     [
         "forkId",
+        "useDefaultMarket",
         "market",
         "owner",
-        "triggerData.baseTokenAddress",
-        "triggerData.quoteTokenAddress",
+        "triggerData.triggerBaseAssetSymbol",
+        "triggerData.triggerQuoteAssetSymbol",
         "triggerData.price",
         "triggerData.ratioState",
         "subData.collAssetSymbol",
@@ -219,15 +224,16 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, market, owner, triggerData, subData } = req.body;
+    const { forkId, useDefaultMarket, market, owner, triggerData, subData } = req.body;
 
     await setupFork(forkId, [owner]);
 
     subAaveCloseToCollStrategy(
+        useDefaultMarket,
         market,
         owner,
-        triggerData.baseTokenAddress,
-        triggerData.quoteTokenAddress,
+        triggerData.triggerBaseAssetSymbol,
+        triggerData.triggerQuoteAssetSymbol,
         triggerData.price,
         triggerData.ratioState,
         subData.collAssetSymbol,

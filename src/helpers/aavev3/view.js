@@ -1,11 +1,6 @@
 const hre = require("hardhat");
 const { aaveV3ViewAbi } = require("../../abi/aaveV3/abis");
-
-
-const aaveView = {
-    address: "0x485416D87B6B6B98259c32E789D4f7Ce4CD2959c",
-    abi: aaveV3ViewAbi
-};
+const { addresses } = require("../../utils");
 
 /**
  * returns market data for a list of tokens
@@ -15,9 +10,11 @@ const aaveView = {
  */
 async function getFullTokensInfo(market, assets) {
     const [signer] = await hre.ethers.getSigners();
-    const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, signer);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const viewAddress = addresses[chainId].AAVE_V3_VIEW;
+    const viewContract = new hre.ethers.Contract(viewAddress, aaveV3ViewAbi, signer);
 
-    return await view.getFullTokensInfo(market, assets);
+    return await viewContract.getFullTokensInfo(market, assets);
 }
 
 /**
@@ -28,9 +25,11 @@ async function getFullTokensInfo(market, assets) {
  */
 async function getLoanData(market, user) {
     const [signer] = await hre.ethers.getSigners();
-    const view = new hre.ethers.Contract(aaveView.address, aaveView.abi, signer);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const viewAddress = addresses[chainId].AAVE_V3_VIEW;
+    const viewContract = new hre.ethers.Contract(viewAddress, aaveV3ViewAbi, signer);
 
-    const loanData = await view.getLoanData(market, user);
+    const loanData = await viewContract.getLoanData(market, user);
 
     return {
         user: loanData.user,

@@ -1,42 +1,51 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
 const { getAssetInfo } = require("@defisaver/tokens");
-const { getSender, approve, executeAction, setBalance } = require("../../utils");
+const { getSender, approve, executeAction, setBalance, addresses } = require("../../utils");
 const { getFullTokensInfo, getLoanData } = require("./view");
 
 /**
  * Create a Aave position for sender on his proxy (created if he doesn't have one)
+ * @param {boolean} useDefaultMarket whether to use the default market or not
  * @param {string} market market address
  * @param {string} collToken collateral token symbol
  * @param {string} debtToken debt token symbol
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
- * @param {number} coll amount of collateral to be supplied (whole number)
- * @param {number} debt amount of debt to be generated (whole number)
+ * @param {number} collAmount amount of collateral to be supplied (whole number)
+ * @param {number} debtAmount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
  * @returns {Object} object that has users position data in it
  */
-async function createAaveV3Position(market, collToken, debtToken, rateMode, coll, debt, owner) {
+async function createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner) {
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    let marketAddress = market;
+
+    if (useDefaultMarket) {
+        marketAddress = addresses[chainId].AAVE_V3_MARKET;
+    }
+
     const [senderAcc, proxy] = await getSender(owner);
 
-    const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
-    const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
+    const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken, chainId);
+    const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken, chainId);
 
     // set coll balance for the user
-    await setBalance(collTokenData.address, owner, coll);
+    await setBalance(collTokenData.address, owner, collAmount);
 
     // approve coll asset for proxy to pull
     await approve(collTokenData.address, proxy.address, owner);
 
-    const amountColl = hre.ethers.utils.parseUnits(coll.toString(), collTokenData.decimals);
-    const amountDebt = hre.ethers.utils.parseUnits(debt.toString(), debtTokenData.decimals);
+    const amountColl = hre.ethers.utils.parseUnits(collAmount.toString(), collTokenData.decimals);
+    const amountDebt = hre.ethers.utils.parseUnits(debtAmount.toString(), debtTokenData.decimals);
 
-    const infos = await getFullTokensInfo(market, [collTokenData.address, debtTokenData.address]);
+    const infos = await getFullTokensInfo(marketAddress, [collTokenData.address, debtTokenData.address]);
     const aaveCollInfo = infos[0];
     const aaveDebtInfo = infos[1];
 
     const supplyAction = new dfs.actions.aaveV3.AaveV3SupplyAction(
         false,
-        market,
+        marketAddress,
         amountColl.toString(),
         senderAcc._address,
         collTokenData.address,
@@ -48,7 +57,7 @@ async function createAaveV3Position(market, collToken, debtToken, rateMode, coll
 
     const borrowAction = new dfs.actions.aaveV3.AaveV3BorrowAction(
         false,
-        market,
+        marketAddress,
         amountDebt.toString(),
         senderAcc._address,
         rateMode.toString(),
@@ -66,7 +75,7 @@ async function createAaveV3Position(market, collToken, debtToken, rateMode, coll
 
     await executeAction("RecipeExecutor", functionData, proxy);
 
-    return await getLoanData(market, proxy.address);
+    return await getLoanData(marketAddress, proxy.address);
 }
 
 /**

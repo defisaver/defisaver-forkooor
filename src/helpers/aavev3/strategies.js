@@ -1,5 +1,6 @@
+const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToStrategy, subToAaveV3Automation } = require("../../utils");
+const { getSender, subToStrategy, subToAaveV3Automation, addresses } = require("../../utils");
 const { getFullTokensInfo } = require("./view");
 const { getAssetInfo } = require("@defisaver/tokens");
 
@@ -77,40 +78,51 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
 
 /**
  * Subscribes to Aave V3 Close To Coll strategy
+ * @param {boolean} useDefaultMarket whether to use the default market or not
  * @param {string} market aaveV3 market address
  * @param {string} owner proxy owner
- * @param {string} triggerBaseAsset trigger base asset
- * @param {string} triggerQuoteAsset trigger quote asset
+ * @param {string} triggerBaseAssetSymbol trigger base asset symbol
+ * @param {string} triggerQuoteAssetSymbol trigger quote asset symbol
  * @param {number} targetPrice trigger price
- * @param {number} priceState 1 for UNDER, 0 for OVER
+ * @param {number} priceState 'under' or 'over'
  * @param {string} collAssetSymbol symbol of the collateral asset
  * @param {string} debtAssetSymbol symbol of the debt asset
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveCloseToCollStrategy(
+    useDefaultMarket,
     market,
     owner,
-    triggerBaseAsset,
-    triggerQuoteAsset,
+    triggerBaseAssetSymbol,
+    triggerQuoteAssetSymbol,
     targetPrice,
     priceState,
     collAssetSymbol,
     debtAssetSymbol
 ) {
     try {
+        const { chainId } = await hre.ethers.provider.getNetwork();
         const [, proxy] = await getSender(owner);
 
+        let marketAddress = market;
+
+        if (useDefaultMarket) {
+            marketAddress = addresses[chainId].AAVE_V3_MARKET;
+        }
+
+        const collTokenData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
+        const debtTokenData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+        const triggerBaseAssetData = getAssetInfo(triggerBaseAssetSymbol === "ETH" ? "WETH" : triggerBaseAssetSymbol, chainId);
+        const triggerQuoteAssetData = getAssetInfo(triggerQuoteAssetSymbol === "ETH" ? "WETH" : triggerQuoteAssetSymbol, chainId);
+
         const triggerData = {
-            baseTokenAddress: triggerBaseAsset,
-            quoteTokenAddress: triggerQuoteAsset,
+            baseTokenAddress: triggerBaseAssetData.address,
+            quoteTokenAddress: triggerQuoteAssetData.address,
             price: targetPrice,
-            ratioState: (priceState === 1) ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER
+            ratioState: (priceState.toString().toLowerCase() === "under") ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER
         };
 
-        const collTokenData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol);
-        const debtTokenData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol);
-
-        const infos = await getFullTokensInfo(market, [collTokenData.address, debtTokenData.address]);
+        const infos = await getFullTokensInfo(marketAddress, [collTokenData.address, debtTokenData.address]);
         const aaveCollInfo = infos[0];
         const aaveDebtInfo = infos[1];
 
@@ -121,8 +133,13 @@ async function subAaveCloseToCollStrategy(
             debtAssetId: aaveDebtInfo.assetId
         };
 
-        // TODO: mainent bundle hardcoded for now, add support for other networks
-        const bundleId = 13;
+        let bundleId = automationSdk.enums.Bundles.MainnetIds.AAVE_V3_CLOSE_TO_COLLATERAL;
+
+        if (chainId === 42161) {
+            bundleId = automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_CLOSE_TO_COLLATERAL;
+        } else if (chainId === 10) {
+            bundleId = automationSdk.enums.Bundles.OptimismIds.AAVE_V3_CLOSE_TO_COLLATERAL;
+        }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAsset(
             bundleId,

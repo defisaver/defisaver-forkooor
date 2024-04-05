@@ -178,6 +178,10 @@ router.post("/get-position",
  *              forkId:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *              useDefaultMarket:
+ *                type: boolean
+ *                example: true
+ *                description: "If true, the default market will be used, ignoring the value of market parameter"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -192,11 +196,12 @@ router.post("/get-position",
  *                example: "DAI"
  *              rateMode:
  *                type: number
+ *                description: "2 For variable rate and 1 for stable rate"
  *                example: 2
- *              coll:
+ *              collAmount:
  *                type: number
  *                example: 2
- *              debt:
+ *              debtAmount:
  *                type: number
  *                example: 2000
  *     responses:
@@ -290,7 +295,7 @@ router.post("/get-position",
  *                   type: string
  */
 router.post("/create",
-    body(["forkId", "market", "collToken", "debtToken", "rateMode", "coll", "debt", "owner"]).notEmpty(),
+    body(["forkId", "useDefaultMarket", "market", "collToken", "debtToken", "rateMode", "collAmount", "debtAmount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -298,11 +303,11 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
+        const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
 
-        createAaveV3Position(market, collToken, debtToken, rateMode, coll, debt, owner)
+        createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner)
             .then(pos => {
                 res.status(200).send(pos);
             })

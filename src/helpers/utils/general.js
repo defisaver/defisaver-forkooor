@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 const hre = require("hardhat");
 const axios = require("axios");
 
@@ -53,12 +54,11 @@ async function setUpBotAccounts(forkId, botAccounts = []) {
  * @returns {Object} returns timestamp before the change and updated timestamp
  */
 async function timeTravel(forkId, timeIncrease) {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://virtual.mainnet.rpc.tenderly.co/${forkId}`);
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
     await hre.ethers.provider.send("evm_increaseTime", [timeIncrease]);
-    await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
     const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
     return { oldTimestamp, newTimestamp };
@@ -72,12 +72,28 @@ async function timeTravel(forkId, timeIncrease) {
  * @returns {string} Tenderly fork id of the newly created fork
  */
 async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
-    // eslint-disable-next-line camelcase
-    const body = { network_id: chainId };
-    const headers = getHeaders(tenderlyAccessKey);
-    const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork`, body, { headers });
+    const body = {
+        slug: "",
+        displayName: "DFS Simulation",
+        description: "",
+        networkConfig: {
+            networkId: chainId.toString(),
+            blockNumber: "latest",
+            chainConfig: {
+                chainId: chainId.toString()
+            },
+            baseFeePerGas: "1"
+        },
+        explorerPage: "ENABLED",
+        syncState: false
+    };
 
-    return forkRes.data.simulation_fork.id;
+    const headers = getHeaders(tenderlyAccessKey);
+
+    const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/testnet/container`, body, { headers });
+
+    console.log(forkRes);
+    return forkRes.data;
 }
 
 /**
@@ -88,14 +104,17 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
  * @returns {string} Tenderly fork id of the newly created fork
  */
 async function cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey) {
-    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/clone-fork`;
+    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/testnet/clone`;
 
     // eslint-disable-next-line camelcase
-    const body = { fork_id: cloningForkId };
+    const body = {
+        srcContainerId: cloningForkId,
+        dstContainerDisplayName: ""
+    };
     const headers = getHeaders(tenderlyAccessKey);
     const forkRes = await axios.post(url, body, { headers });
 
-    return forkRes.data.simulation_fork.id;
+    return forkRes.data;
 }
 
 /**

@@ -64,7 +64,8 @@ router.post("/new-fork", async (req, res) => {
     try {
         const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts } = req.body;
 
-        const forkId = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
+        const forkInfoObject = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
+        const forkId = forkInfoObject.container.connectivityConfig.endpoints[0].id;
 
         await setupFork(forkId);
         await topUpOwner(forkId);
@@ -135,7 +136,8 @@ router.post("/clone-fork", async (req, res) => {
     try {
         const { cloningForkId, tenderlyProject, tenderlyAccessKey, botAccounts } = req.body;
 
-        const forkId = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey);
+        const forkInfoObject = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey);
+        const forkId = forkInfoObject.container.connectivityConfig.endpoints[0].id;
 
         await setupFork(forkId);
         await topUpOwner(forkId);
@@ -268,6 +270,7 @@ router.post("/set-bot-auth", async (req, res) => {
  */
 router.post("/set-safe-thresholds", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, safes, thresholds } = req.body;
 

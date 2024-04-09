@@ -59,6 +59,7 @@ const addresses = {
  */
 function getHeaders(tenderlyAccessKey) {
     return {
+        accept: "*/*",
         "Content-Type": "application/json",
         "X-Access-Key": tenderlyAccessKey
     };
@@ -217,7 +218,7 @@ async function topUpAccount(address, amount) {
  * @returns {void}
  */
 async function setupFork(forkId, accounts = []) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://virtual.mainnet.rpc.tenderly.co/${forkId}`);
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
     }));
@@ -231,7 +232,7 @@ async function setupFork(forkId, accounts = []) {
  * @returns {void}
  */
 async function lowerSafesThreshold(forkId, safes, thresholds) {
-    const provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+    const provider = await hre.ethers.getDefaultProvider(`https://virtual.mainnet.rpc.tenderly.co/${forkId}`);
     const thresholdSlot = toBytes32(hre.ethers.utils.parseUnits("4", 0)).toString();
 
     for (let i = 0; i < safes.length; i++) {
@@ -294,7 +295,6 @@ async function setBalance(tokenAddr, userAddr, amount) {
         );
     }
     await hre.ethers.provider.send("tenderly_setStorageAt", [tokenAddr, index.toString(), toBytes32(value).toString()]);
-    await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
 
     /**
      * @description

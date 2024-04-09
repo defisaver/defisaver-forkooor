@@ -65,13 +65,13 @@ router.post("/new-fork", async (req, res) => {
         const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts } = req.body;
 
         const forkInfoObject = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
-        const forkId = forkInfoObject.container.connectivityConfig.endpoints[0].id;
+        const forkId = forkInfoObject.connectivityConfig.endpoints[0].id;
 
         await setupFork(forkId);
         await topUpOwner(forkId);
         await setUpBotAccounts(forkId, botAccounts);
 
-        resObj = { forkId };
+        resObj = { forkInfoObject };
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to create a new fork with error : ${err.toString()}` };
@@ -137,13 +137,14 @@ router.post("/clone-fork", async (req, res) => {
         const { cloningForkId, tenderlyProject, tenderlyAccessKey, botAccounts } = req.body;
 
         const forkInfoObject = await cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey);
-        const forkId = forkInfoObject.container.connectivityConfig.endpoints[0].id;
+
+        const forkId = forkInfoObject.connectivityConfig.endpoints[0].id;
 
         await setupFork(forkId);
         await topUpOwner(forkId);
         await setUpBotAccounts(forkId, botAccounts);
 
-        resObj = { forkId };
+        resObj = { forkInfoObject };
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to clone a fork with error : ${err.toString()}` };

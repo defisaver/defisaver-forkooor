@@ -92,8 +92,7 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
 
     const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/testnet/container`, body, { headers });
 
-    console.log(forkRes);
-    return forkRes.data;
+    return forkRes.data.container;
 }
 
 /**

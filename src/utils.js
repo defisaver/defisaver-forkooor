@@ -5,6 +5,8 @@ const {
 } = require("./abi/general");
 const { sparkSubProxyAbi } = require("./abi/spark/abis");
 
+require("dotenv-safe").config();
+
 const storageSlots = require("../src/storageSlots.json");
 const { aaveV3SubProxyAbi } = require("./abi/aaveV3/abis");
 const { mcdSubProxyAbi } = require("./abi/maker/views");
@@ -18,6 +20,7 @@ const addresses = {
         OWNER_ACC: "0xBc841B0dE0b93205e912CFBBd1D0c160A1ec6F00",
         PROXY_REGISTRY: "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
         SUB_PROXY: "0x88B8cEb76b88Ee0Fb7160E6e2Ad86055a32D72d4",
+        WETH_ADDR: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
         SPARK_SUB_PROXY: "0x3730bb1f58087D02Ccf7E0B6696755f588E17A03",
         AAVE_V3_SUB_PROXY: "0x7D2250A5CC1b32670d23FcA14D08fF3dC6230f96",
@@ -26,7 +29,16 @@ const addresses = {
         COMP_V3_SUB_PROXY: "0x39Fce916C420320138dBc1947784667b5Ad88df5",
         LIQUITY_LEVERAGE_MANAGEMENT_SUB_PROXY: "0xE2f4A4629FbbC444964A16438329288C66551c30",
         AAVE_V3_VIEW: "0x485416D87B6B6B98259c32E789D4f7Ce4CD2959c",
-        AAVE_V3_MARKET: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+        AAVE_V3_MARKET: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e",
+        USDC_ADDR: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        WBTC_ADDR: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+        LUSD_ADDR: "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+        SAFE_FACTORY: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+        SAFE_SINGLETON: "0x41675C099F32341bf84BFc5382aF534df5C7461a",
+
+        // Tenderly fork deployment addresses
+        RECIPE_EXECUTOR_TX_RELAY: "0x8D9cDA62DC7Bf75f687c6C8729ABB51ac82E20d5",
+        TX_RELAY_EXECUTOR: "0xb3d3dFf3d68539F6a1bb51e56B7dC8d515aE8978"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -36,7 +48,8 @@ const addresses = {
         DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
         AAVE_V3_SUB_PROXY: "0xa950a534a6AB01D1FF5C6C82E5E7F515c19500e9",
         AAVE_V3_VIEW: "0x1BD33a66791ef6278f6d88503F1e65bEbAED59da",
-        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb"
+        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+        USDC_ADDR: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
     },
     42161: {
         REGISTRY_ADDR: "0xBF1CaC12DB60819Bfa71A328282ecbc1D40443aA",
@@ -48,7 +61,8 @@ const addresses = {
         COMP_V3_SUB_PROXY: "0x2F368325C53656BBEE6BDE1C04a39eEd717F1E43",
         AAVE_V3_SUB_PROXY: "0x967b6dFd1485C30521F8311e39E60B9c4D4b6Dbf",
         AAVE_V3_VIEW: "0x35a329dda803ecced333647d7e6c14bafb14fe8a",
-        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb"
+        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+        USDC_ADDR: "0x7F5c764cBc14f9669B88837ca1490cCa17c31607"
     }
 };
 
@@ -476,6 +490,20 @@ async function subToLiquityLeverageManagementAutomation(proxy, strategySub) {
     return latestSubId;
 }
 
+/**
+ * Return a signer using a test account with private key
+ * @param {number} accountNumber test account number [1-5]
+ * @returns {Object} ethers.Signer object
+ */
+async function getTestSignerUsingPrivateKey(accountNumber) {
+    if (accountNumber < 1 || accountNumber > 5) {
+        throw new Error("Invalid account number");
+    }
+    const signerWallet = new hre.ethers.Wallet(process.env[`TEST_MAINNET_PRIVATE_KEY_${accountNumber.toString()}`]);
+
+    return signerWallet.connect(hre.ethers.provider);
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -496,5 +524,6 @@ module.exports = {
     subToMcdAutomation,
     subToLiquityLeverageManagementAutomation,
     isContract,
-    lowerSafesThreshold
+    lowerSafesThreshold,
+    getTestSignerUsingPrivateKey
 };

@@ -242,6 +242,104 @@ async function lowerSafesThreshold(forkId, safes, thresholds) {
 }
 
 /**
+ * Find balance slot info for a token
+ * @param {string} tokenAddress address of the token
+ * @returns {Object} slot info
+ */
+async function findBalancesSlot(tokenAddress) {
+    const slotObj = storageSlots[tokenAddress];
+
+    if (slotObj) {
+        return { isVyper: slotObj.isVyper, num: slotObj.num };
+    }
+
+    // eslint-disable-next-line func-style
+    const encode = (types, values) => hre.ethers.utils.defaultAbiCoder.encode(types, values);
+    const account = hre.ethers.constants.AddressZero;
+    const probeA = encode(["uint"], [1]);
+    const probeB = encode(["uint"], [2]);
+
+    const [signer] = await hre.ethers.getSigners();
+    const token = new hre.ethers.Contract(tokenAddress, erc20Abi, signer);
+
+    for (let i = 0; i < 100; i++) {
+        {
+            const probedSlot = hre.ethers.utils.keccak256(
+                encode(["address", "uint"], [account, i])
+            );
+
+            const prev = await hre.ethers.provider.send(
+                "eth_getStorageAt",
+                [tokenAddress, probedSlot, "latest"]
+            );
+
+            // make sure the probe will change the slot value
+            const probe = prev === probeA ? probeB : probeA;
+
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                probe
+            ]);
+
+            const balance = await token.balanceOf(account);
+
+            // reset to previous value
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                prev
+            ]);
+            if (balance.eq(hre.ethers.BigNumber.from(probe))) {
+                const result = { isVyper: false, num: i };
+
+                return result;
+            }
+        }
+        {
+            let probedSlot = hre.ethers.utils.keccak256(
+                encode(["uint", "address"], [i, account])
+            );
+
+
+            // remove padding for JSON RPC
+            while (probedSlot.startsWith("0x0")) {
+                probedSlot = `0x${probedSlot.slice(3)}`;
+            }
+            const prev = await hre.ethers.provider.send(
+                "eth_getStorageAt",
+                [tokenAddress, probedSlot, "latest"]
+            );
+
+            // make sure the probe will change the slot value
+            const probe = prev === probeA ? probeB : probeA;
+
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                probe
+            ]);
+
+            const balance = await token.balanceOf(account);
+
+
+            // reset to previous value
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                prev
+            ]);
+            if (balance.eq(hre.ethers.BigNumber.from(probe))) {
+                const result = { isVyper: true, num: i };
+
+                return result;
+            }
+        }
+    }
+    throw new Error("Failed to find balance storage slot");
+}
+
+/**
  * Grants a desired token balance to an address
  * @param {string} tokenAddr address of the ERC20 token
  * @param {string} userAddr address which we want to receive the desired amount of tokens
@@ -257,7 +355,6 @@ async function setBalance(tokenAddr, userAddr, amount) {
 
     const decimals = await erc20.decimals();
     const value = hre.ethers.utils.parseUnits(amount.toString(), decimals);
-    const inputTokenAddr = tokenAddr;
 
     try {
 
@@ -274,10 +371,10 @@ async function setBalance(tokenAddr, userAddr, amount) {
 
         // bojsa pls
     }
-    const slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
+    let slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
 
     if (!slotObj) {
-        throw new Error(`Token balance not changeable : ${inputTokenAddr} - ${chainId}`);
+        slotObj = await findBalancesSlot(tokenAddr.toString());
     }
     const slotInfo = { isVyper: slotObj.isVyper, num: slotObj.num };
     let index;
@@ -324,6 +421,7 @@ async function setBalance(tokenAddr, userAddr, amount) {
     //     }
     // }
 }
+
 
 /**
  * Get latest Subscription ID from SubStorage

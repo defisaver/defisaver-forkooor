@@ -262,7 +262,7 @@ async function findBalancesSlot(tokenAddress) {
     const [signer] = await hre.ethers.getSigners();
     const token = new hre.ethers.Contract(tokenAddress, erc20Abi, signer);
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 10; i++) {
         {
             const probedSlot = hre.ethers.utils.keccak256(
                 encode(["address", "uint"], [account, i])

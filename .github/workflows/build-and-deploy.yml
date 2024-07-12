@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: [self-hosted, be]
+    runs-on: ubuntu-latest
 
     env:
       DOCKER_COMPOSE_FILE: "compose.yaml"

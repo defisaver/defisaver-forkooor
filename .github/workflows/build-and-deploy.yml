@@ -1,4 +1,4 @@
-name: WebsiteV2 - Build and Deploy
+name: Forkoor - Build and Deploy
 
 on:
   workflow_dispatch:

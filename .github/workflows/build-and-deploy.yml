@@ -1,0 +1,35 @@
+name: WebsiteV2 - Build and Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      DOCKER_COMPOSE_FILE: "compose.yaml"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        if: ${{ github.event.inputs.action == 'build-and-deploy'}}
+        run: |
+          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} build
+
+      - name: Deploy Docker image on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.USER_NAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/ubuntu/app/defisaver-forkooor &&
+            git checkout main &&
+            git fetch --all &&
+            git pull origin main &&
+            docker compose up --build -d

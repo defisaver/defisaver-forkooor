@@ -3,7 +3,7 @@ name: WebsiteV2 - Build and Deploy
 on:
   workflow_dispatch:
   push:
-    branches: main
+    branches: fix/ci
 
 jobs:
   build-and-deploy:
@@ -16,11 +16,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Build Docker image
-        if: ${{ github.event.inputs.action == 'build-and-deploy'}}
-        run: |
-          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} build
-
       - name: Deploy Docker image on EC2
         uses: appleboy/ssh-action@master
         with:
@@ -28,6 +23,8 @@ jobs:
           username: ${{ secrets.USER_NAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            pwd
+            ls -al
             cd /home/ubuntu/app/defisaver-forkooor &&
             git checkout main &&
             git fetch --all &&

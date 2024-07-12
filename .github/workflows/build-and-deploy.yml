@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, be]
 
     env:
       DOCKER_COMPOSE_FILE: "compose.yaml"
@@ -15,11 +15,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Build Docker image
-        if: ${{ github.event.inputs.action == 'build-and-deploy'}}
-        run: |
-          docker-compose -f ${{ env.DOCKER_COMPOSE_FILE }} build
 
       - name: Deploy Docker image on EC2
         uses: appleboy/ssh-action@master

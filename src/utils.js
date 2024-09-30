@@ -1,7 +1,8 @@
 const hre = require("hardhat");
 
 const {
-    dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi
+    dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi, safeProxyFactoryAbi,
+    safeAbi, 
 } = require("./abi/general");
 const { sparkSubProxyAbi } = require("./abi/spark/abis");
 
@@ -9,6 +10,9 @@ const storageSlots = require("../src/storageSlots.json");
 const { aaveV3SubProxyAbi } = require("./abi/aaveV3/abis");
 const { mcdSubProxyAbi } = require("./abi/maker/views");
 const { liquityLeverageManagementSubProxyAbi } = require("./abi/liquity/abis");
+
+const SAFE_PROXY_FACTORY_ADDR = "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67";
+const SAFE_SINGLETON_ADDR = "0x41675C099F32341bf84BFc5382aF534df5C7461a";
 
 const addresses = {
     1: {
@@ -50,6 +54,47 @@ const addresses = {
     }
 };
 
+/** Create a new Safe for the senderAddress
+ * @param {string} senderAddress account that will be the owner of the safe
+ * @returns {string} created safe address
+ */
+async function createSafe(senderAddress) {
+    const abiCoder = new hre.ethers.utils.AbiCoder();
+
+    const safeProxyFactory = await hre.ethers.getContractAt(safeProxyFactoryAbi, SAFE_PROXY_FACTORY_ADDR);
+
+    const saltNonce = Date.now();
+    const setupData = [
+        [senderAddress], // owner
+        1, // threshold
+        hre.ethers.constants.AddressZero, // to module address
+        [], // data for module
+        hre.ethers.constants.AddressZero, // fallback handler
+        hre.ethers.constants.AddressZero, // payment token
+        0, // payment
+        hre.ethers.constants.AddressZero // payment receiver
+    ];
+
+    const safeInterface = await hre.ethers.getContractAt(safeAbi, SAFE_SINGLETON_ADDR);
+    const functionData = safeInterface.interface.encodeFunctionData(
+        "setup",
+        setupData
+    );
+
+    let receipt = await safeProxyFactory.createProxyWithNonce(
+        SAFE_SINGLETON_ADDR,
+        functionData,
+        saltNonce
+    );
+
+    receipt = await receipt.wait();
+
+    // fetch deployed safe addr
+    const safeAddr = abiCoder.decode(["address"], receipt.events.reverse()[0].topics[1]);
+
+    return safeAddr[0];
+}
+
 /**
  * Create a headers object needed for tenderly API
  * @param {string} tenderlyAccessKey access key for tenderly
@@ -90,14 +135,24 @@ async function getAddrFromRegistry(name) {
 }
 
 /**
- * Get an existing or build a new Proxy ethers.Contract object for an EOA
+ * Get an existing or build a new Safe/DsProxy ethers.Contract object for an EOA
  * @param {string} account proxy owner
+ * @param {boolean} isSafe whether to create a safe or dsproxy, defaults to safe wallet
  * @returns {Object} DSProxy ethers.Contract object
  */
-async function getProxy(account) {
+async function getProxy(account, isSafe = true) {
     const accSigner = await hre.ethers.getSigner(account);
     const { chainId } = await hre.ethers.provider.getNetwork();
     const [signer] = await hre.ethers.getSigners();
+
+    if (isSafe) {
+        const safeAddr = await createSafe(account);
+        const safe = await hre.ethers.getContractAt("ISafe", safeAddr);
+
+        console.log(`Safe created ${safeAddr}`);
+        return safe;
+    }
+
     let proxyRegistryContract = new hre.ethers.Contract(addresses[chainId].PROXY_REGISTRY, proxyRegistryAbi, signer);
     let proxyAddr = await proxyRegistryContract.proxies(account);
 

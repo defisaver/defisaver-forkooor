@@ -13,7 +13,7 @@ const morphoBlue = {
 /**
  * Create a MorphoBlue position for sender on his proxy (created if he doesn't have one)
  * @param {Object} marketParams MorphoBlue marketParams
- * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
  * @param {number} coll amount of collateral to be supplied (whole number)
  * @param {number} debt amount of debt to be generated (whole number)
  * @returns {Object} object that has users position data in it

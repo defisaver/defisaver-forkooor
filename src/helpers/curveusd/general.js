@@ -10,7 +10,7 @@ const { getUserData } = require("./view");
  * @param {string} controller Crvusd controller address
  * @param {number} coll amount of collateral to be supplied (whole number)
  * @param {number} debt amount of crvusd debt to be generated (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
  * @param {number} numberOfBands number of bands for creating a new curveusd position
  * @returns {Object} object that has users position data in it
  */

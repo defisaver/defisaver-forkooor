@@ -2,7 +2,7 @@ const hre = require("hardhat");
 
 const {
     dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi, safeProxyFactoryAbi,
-    safeAbi, 
+    safeAbi
 } = require("./abi/general");
 const { sparkSubProxyAbi } = require("./abi/spark/abis");
 
@@ -54,6 +54,15 @@ const addresses = {
     }
 };
 
+/**
+ * Returns true if the proxy is a Safe Smart wallet
+ * @param {Object} proxy a proxy object
+ * @returns {boolean} true if the proxy is a Safe Smart wallet
+ */
+function isProxySafe(proxy) {
+    return proxy.functions.nonce;
+}
+
 /** Create a new Safe for the senderAddress
  * @param {string} senderAddress account that will be the owner of the safe
  * @returns {string} created safe address
@@ -93,6 +102,67 @@ async function createSafe(senderAddress) {
     const safeAddr = abiCoder.decode(["address"], receipt.events.reverse()[0].topics[1]);
 
     return safeAddr[0];
+}
+
+/**
+ * Executes 1/1 safe tx without sig
+ * @param {string} senderAddress safe owner address
+ * @param {Object} safeInstance safe object instance
+ * @param {string} targetAddr target contract address for execution
+ * @param {Object} calldata calldata to send to target address
+ * @param {number} callType type of call (1 for delegateCall, 0 for call). Default to DelegateCall
+ * @param {number} ethValue eth value to send. Defaults to 0
+ * @returns {void}
+ */
+async function executeSafeTx(
+    senderAddress,
+    safeInstance,
+    targetAddr,
+    calldata,
+    callType = 1,
+    ethValue = 0
+) {
+    const abiCoder = new hre.ethers.utils.AbiCoder();
+
+    const nonce = await safeInstance.nonce();
+
+    const txHash = await safeInstance.getTransactionHash(
+        targetAddr, // to
+        ethValue, // eth value
+        calldata, // action calldata
+        callType, // 1 is delegate call
+        0, // safeTxGas
+        0, // baseGas
+        0, // gasPrice
+        hre.ethers.constants.AddressZero, // gasToken
+        hre.ethers.constants.AddressZero, // refundReceiver
+        nonce // nonce
+    );
+
+    console.log(`Tx hash of safe ${txHash}`);
+
+    // encode r and s
+    let sig = abiCoder.encode(["address", "bytes32"], [senderAddress, "0x0000000000000000000000000000000000000000000000000000000000000000"]);
+
+    // add v = 1
+    sig += "01";
+
+    // call safe function
+    const receipt = await safeInstance.execTransaction(
+        targetAddr,
+        ethValue,
+        calldata,
+        callType,
+        0,
+        0,
+        0,
+        hre.ethers.constants.AddressZero,
+        hre.ethers.constants.AddressZero,
+        sig,
+        { gasLimit: 8000000 }
+    );
+
+    return receipt;
 }
 
 /**
@@ -138,7 +208,7 @@ async function getAddrFromRegistry(name) {
  * Get an existing or build a new Safe/DsProxy ethers.Contract object for an EOA
  * @param {string} account proxy owner
  * @param {boolean} isSafe whether to create a safe or dsproxy, defaults to safe wallet
- * @returns {Object} DSProxy ethers.Contract object
+ * @returns {Object} Safe/DSProxy ethers.Contract object
  */
 async function getProxy(account, isSafe = true) {
     const accSigner = await hre.ethers.getSigner(account);
@@ -221,13 +291,28 @@ async function approve(tokenAddr, to, owner) {
  * @param {string} actionName name of the Contract we're invoking via proxy
  * @param {string} functionData dfs sdk action encoded for proxy
  * @param {Object} proxy DSProxy ethers.Contract object
- * @returns {void}
+ * @returns {Object} receipt of the transaction
  */
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 30000000 })
-        .then(e => e.wait());
+    let receipt;
+
+    if (isProxySafe(proxy)) {
+        receipt = await executeSafeTx(
+            proxy.signer.address,
+            proxy,
+            actionAddr,
+            functionData,
+            1,
+            0
+        );
+    } else {
+        receipt = await proxy["execute(address,bytes)"](actionAddr, functionData, {
+            gasLimit: 30000000
+        });
+    }
+    return receipt;
 }
 
 /**

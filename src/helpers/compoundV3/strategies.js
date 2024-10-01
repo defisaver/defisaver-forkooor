@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, addresses, getLatestSubId } = require("../../utils");
+const { getSender, addresses, getLatestSubId, executeActionFromProxy } = require("../../utils");
 const { compoundV3SubProxyAbi } = require("../../abi/compoundV3/abis");
 const { compoundV3SubProxyL2Abi } = require("../../abi/compoundV3/abis");
 
@@ -34,9 +34,7 @@ async function _subToCompoundV3Automation(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -54,44 +52,39 @@ async function _subToCompoundV3Automation(proxy, strategySub) {
  * @param {int} targetBoostRatio wanted ratio after boost
  * @param {boolean} boostEnabled enable boost
  * @param {boolean} isEOA is EOA subscription
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subCompoundV3AutomationStrategy(owner, market, baseToken, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, isEOA) {
+async function subCompoundV3AutomationStrategy(
+    owner,
+    market,
+    baseToken,
+    minRatio,
+    maxRatio,
+    targetRepayRatio,
+    targetBoostRatio,
+    boostEnabled,
+    isEOA,
+    proxyAddr,
+    useSafe = true
+) {
 
     try {
-        const [, proxy] = await getSender(owner);
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         const { chainId } = await hre.ethers.provider.getNetwork();
 
         let strategySub;
 
         if (chainId === 1) {
-
             strategySub = automationSdk.strategySubService.compoundV3Encode.leverageManagement(
                 market, baseToken, minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled, isEOA
             );
         } else {
-
-            const minRatio_ = hre.ethers.utils.parseUnits(minRatio.toString(), "16");
-            const maxRatio_ = hre.ethers.utils.parseUnits(maxRatio.toString(), "16");
-            const targetRepayRatio_ = hre.ethers.utils.parseUnits(targetRepayRatio.toString(), "16");
-            const targetBoostRatio_ = hre.ethers.utils.parseUnits(targetBoostRatio.toString(), "16");
-
-            const minRatioBytes = hre.ethers.utils.zeroPad(hre.ethers.BigNumber.from(minRatio_), 16);
-            const maxRatioBytes = hre.ethers.utils.zeroPad(hre.ethers.BigNumber.from(maxRatio_), 16);
-            const optimalRatioBoostBytes = hre.ethers.utils.zeroPad(hre.ethers.BigNumber.from(targetBoostRatio_), 16);
-            const optimalRatioRepayBytes = hre.ethers.utils.zeroPad(hre.ethers.BigNumber.from(targetRepayRatio_), 16);
-            const boostEnabledBytes = boostEnabled ? "0x01" : "0x00";
-
-            strategySub = hre.ethers.utils.concat([
-                market,
-                baseToken,
-                minRatioBytes,
-                maxRatioBytes,
-                optimalRatioBoostBytes,
-                optimalRatioRepayBytes,
-                boostEnabledBytes
-            ]);
+            strategySub = automationSdk.strategySubService.compoundV3L2Encode.leverageManagement(
+                market, baseToken, minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
+            );
         }
 
         const subId = await _subToCompoundV3Automation(proxy, strategySub);

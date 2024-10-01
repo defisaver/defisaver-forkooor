@@ -1,6 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
+/* eslint-disable consistent-return */
 const express = require("express");
-const { setupFork, getProxy, isContract } = require("../../utils");
+const { setupFork, getProxy, isContract, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { getLoanData } = require("../../helpers/compoundV3/view");
 const {
     createCompoundV3Position
@@ -148,6 +149,7 @@ router.post("/get-position",
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              collToken:
  *                type: string
  *                example: "WETH"
@@ -160,6 +162,14 @@ router.post("/get-position",
  *              borrowAmount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -231,7 +241,7 @@ router.post("/create",
 
         await setupFork(forkId, [owner]);
 
-        createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner)
+        createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

@@ -1,8 +1,9 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getProxy, isContract} = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { getLoanData } = require("../../helpers/spark/view");
 const { createSparkPosition, sparkSupply, sparkWithdraw, sparkBorrow, sparkPayback } = require("../../helpers/spark/general");
+const { get } = require("express/lib/response");
 
 const router = express.Router();
 
@@ -127,19 +128,9 @@ router.post("/get-position", async (req, res) => {
     try {
         const { forkId, market, owner } = req.body;
 
-        let proxy = owner;
+        await setupFork(forkId);
 
-        const isContractResp = await isContract(owner);
-
-        await setupFork(forkId); // Needs to set up fork before fetching proxy
-
-        if (!isContractResp) {
-            const proxyContract = await getProxy(owner);
-
-            proxy = proxyContract.address;
-        }
-
-        const pos = await getLoanData(market, proxy);
+        const pos = await getLoanData(market, owner);
 
         res.status(200).send(pos);
     } catch (err) {
@@ -173,6 +164,7 @@ router.post("/get-position", async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              collToken:
  *                type: string
  *                example: "ETH"
@@ -188,6 +180,14 @@ router.post("/get-position", async (req, res) => {
  *              debt:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -285,7 +285,7 @@ router.post("/create", async (req, res) => {
         const { forkId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner);
+        const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -325,6 +325,14 @@ router.post("/create", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -422,7 +430,7 @@ router.post("/supply", async (req, res) => {
         const { forkId, market, collToken, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkSupply(market, collToken, amount, owner);
+        const pos = await sparkSupply(market, collToken, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -462,6 +470,14 @@ router.post("/supply", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -559,7 +575,7 @@ router.post("/withdraw", async (req, res) => {
         const { forkId, market, collToken, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkWithdraw(market, collToken, amount, owner);
+        const pos = await sparkWithdraw(market, collToken, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -602,6 +618,14 @@ router.post("/withdraw", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -699,7 +723,7 @@ router.post("/borrow", async (req, res) => {
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkBorrow(market, debtToken, rateMode, amount, owner);
+        const pos = await sparkBorrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -742,6 +766,14 @@ router.post("/borrow", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -839,7 +871,7 @@ router.post("/payback", async (req, res) => {
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkPayback(market, debtToken, rateMode, amount, owner);
+        const pos = await sparkPayback(market, debtToken, rateMode, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
 
         res.status(200).send(pos);
     } catch (err) {

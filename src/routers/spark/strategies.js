@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { subSparkDfsAutomationStrategy } = require("../../helpers/spark/strategies");
 
 const router = express.Router();
@@ -42,6 +42,14 @@ const router = express.Router();
  *              boostEnabled:
  *                type: boolean
  *                example: true
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -77,7 +85,9 @@ router.post("/dfs-automation", async (req, res) => {
 
         await setupFork(forkId, [owner]);
 
-        const sub = await subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled);
+        const sub = await subSparkDfsAutomationStrategy(
+            owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req.body), defaultsToSafe(req.body)
+        );
 
         res.status(200).send(sub);
     } catch (err) {

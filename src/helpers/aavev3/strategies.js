@@ -215,7 +215,7 @@ async function subAaveV3OpenOrderFromCollateral(
                 baseTokenAddress: collTokenData.address,
                 quoteTokenAddress: debtTokenData.address,
                 price: triggerPrice,
-                state: (triggerState.toString().toLowerCase() === "under") ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
+                state: (triggerState.toString().toLowerCase() === "under") ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER
             },
             {
                 collAsset: collTokenData.address,
@@ -224,8 +224,8 @@ async function subAaveV3OpenOrderFromCollateral(
                 debtAssetId: aaveDebtInfo.assetId,
                 marketAddr: marketAddress,
                 targetRatio,
-                useOnBehalf: false,
-            },
+                useOnBehalf: false
+            }
         );
 
         const subId = await subToStrategy(proxy, strategySub);

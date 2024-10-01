@@ -143,19 +143,12 @@ router.post("/get-position",
         }
 
         const { forkId, market, owner } = req.body;
-        let proxy = owner;
 
-        const isContractPromise = isContract(owner);
+        console.log("owner", owner);
 
         setupFork(forkId);
 
-        if (!await isContractPromise) {
-            const proxyContract = await getProxy(owner, defaultsToSafeInRequest(req));
-
-            proxy = proxyContract.address;
-        }
-
-        getLoanData(market, proxy)
+        getLoanData(market, owner)
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {

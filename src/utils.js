@@ -90,7 +90,9 @@ async function createSafe(senderAddress) {
         setupData
     );
 
-    let receipt = await safeProxyFactory.createProxyWithNonce(
+    const accSigner = await hre.ethers.getSigner(senderAddress);
+
+    let receipt = await safeProxyFactory.connect(accSigner).createProxyWithNonce(
         SAFE_SINGLETON_ADDR,
         functionData,
         saltNonce
@@ -106,7 +108,6 @@ async function createSafe(senderAddress) {
 
 /**
  * Executes 1/1 safe tx without sig
- * @param {string} senderAddress safe owner address
  * @param {Object} safeInstance safe object instance
  * @param {string} targetAddr target contract address for execution
  * @param {Object} calldata calldata to send to target address
@@ -115,7 +116,6 @@ async function createSafe(senderAddress) {
  * @returns {void}
  */
 async function executeSafeTx(
-    senderAddress,
     safeInstance,
     targetAddr,
     calldata,
@@ -141,14 +141,17 @@ async function executeSafeTx(
 
     console.log(`Tx hash of safe ${txHash}`);
 
+    const owners = await safeInstance.getOwners();
+    const ownerAsSigner = await hre.ethers.provider.getSigner(owners[0]);
+
     // encode r and s
-    let sig = abiCoder.encode(["address", "bytes32"], [senderAddress, "0x0000000000000000000000000000000000000000000000000000000000000000"]);
+    let sig = abiCoder.encode(["address", "bytes32"], [owners[0], "0x0000000000000000000000000000000000000000000000000000000000000000"]);
 
     // add v = 1
     sig += "01";
 
     // call safe function
-    const receipt = await safeInstance.execTransaction(
+    const receipt = await safeInstance.connect(ownerAsSigner).execTransaction(
         targetAddr,
         ethValue,
         calldata,
@@ -301,7 +304,6 @@ async function executeAction(actionName, functionData, proxy) {
 
     if (isProxySafe(proxy)) {
         receipt = await executeSafeTx(
-            proxy.signer.address,
             proxy,
             actionAddr,
             functionData,
@@ -313,7 +315,12 @@ async function executeAction(actionName, functionData, proxy) {
             gasLimit: 30000000
         });
     }
-    return receipt;
+
+    const txData = await hre.ethers.provider.getTransactionReceipt(receipt.hash);
+
+    if (txData.status !== 1) {
+        throw new Error(`Action execution failed: ${actionName}`);
+    }
 }
 
 /**

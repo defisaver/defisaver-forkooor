@@ -86,7 +86,7 @@ router.post("/dfs-automation", async (req, res) => {
         await setupFork(forkId, [owner]);
 
         const sub = await subSparkDfsAutomationStrategy(
-            owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req.body), defaultsToSafe(req.body)
+            owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)
         );
 
         res.status(200).send(sub);

@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getProxy, isContract } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { getUserData } = require("../../helpers/morpho-blue/view");
 const { createMorphoBluePosition } = require("../../helpers/morpho-blue/general");
@@ -52,6 +52,14 @@ const router = express.Router();
  *              debt:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -105,7 +113,7 @@ router.post("/create",
         const { forkId, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
 
         await setupFork(forkId, [owner]);
-        createMorphoBluePosition({ loanToken, collateralToken, oracle, irm, lltv }, owner, coll, debt)
+        createMorphoBluePosition({ loanToken, collateralToken, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -200,17 +208,10 @@ router.post("/get-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
         const { forkId, loanToken, collateralToken, oracle, irm, lltv, owner } = req.body;
-        let proxy = owner;
-        const isContractPromise = isContract(owner);
 
         setupFork(forkId);
 
-        if (!await isContractPromise) {
-            const proxyContract = await getProxy(owner);
-
-            proxy = proxyContract.address;
-        }
-        getUserData({ loanToken, collateralToken, oracle, irm, lltv }, proxy)
+        getUserData({ loanToken, collateralToken, oracle, irm, lltv }, owner)
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {

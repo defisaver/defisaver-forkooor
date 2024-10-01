@@ -285,7 +285,7 @@ router.post("/create", async (req, res) => {
         const { forkId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
+        const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -430,7 +430,7 @@ router.post("/supply", async (req, res) => {
         const { forkId, market, collToken, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkSupply(market, collToken, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
+        const pos = await sparkSupply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -575,7 +575,7 @@ router.post("/withdraw", async (req, res) => {
         const { forkId, market, collToken, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkWithdraw(market, collToken, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
+        const pos = await sparkWithdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -723,7 +723,7 @@ router.post("/borrow", async (req, res) => {
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkBorrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
+        const pos = await sparkBorrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -871,7 +871,7 @@ router.post("/payback", async (req, res) => {
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const pos = await sparkPayback(market, debtToken, rateMode, amount, owner, getWalletAddr(req.body), defaultsToSafe(req.body));
+        const pos = await sparkPayback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {

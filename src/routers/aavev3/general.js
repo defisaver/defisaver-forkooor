@@ -3,7 +3,7 @@
 const hre = require("hardhat");
 const express = require("express");
 const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
-const { getLoanData } = require("../../helpers/aavev3/view");
+const { getLoanData, getSafetyRatio } = require("../../helpers/aavev3/view");
 const {
     aaveV3Supply,
     aaveV3Withdraw,
@@ -151,6 +151,76 @@ router.post("/get-position",
                 res.status(500).send({ error: `Failed to fetch position info with error : ${err.toString()}` });
             });
     });
+
+/**
+ * @swagger
+ * /aave/v3/general/get-safety-ratio:
+ *   post:
+ *     summary: Fetch safety ratio for user's AaveV3 position on a fork
+ *     tags:
+ *      - AaveV3
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *              owner:
+ *                type: string
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                description: "User owning the position. Specify either eoa, if eoa position, or wallet address if position is owned by a wallet"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ratio:
+ *                   type: string
+ *                   example: "1214255397822228163"
+ *                   description: "Ratio of the user's assets to liabilities"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/get-safety-ratio",
+    body(["forkId", "market", "owner"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { forkId, market, owner } = req.body;
+
+        setupFork(forkId);
+
+        getSafetyRatio(market, owner)
+            .then(pos => {
+                res.status(200).send(pos);
+            }).catch(err => {
+                res.status(500).send({ error: `Failed to fetch safety ratio info with error : ${err.toString()}` });
+            });
+    });
+
 
 /**
  * @swagger

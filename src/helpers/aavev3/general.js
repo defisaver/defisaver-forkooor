@@ -14,9 +14,10 @@ const { getFullTokensInfo, getLoanData } = require("./view");
  * @param {number} collAmount amount of collateral to be supplied (whole number)
  * @param {number} debtAmount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
  * @returns {Object} object that has users position data in it
  */
-async function createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner) {
+async function createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, useSafe = true) {
     const { chainId } = await hre.ethers.provider.getNetwork();
 
     let marketAddress = market;
@@ -25,7 +26,7 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
         marketAddress = addresses[chainId].AAVE_V3_MARKET;
     }
 
-    const [senderAcc, proxy] = await getSender(owner);
+    const [senderAcc, proxy] = await getSender(owner, useSafe);
 
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken, chainId);
     const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken, chainId);
@@ -84,10 +85,11 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
  * @param {string} collToken collateral token symbol
  * @param {number} amount amount of collateral to be supplied (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
  * @returns {Object} object that has users position data in it
  */
-async function aaveV3Supply(market, collToken, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function aaveV3Supply(market, collToken, amount, owner, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, useSafe);
 
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
 
@@ -117,10 +119,11 @@ async function aaveV3Supply(market, collToken, amount, owner) {
  * @param {string} collToken collateral token symbol
  * @param {number} amount amount of collateral to be withdrawnw (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
  * @returns {Object} object that has users position data in it
  */
-async function aaveV3Withdraw(market, collToken, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function aaveV3Withdraw(market, collToken, amount, owner, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, useSafe);
 
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
     const amountColl = hre.ethers.utils.parseUnits(amount.toString(), collTokenData.decimals);
@@ -143,10 +146,11 @@ async function aaveV3Withdraw(market, collToken, amount, owner) {
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
  * @returns {Object} object that has users position data in it
  */
-async function aaveV3Borrow(market, debtToken, rateMode, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function aaveV3Borrow(market, debtToken, rateMode, amount, owner, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, useSafe);
 
     const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
 
@@ -171,10 +175,11 @@ async function aaveV3Borrow(market, debtToken, rateMode, amount, owner) {
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be payed back (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
  * @returns {Object} object that has users position data in it
  */
-async function aaveV3Payback(market, debtToken, rateMode, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function aaveV3Payback(market, debtToken, rateMode, amount, owner, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, useSafe);
 
     const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
 

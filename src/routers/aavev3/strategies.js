@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupFork, defaultsToSafeInRequest } = require("../../utils");
 const { subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy, subAaveCloseToCollStrategy } = require("../../helpers/aavev3/strategies");
 const { body, validationResult } = require("express-validator");
 
@@ -66,6 +66,10 @@ const router = express.Router();
  *                      debtAssetId:
  *                          type: integer
  *                          example: 4
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -118,7 +122,8 @@ async (req, res) => {
     subAaveV3CloseWithMaximumGasPriceStrategy(
         owner, strategyOrBundleId,
         triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
-        subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId
+        subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId,
+        defaultsToSafeInRequest(req)
     ).then(sub => {
         res.status(201).send(sub);
     }).catch(err => {
@@ -181,6 +186,10 @@ async (req, res) => {
  *                      debtAssetSymbol:
  *                          type: string
  *                          example: "DAI"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -237,7 +246,8 @@ async (req, res) => {
         triggerData.price,
         triggerData.ratioState,
         subData.collAssetSymbol,
-        subData.debtAssetSymbol
+        subData.debtAssetSymbol,
+        defaultsToSafeInRequest(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -283,6 +293,10 @@ async (req, res) => {
  *              boostEnabled:
  *                 type: boolean
  *                 example: true
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -323,7 +337,7 @@ router.post("/dfs-automation", async (req, res) => {
 
         await setupFork(forkId, [owner]);
 
-        const sub = await subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled);
+        const sub = await subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, defaultsToSafeInRequest(req));
 
         res.status(200).send(sub);
     } catch (err) {

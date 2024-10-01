@@ -217,7 +217,7 @@ async function getProxy(account, isSafe = true) {
 
     if (isSafe) {
         const safeAddr = await createSafe(account);
-        const safe = await hre.ethers.getContractAt("ISafe", safeAddr);
+        const safe = await hre.ethers.getContractAt(safeAbi, safeAddr);
 
         console.log(`Safe created ${safeAddr}`);
         return safe;
@@ -250,15 +250,16 @@ async function isContract(address) {
 /**
  * Get sender account and his proxy
  * @param {string} owner the EOA which will be sending transactions and own the newly created vault
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
  * @returns {Object} object that has sender account and his proxy
  */
-async function getSender(owner) {
+async function getSender(owner, useSafe = true) {
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, useSafe);
 
     return [
         senderAcc,
@@ -712,6 +713,17 @@ async function subToLiquityLeverageManagementAutomation(proxy, strategySub) {
     return latestSubId;
 }
 
+/**
+ * Whether to default to Safe or use DSProxy
+ * @param {Object} req request object
+ * @returns {boolean} true if we should default to Safe
+ */
+function defaultsToSafeInRequest(req) {
+    const useDsProxy = req.body.walletType && req.body.walletType === "dsproxy";
+
+    return !useDsProxy;
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -732,5 +744,6 @@ module.exports = {
     subToMcdAutomation,
     subToLiquityLeverageManagementAutomation,
     isContract,
-    lowerSafesThreshold
+    lowerSafesThreshold,
+    defaultsToSafeInRequest
 };

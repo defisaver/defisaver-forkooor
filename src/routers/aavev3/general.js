@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getProxy, isContract } = require("../../utils");
+const { setupFork, getProxy, isContract, defaultsToSafeInRequest } = require("../../utils");
 const { getLoanData } = require("../../helpers/aavev3/view");
 const {
     aaveV3Supply,
@@ -39,6 +39,10 @@ const router = express.Router();
  *              owner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -146,7 +150,7 @@ router.post("/get-position",
         setupFork(forkId);
 
         if (!await isContractPromise) {
-            const proxyContract = await getProxy(owner);
+            const proxyContract = await getProxy(owner, defaultsToSafeInRequest(req));
 
             proxy = proxyContract.address;
         }
@@ -204,6 +208,10 @@ router.post("/get-position",
  *              debtAmount:
  *                type: number
  *                example: 2000
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -307,7 +315,7 @@ router.post("/create",
 
         await setupFork(forkId, [owner]);
 
-        createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner)
+        createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, defaultsToSafeInRequest(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -348,6 +356,10 @@ router.post("/create",
  *              amount:
  *                type: number
  *                example: 2
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -451,7 +463,7 @@ router.post("/supply",
 
         await setupFork(forkId, [owner]);
 
-        aaveV3Supply(market, collToken, amount, owner)
+        aaveV3Supply(market, collToken, amount, owner, defaultsToSafeInRequest(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -492,6 +504,10 @@ router.post("/supply",
  *              amount:
  *                type: number
  *                example: 2
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -594,7 +610,7 @@ router.post("/withdraw",
 
         await setupFork(forkId, [owner]);
 
-        aaveV3Withdraw(market, collToken, amount, owner)
+        aaveV3Withdraw(market, collToken, amount, owner, defaultsToSafeInRequest(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -637,6 +653,10 @@ router.post("/withdraw",
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -738,7 +758,7 @@ router.post("/borrow",
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        aaveV3Borrow(market, debtToken, rateMode, amount, owner)
+        aaveV3Borrow(market, debtToken, rateMode, amount, owner, defaultsToSafeInRequest(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -781,6 +801,10 @@ router.post("/borrow",
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -883,7 +907,7 @@ router.post("/payback",
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        aaveV3Payback(market, debtToken, rateMode, amount, owner)
+        aaveV3Payback(market, debtToken, rateMode, amount, owner, defaultsToSafeInRequest(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

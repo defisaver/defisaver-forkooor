@@ -168,8 +168,78 @@ async function subAaveCloseToCollStrategy(
     }
 }
 
+/**
+ * Subscribes to Aave V3 Close To Coll strategy bundle
+ * @param {boolean} useDefaultMarket whether to use the default market or not
+ * @param {string} market aaveV3 market address
+ * @param {string} owner proxy owner
+ * @param {number} bundleId bundle ID
+ * @param {number} triggerPrice trigger price
+ * @param {string} triggerState 'under' or 'over'
+ * @param {string} collAssetSymbol symbol of the collateral asset
+ * @param {string} debtAssetSymbol symbol of the debt asset
+ * @param {number} targetRatio target ratio
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subAaveV3OpenOrderFromCollateral(
+    useDefaultMarket,
+    market,
+    owner,
+    bundleId,
+    triggerPrice,
+    triggerState,
+    collAssetSymbol,
+    debtAssetSymbol,
+    targetRatio,
+    proxyAddr,
+    useSafe = true
+) {
+    try {
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+
+        const marketAddress = useDefaultMarket ? addresses[chainId].AAVE_V3_MARKET : market;
+        const collTokenData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
+        const debtTokenData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+
+        const infos = await getFullTokensInfo(marketAddress, [collTokenData.address, debtTokenData.address]);
+        const aaveCollInfo = infos[0];
+        const aaveDebtInfo = infos[1];
+
+        const strategySub = automationSdk.strategySubService.aaveV3Encode.openOrder(
+            bundleId,
+            true,
+            {
+                baseTokenAddress: collTokenData.address,
+                quoteTokenAddress: debtTokenData.address,
+                price: triggerPrice,
+                state: (triggerState.toString().toLowerCase() === "under") ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
+            },
+            {
+                collAsset: collTokenData.address,
+                collAssetId: aaveCollInfo.assetId,
+                debtAsset: debtTokenData.address,
+                debtAssetId: aaveDebtInfo.assetId,
+                marketAddr: marketAddress,
+                targetRatio,
+                useOnBehalf: false,
+            },
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
 module.exports = {
     subAaveV3CloseWithMaximumGasPriceStrategy,
     subAaveAutomationStrategy,
-    subAaveCloseToCollStrategy
+    subAaveCloseToCollStrategy,
+    subAaveV3OpenOrderFromCollateral
 };

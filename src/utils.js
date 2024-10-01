@@ -220,7 +220,7 @@ async function getProxy(account, proxyAddr = hre.ethers.constants.AddressZero, i
     const [signer] = await hre.ethers.getSigners();
 
     if (proxyAddr !== hre.ethers.constants.AddressZero) {
-        let proxy = await hre.ethers.Contract(proxyAddr, safeAbi, accSigner);
+        let proxy = new hre.ethers.Contract(proxyAddr, safeAbi, accSigner);
 
         try {
             await proxy.nonce();

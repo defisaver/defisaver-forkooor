@@ -12,7 +12,6 @@ const router = express.Router();
  *     summary: Subscribe to a DFS Automation strategy
  *     tags:
  *      - Spark
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint

@@ -14,7 +14,6 @@ const router = express.Router();
  *     summary: Subscribe to a Aave V3 Close With Maximum Gas Price strategy
  *     tags:
  *      - AaveV3
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -144,7 +143,6 @@ async (req, res) => {
  *     summary: Subscribe to a Aave V3 Close With Collateral strategy
  *     tags:
  *      - AaveV3
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -273,7 +271,6 @@ async (req, res) => {
  *     summary: Subscribe to a Aave Automation strategy
  *     tags:
  *      - AaveV3
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -372,7 +369,6 @@ router.post("/dfs-automation", async (req, res) => {
  *     summary: Subscribe to a Aave V3 Open Order from collateral strategy
  *     tags:
  *      - AaveV3
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint

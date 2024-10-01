@@ -15,7 +15,6 @@ const router = express.Router();
  *     summary: Subscribe to a CurveUsd Repay strategy
  *     tags:
  *      - CurveUsd
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -103,7 +102,6 @@ async (req, res) => {
  *     summary: Subscribe to a CurveUsd Repay strategy
  *     tags:
  *      - CurveUsd
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -190,7 +188,6 @@ async (req, res) => {
  *     summary: Subscribe to a CurveUsd Payback strategy
  *     tags:
  *      - CurveUsd
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint

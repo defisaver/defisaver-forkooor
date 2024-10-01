@@ -16,7 +16,6 @@ const router = express.Router();
  *     summary: Subscribe to a MorphoBlue Repay strategy
  *     tags:
  *      - MorphoBlue
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -125,7 +124,6 @@ async (req, res) => {
  *     summary: Subscribe to a MorphoBlue Boost strategy
  *     tags:
  *      - MorphoBlue
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint

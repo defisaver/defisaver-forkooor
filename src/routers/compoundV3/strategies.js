@@ -12,7 +12,6 @@ const router = express.Router();
  *     summary: Subscribe to a Compound V3 Automation strategy
  *     tags:
  *      - CompoundV3
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint

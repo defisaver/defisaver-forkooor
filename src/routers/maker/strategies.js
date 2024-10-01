@@ -13,7 +13,6 @@ const router = express.Router();
  *     summary: Subscribe to MCD Close to DAI strategy
  *     tags:
  *      - Maker
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -85,7 +84,6 @@ router.post("/close-to-dai", async (req, res) => {
  *     summary: Subscribe to a MCD Close to Coll strategy
  *     tags:
  *      - Maker
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -158,7 +156,6 @@ router.post("/close-to-coll", async (req, res) => {
  *     summary: Subscribe to a MCD Repay from smart savings bundle
  *     tags:
  *      - Maker
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -234,7 +231,6 @@ router.post("/smart-savings-repay", async (req, res) => {
  *     summary: Subscribe to a MCD Automation strategy
  *     tags:
  *      - Maker
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint

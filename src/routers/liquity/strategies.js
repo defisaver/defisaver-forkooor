@@ -17,7 +17,6 @@ const router = express.Router();
  *     summary: Subscribe to a Liquity Dsr Payback strategy
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -87,7 +86,6 @@ router.post("/dsr-payback", async (req, res) => {
  *     summary: Subscribe to a Liquity Dsr Supply strategy
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -157,7 +155,6 @@ router.post("/dsr-supply", async (req, res) => {
  *     summary: Subscribe to a Liquity Debt In Front strategy
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -227,7 +224,6 @@ router.post("/debt-in-front-repay", async (req, res) => {
  *     summary: Subscribe to a Liquity Leverage Management strategies
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint

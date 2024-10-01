@@ -156,7 +156,7 @@ router.post("/clone-fork", async (req, res) => {
  *     summary: Sets up bot accounts
  *     tags:
  *      - Utils
- *     description: Sets up bot accounts by  iving them ETH and adding them as bot caller on BotAuth contract
+ *     description: Sets up bot accounts by giving them ETH and adding them as bot caller on BotAuth contract
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -268,6 +268,7 @@ router.post("/set-bot-auth", async (req, res) => {
  */
 router.post("/set-safe-thresholds", async (req, res) => {
     let resObj;
+
     try {
         const { forkId, safes, thresholds } = req.body;
 
@@ -458,6 +459,10 @@ router.post("/set-token-balance", async (req, res) => {
  *              isProxyApproval:
  *                type: boolean
  *                example: true
+ *              proxyAddr:
+ *                type: string
+ *                example: "0x000000000000000000000000000000000000dEaD"
+ *                description: Address of the proxy contract if isProxyApproval is true
  *     responses:
  *       '200':
  *         description: OK
@@ -478,6 +483,9 @@ router.post("/set-token-balance", async (req, res) => {
  *                 isProxyApproval:
  *                   type: boolean
  *                   example: true
+ *                 proxyAddr:
+ *                   type: string
+ *                   example: "0x000000000000000000000000000000000000dEaD"
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -492,17 +500,11 @@ router.post("/give-approval", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, token, owner, to, isProxyApproval } = req.body;
+        const { forkId, token, owner, to, isProxyApproval, proxyAddr } = req.body;
 
         await setupFork(forkId);
 
-        let giveApprovalTo = to;
-
-        if (isProxyApproval) {
-            const proxyContract = await getProxy(owner);
-
-            giveApprovalTo = proxyContract.address;
-        }
+        const giveApprovalTo = isProxyApproval ? proxyAddr : to;
 
         await approve(token, giveApprovalTo, owner);
 

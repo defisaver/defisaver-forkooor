@@ -210,31 +210,43 @@ async function getAddrFromRegistry(name) {
 /**
  * Get an existing or build a new Safe/DsProxy ethers.Contract object for an EOA
  * @param {string} account proxy owner
- * @param {boolean} isSafe whether to create a safe or dsproxy, defaults to safe wallet
+ * @param {string} proxyAddr address of the proxy that will be used for the position, if not provided a new proxy will be created
+ * @param {boolean} isSafe whether to create a safe or dsproxy if proxyAddr is not provided. Defaults to safe
  * @returns {Object} Safe/DSProxy ethers.Contract object
  */
-async function getProxy(account, isSafe = true) {
+async function getProxy(account, proxyAddr = hre.ethers.constants.AddressZero, isSafe = true) {
     const accSigner = await hre.ethers.getSigner(account);
     const { chainId } = await hre.ethers.provider.getNetwork();
     const [signer] = await hre.ethers.getSigners();
 
+    if (proxyAddr !== hre.ethers.constants.AddressZero) {
+        let proxy = await hre.ethers.Contract(proxyAddr, safeAbi, accSigner);
+
+        try {
+            await proxy.nonce();
+        } catch (error) {
+            proxy = new hre.ethers.Contract(proxyAddr, proxyAbi, accSigner);
+        }
+        return proxy;
+    }
+
     if (isSafe) {
         const safeAddr = await createSafe(account);
-        const safe = await hre.ethers.getContractAt(safeAbi, safeAddr);
+        const safe = new hre.ethers.Contract(safeAddr, safeAbi, accSigner);
 
         console.log(`Safe created ${safeAddr}`);
         return safe;
     }
 
-    let proxyRegistryContract = new hre.ethers.Contract(addresses[chainId].PROXY_REGISTRY, proxyRegistryAbi, signer);
-    let proxyAddr = await proxyRegistryContract.proxies(account);
+    let dsProxyRegistryContract = new hre.ethers.Contract(addresses[chainId].PROXY_REGISTRY, proxyRegistryAbi, signer);
+    let dsProxyAddr = await dsProxyRegistryContract.proxies(account);
 
-    if (proxyAddr === hre.ethers.constants.AddressZero) {
-        proxyRegistryContract = await proxyRegistryContract.connect(accSigner);
-        await proxyRegistryContract.build(account);
-        proxyAddr = await proxyRegistryContract.proxies(account);
+    if (dsProxyAddr === hre.ethers.constants.AddressZero) {
+        dsProxyRegistryContract = await dsProxyRegistryContract.connect(accSigner);
+        await dsProxyRegistryContract.build(account);
+        dsProxyAddr = await dsProxyRegistryContract.proxies(account);
     }
-    const dsProxy = new hre.ethers.Contract(proxyAddr, proxyAbi, accSigner);
+    const dsProxy = new hre.ethers.Contract(dsProxyAddr, proxyAbi, accSigner);
 
     return dsProxy;
 }
@@ -252,17 +264,18 @@ async function isContract(address) {
 
 /**
  * Get sender account and his proxy
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
+ * @param {string} owner the EOA which will be sending transactions and own the newly created proxy if proxyAddr is not provided
+ * @param {string} proxyAddr the address of the proxy that will be used for the position, if not provided a new proxy will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} object that has sender account and his proxy
  */
-async function getSender(owner, useSafe = true) {
+async function getSender(owner, proxyAddr = hre.ethers.constants.AddressZero, useSafe = true) {
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address, useSafe);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     return [
         senderAcc,
@@ -291,6 +304,38 @@ async function approve(tokenAddr, to, owner) {
 }
 
 /**
+ * Execute an action through a proxy
+ * @param {Object} proxy user's wallet
+ * @param {string} targetAddr address of the contract we're invoking via proxy
+ * @param {Object} callData encoded function call
+ * @param {number} ethValue eth value to send. Defaults to 0
+ * @returns {void}
+ */
+async function executeActionFromProxy(proxy, targetAddr, callData, ethValue = 0) {
+    let receipt;
+
+    if (isProxySafe(proxy)) {
+        receipt = await executeSafeTx(
+            proxy,
+            targetAddr,
+            callData,
+            1,
+            ethValue
+        );
+    } else {
+        receipt = await proxy["execute(address,bytes)"](targetAddr, callData, {
+            gasLimit: 30000000,
+            value: ethValue
+        });
+    }
+    const txData = await hre.ethers.provider.getTransactionReceipt(receipt.hash);
+
+    if (txData.status !== 1) {
+        throw new Error(`Action execution failed on address: ${targetAddr}`);
+    }
+}
+
+/**
  * Util function for invoking an action via DSProxy
  * @param {string} actionName name of the Contract we're invoking via proxy
  * @param {string} functionData dfs sdk action encoded for proxy
@@ -300,27 +345,7 @@ async function approve(tokenAddr, to, owner) {
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    let receipt;
-
-    if (isProxySafe(proxy)) {
-        receipt = await executeSafeTx(
-            proxy,
-            actionAddr,
-            functionData,
-            1,
-            0
-        );
-    } else {
-        receipt = await proxy["execute(address,bytes)"](actionAddr, functionData, {
-            gasLimit: 30000000
-        });
-    }
-
-    const txData = await hre.ethers.provider.getTransactionReceipt(receipt.hash);
-
-    if (txData.status !== 1) {
-        throw new Error(`Action execution failed: ${actionName}`);
-    }
+    await executeActionFromProxy(proxy, actionAddr, functionData);
 }
 
 /**
@@ -604,9 +629,7 @@ async function subToStrategy(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -631,9 +654,7 @@ async function subToSparkStrategy(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -657,9 +678,7 @@ async function subToAaveV3Automation(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -684,9 +703,7 @@ async function subToMcdAutomation(proxy, strategySub) {
         [strategySub, false]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -711,9 +728,7 @@ async function subToLiquityLeverageManagementAutomation(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -725,10 +740,19 @@ async function subToLiquityLeverageManagementAutomation(proxy, strategySub) {
  * @param {Object} req request object
  * @returns {boolean} true if we should default to Safe
  */
-function defaultsToSafeInRequest(req) {
+function defaultsToSafe(req) {
     const useDsProxy = req.body.walletType && req.body.walletType === "dsproxy";
 
     return !useDsProxy;
+}
+
+/**
+ * Read walletAddr from request. If not provided, return AddressZero, meaning new wallet will be created
+ * @param {Object} req request object
+ * @returns {string} wallet address
+ */
+function getWalletAddr(req) {
+    return req.body.walletAddr ? req.body.walletAddr : hre.ethers.constants.AddressZero;
 }
 
 module.exports = {
@@ -752,5 +776,7 @@ module.exports = {
     subToLiquityLeverageManagementAutomation,
     isContract,
     lowerSafesThreshold,
-    defaultsToSafeInRequest
+    defaultsToSafe,
+    executeActionFromProxy,
+    getWalletAddr
 };

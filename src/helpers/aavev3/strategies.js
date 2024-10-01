@@ -17,7 +17,8 @@ const { getAssetInfo } = require("@defisaver/tokens");
  * @param {number} subCollAssetId collateral asset ID
  * @param {string} subDebtAsset debt asset
  * @param {number} subDebtAssetId debt asset ID
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3CloseWithMaximumGasPriceStrategy(
@@ -25,9 +26,10 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
     strategyOrBundleId,
     triggerBaseTokenAddress, triggerQuoteTokenAddress, triggerPrice, triggerRatioState, triggerMaximumGasPrice,
     subCollAsset, subCollAssetId, subDebtAsset, subDebtAssetId,
+    proxyAddr,
     useSafe = true
 ) {
-    const [, proxy] = await getSender(owner, useSafe);
+    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAssetWithMaximumGasPrice(
         strategyOrBundleId,
@@ -59,13 +61,14 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
  * @param {int} targetRepayRatio wanted ratio after repay
  * @param {int} targetBoostRatio wanted ratio after boost
  * @param {boolean} boostEnabled enable boost
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {boolean} StrategySub object and ID of the subscription
  */
-async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, useSafe = true) {
+async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
 
     try {
-        const [, proxy] = await getSender(owner, useSafe);
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagement(
             minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
@@ -91,7 +94,8 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
  * @param {number} priceState 'under' or 'over'
  * @param {string} collAssetSymbol symbol of the collateral asset
  * @param {string} debtAssetSymbol symbol of the debt asset
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveCloseToCollStrategy(
@@ -104,11 +108,12 @@ async function subAaveCloseToCollStrategy(
     priceState,
     collAssetSymbol,
     debtAssetSymbol,
+    proxyAddr,
     useSafe = true
 ) {
     try {
         const { chainId } = await hre.ethers.provider.getNetwork();
-        const [, proxy] = await getSender(owner, useSafe);
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         let marketAddress = market;
 

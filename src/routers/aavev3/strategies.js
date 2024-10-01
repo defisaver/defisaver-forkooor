@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, defaultsToSafeInRequest } = require("../../utils");
+const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy, subAaveCloseToCollStrategy } = require("../../helpers/aavev3/strategies");
 const { body, validationResult } = require("express-validator");
 
@@ -66,10 +66,14 @@ const router = express.Router();
  *                      debtAssetId:
  *                          type: integer
  *                          example: 4
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -120,10 +124,12 @@ async (req, res) => {
 
     await setupFork(forkId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
-        owner, strategyOrBundleId,
+        owner,
+        strategyOrBundleId,
         triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
         subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId,
-        defaultsToSafeInRequest(req)
+        getWalletAddr(req),
+        defaultsToSafe(req)
     ).then(sub => {
         res.status(201).send(sub);
     }).catch(err => {
@@ -186,10 +192,14 @@ async (req, res) => {
  *                      debtAssetSymbol:
  *                          type: string
  *                          example: "DAI"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -247,7 +257,8 @@ async (req, res) => {
         triggerData.ratioState,
         subData.collAssetSymbol,
         subData.debtAssetSymbol,
-        defaultsToSafeInRequest(req)
+        getWalletAddr(req),
+        defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -293,10 +304,14 @@ async (req, res) => {
  *              boostEnabled:
  *                 type: boolean
  *                 example: true
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -337,7 +352,11 @@ router.post("/dfs-automation", async (req, res) => {
 
         await setupFork(forkId, [owner]);
 
-        const sub = await subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, defaultsToSafeInRequest(req));
+        const sub = await subAaveAutomationStrategy(
+            owner,
+            minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled,
+            getWalletAddr(req), defaultsToSafe(req)
+        );
 
         res.status(200).send(sub);
     } catch (err) {

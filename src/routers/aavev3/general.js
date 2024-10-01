@@ -1,7 +1,8 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
+const hre = require("hardhat");
 const express = require("express");
-const { setupFork, getProxy, isContract, defaultsToSafeInRequest } = require("../../utils");
+const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { getLoanData } = require("../../helpers/aavev3/view");
 const {
     aaveV3Supply,
@@ -39,10 +40,7 @@ const router = express.Router();
  *              owner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              walletType:
- *                type: string
- *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
+ *                description: "User owning the position. Specify either eoa, if eoa position, or wallet address if position is owned by a wallet"
  *     responses:
  *       '200':
  *         description: OK
@@ -144,8 +142,6 @@ router.post("/get-position",
 
         const { forkId, market, owner } = req.body;
 
-        console.log("owner", owner);
-
         setupFork(forkId);
 
         getLoanData(market, owner)
@@ -185,6 +181,7 @@ router.post("/get-position",
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              collToken:
  *                type: string
  *                example: "ETH"
@@ -201,10 +198,14 @@ router.post("/get-position",
  *              debtAmount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -308,7 +309,9 @@ router.post("/create",
 
         await setupFork(forkId, [owner]);
 
-        createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, defaultsToSafeInRequest(req))
+        createAaveV3Position(
+            useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)
+        )
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -349,6 +352,10 @@ router.post("/create",
  *              amount:
  *                type: number
  *                example: 2
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
@@ -456,7 +463,7 @@ router.post("/supply",
 
         await setupFork(forkId, [owner]);
 
-        aaveV3Supply(market, collToken, amount, owner, defaultsToSafeInRequest(req))
+        aaveV3Supply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -497,6 +504,10 @@ router.post("/supply",
  *              amount:
  *                type: number
  *                example: 2
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
@@ -603,7 +614,7 @@ router.post("/withdraw",
 
         await setupFork(forkId, [owner]);
 
-        aaveV3Withdraw(market, collToken, amount, owner, defaultsToSafeInRequest(req))
+        aaveV3Withdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -646,6 +657,10 @@ router.post("/withdraw",
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
@@ -751,7 +766,7 @@ router.post("/borrow",
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        aaveV3Borrow(market, debtToken, rateMode, amount, owner, defaultsToSafeInRequest(req))
+        aaveV3Borrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -794,6 +809,10 @@ router.post("/borrow",
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
@@ -900,7 +919,7 @@ router.post("/payback",
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        aaveV3Payback(market, debtToken, rateMode, amount, owner, defaultsToSafeInRequest(req))
+        aaveV3Payback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

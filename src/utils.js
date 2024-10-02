@@ -781,5 +781,6 @@ module.exports = {
     lowerSafesThreshold,
     defaultsToSafe,
     executeActionFromProxy,
-    getWalletAddr
+    getWalletAddr,
+    createSafe
 };

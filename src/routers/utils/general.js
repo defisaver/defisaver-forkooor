@@ -3,7 +3,7 @@
 
 const express = require("express");
 const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress } = require("../../helpers/utils/general");
-const { setBalance, setupFork, lowerSafesThreshold, approve, getProxy } = require("../../utils");
+const { setBalance, setupFork, lowerSafesThreshold, approve, createSafe } = require("../../utils");
 
 const router = express.Router();
 
@@ -502,7 +502,6 @@ router.post("/give-approval", async (req, res) => {
     try {
         const { forkId, token, owner, to, isProxyApproval, proxyAddr } = req.body;
 
-        await setupFork(forkId);
 
         const giveApprovalTo = isProxyApproval ? proxyAddr : to;
 
@@ -615,6 +614,62 @@ router.get("/new-address", async (req, res) => {
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to create new address with error : ${err.toString()}` };
+        res.status(500).send(resObj);
+    }
+});
+
+/**
+ * @swagger
+ * /utils/general/create-safe:
+ *   post:
+ *     summary: Creates new Safe Smart Wallet
+ *     tags:
+ *      - Utils
+ *     description: Returns new Safe Smart Wallet address.
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *              owner:
+ *                type: string
+ *                example: "0xc78E09653fb412264321653468bF56244D00153E"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: string
+ *               example: "0xc78E09653fb412264321653468bF56244D00153E"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/create-safe", async (req, res) => {
+    let resObj;
+
+    try {
+        const { forkId, owner } = req.body;
+
+        await setupFork(forkId);
+
+        resObj = await createSafe(owner);
+        res.status(200).send(resObj);
+    } catch (err) {
+        resObj = { error: `Failed to create safe smart wallet: ${err.toString()}` };
         res.status(500).send(resObj);
     }
 });

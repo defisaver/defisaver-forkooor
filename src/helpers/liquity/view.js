@@ -1,6 +1,5 @@
 const { ethers } = require("hardhat");
 const { liquityViewAbi } = require("../../abi/liquity/abis");
-const { getProxy } = require("../../utils");
 
 const LIQUITY_VIEW = "0xb760e60Dff6263E8Ab31B04ee5Cc010beA47e2Df";
 const numOfTrials = 20;
@@ -25,18 +24,13 @@ async function convertToJson(toveData) {
 
 /**
  * Function that fetches trove data from liquity
- * @param {string} sender Address that owns the proxy that owns the trove
+ * @param {string} owner Address that owns the trove
  * @returns {Object} has trove position data
  */
-async function getTroveInfo(sender) {
-    const senderAcc = await ethers.provider.getSigner(sender.toString());
+async function getTroveInfo(owner) {
+    const liquityView = new ethers.Contract(LIQUITY_VIEW, liquityViewAbi);
 
-    senderAcc.address = senderAcc._address;
-
-    const proxy = await getProxy(senderAcc.address);
-    const liquityView = new ethers.Contract(LIQUITY_VIEW, liquityViewAbi, senderAcc);
-
-    return liquityView.getTroveInfo(proxy.address).then(r => convertToJson(r));
+    return liquityView.getTroveInfo(owner).then(r => convertToJson(r));
 }
 
 /**

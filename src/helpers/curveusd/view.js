@@ -1,11 +1,6 @@
 const hre = require("hardhat");
 const { curveusdViewAbi } = require("../../abi/curveusd/abis");
-
-
-const curveusdView = {
-    address: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701",
-    abi: curveusdViewAbi
-};
+const { addresses } = require("../../utils");
 
 /**
  * returns CurveUsd position info
@@ -15,7 +10,10 @@ const curveusdView = {
  */
 async function getUserData(controller, user) {
     const [signer] = await hre.ethers.getSigners();
-    const view = new hre.ethers.Contract(curveusdView.address, curveusdView.abi, signer);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    const viewAddress = addresses[chainId].CURVE_USD_VIEW;
+    const view = new hre.ethers.Contract(viewAddress, curveusdViewAbi, signer);
     const userData = await view.userData(controller, user);
 
     return {

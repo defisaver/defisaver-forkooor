@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { subMcdCloseToDaiStrategy, subMcdCloseToCollStrategy, subMCDSmartSavingsRepayStrategy, subMcdAutomationStrategy } = require("../../helpers/maker/strategies");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body } = require("express-validator");
 
 const router = express.Router();
@@ -37,6 +37,14 @@ const router = express.Router();
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -68,7 +76,7 @@ router.post("/close-to-dai", async (req, res) => {
         const { forkId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        const sub = await subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner);
+        const sub = await subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(sub);
     } catch (err) {
@@ -108,6 +116,14 @@ router.post("/close-to-dai", async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -140,7 +156,7 @@ router.post("/close-to-coll", async (req, res) => {
 
         await setupFork(forkId, [owner]);
 
-        const sub = await subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, owner);
+        const sub = await subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(sub);
     } catch (err) {
@@ -183,6 +199,14 @@ router.post("/close-to-coll", async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -215,7 +239,7 @@ router.post("/smart-savings-repay", async (req, res) => {
 
         await setupFork(forkId, [owner]);
 
-        const sub = await subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, owner);
+        const sub = await subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(sub);
     } catch (err) {
@@ -264,6 +288,14 @@ router.post("/smart-savings-repay", async (req, res) => {
  *              boostEnabled:
  *                 type: boolean
  *                 example: true
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -316,7 +348,9 @@ async (req, res) => {
 
         await setupFork(forkId, [owner]);
 
-        const sub = await subMcdAutomationStrategy(vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled);
+        const sub = await subMcdAutomationStrategy(
+            vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)
+        );
 
         res.status(200).send(sub);
     } catch (err) {

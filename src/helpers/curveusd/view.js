@@ -17,6 +17,7 @@ async function getUserData(controller, user) {
     const userData = await view.userData(controller, user);
 
     return {
+        ownerAddr: user,
         loanExists: userData.loanExists,
         collateralPrice: userData.collateralPrice.toString(),
         marketCollateralAmount: userData.marketCollateralAmount.toString(),

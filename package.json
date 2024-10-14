@@ -4,7 +4,7 @@
   "author": "@defisaver",
   "private": true,
   "scripts": {
-    "dev": "nodemon forkooor.js"
+    "dev": "node forkooor.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",

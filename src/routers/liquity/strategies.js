@@ -1,11 +1,11 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const {
-    subLiqutityDsrPaybackStrategy,
-    subLiqutityDsrSupplyStrategy,
     subLiquityDebtInFrontRepayStrategy,
-    subLiquityLeverageManagementStrategies
+    subLiquityLeverageManagementStrategies,
+    subLiquityDsrPaybackStrategy,
+    subLiquityDsrSupplyStrategy
 } = require("../../helpers/liquity/strategies");
 
 const router = express.Router();
@@ -17,7 +17,6 @@ const router = express.Router();
  *     summary: Subscribe to a Liquity Dsr Payback strategy
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -39,6 +38,14 @@ const router = express.Router();
  *              targetRatio:
  *                type: integer
  *                example: 240
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -71,7 +78,10 @@ router.post("/dsr-payback", async (req, res) => {
 
         await setupFork(forkId, [sender]);
 
-        const sub = await subLiquityDsrPaybackStrategy({ sender, triggerRatio, targetRatio });
+        const proxyAddr = getWalletAddr(req);
+        const useSafe = defaultsToSafe(req);
+
+        const sub = await subLiquityDsrPaybackStrategy({ sender, triggerRatio, targetRatio, proxyAddr, useSafe });
 
         res.status(200).send(sub);
     } catch (err) {
@@ -87,7 +97,6 @@ router.post("/dsr-payback", async (req, res) => {
  *     summary: Subscribe to a Liquity Dsr Supply strategy
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -109,6 +118,14 @@ router.post("/dsr-payback", async (req, res) => {
  *              targetRatio:
  *                type: integer
  *                example: 240
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -141,7 +158,10 @@ router.post("/dsr-supply", async (req, res) => {
 
         await setupFork(forkId, [sender]);
 
-        const sub = await subLiquityDsrSupplyStrategy({ sender, triggerRatio, targetRatio });
+        const proxyAddr = getWalletAddr(req);
+        const useSafe = defaultsToSafe(req);
+
+        const sub = await subLiquityDsrSupplyStrategy({ sender, triggerRatio, targetRatio, proxyAddr, useSafe });
 
         res.status(200).send(sub);
     } catch (err) {
@@ -157,7 +177,6 @@ router.post("/dsr-supply", async (req, res) => {
  *     summary: Subscribe to a Liquity Debt In Front strategy
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -179,6 +198,14 @@ router.post("/dsr-supply", async (req, res) => {
  *              targetRatioIncrease:
  *                type: integer
  *                example: 20
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -211,7 +238,10 @@ router.post("/debt-in-front-repay", async (req, res) => {
 
         await setupFork(forkId, [sender]);
 
-        const sub = await subLiquityDebtInFrontRepayStrategy({ sender, debtInFront, targetRatioIncrease });
+        const proxyAddr = getWalletAddr(req);
+        const useSafe = defaultsToSafe(req);
+
+        const sub = await subLiquityDebtInFrontRepayStrategy({ sender, debtInFront, targetRatioIncrease, proxyAddr, useSafe });
 
         res.status(200).send(sub);
     } catch (err) {
@@ -227,7 +257,6 @@ router.post("/debt-in-front-repay", async (req, res) => {
  *     summary: Subscribe to a Liquity Leverage Management strategies
  *     tags:
  *      - Liquity
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -258,6 +287,14 @@ router.post("/debt-in-front-repay", async (req, res) => {
  *              boostEnabled:
  *                type: boolean
  *                example: true
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -298,13 +335,19 @@ router.post("/leverage-management", async (req, res) => {
 
         await setupFork(forkId, [sender]);
 
+        const proxyAddr = getWalletAddr(req);
+        const useSafe = defaultsToSafe(req);
+
+
         const sub = await subLiquityLeverageManagementStrategies({
             sender,
             minRatio,
             maxRatio,
             targetRatioRepay,
             targetRatioBoost,
-            boostEnabled
+            boostEnabled,
+            proxyAddr,
+            useSafe
         });
 
         res.status(200).send(sub);

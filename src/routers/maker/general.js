@@ -2,7 +2,7 @@
 const express = require("express");
 const { createMcdVault, openEmptyMcdVault, mcdSupply, mcdWithdraw, mcdBorrow, mcdPayback, mcdDsrWithdraw, mcdDsrDeposit } = require("../../helpers/maker/general");
 const { getVaultInfo } = require("../../helpers/maker/view");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 
 const router = express.Router();
 
@@ -107,6 +107,14 @@ router.post("/get-vault", async (req, res) => {
  *              debtAmount:
  *                type: integer
  *                example: 50000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -146,7 +154,7 @@ router.post("/create-vault", async (req, res) => {
         const { forkId, owner, collType, collAmount, debtAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await createMcdVault(collType, collAmount, debtAmount, owner);
+        const vaultInfo = await createMcdVault(collType, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -180,6 +188,14 @@ router.post("/create-vault", async (req, res) => {
  *              collType:
  *                type: string
  *                example: "ETH-A"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -219,7 +235,7 @@ router.post("/open-empty-vault", async (req, res) => {
         const { forkId, owner, collType } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await openEmptyMcdVault(collType, owner);
+        const vaultInfo = await openEmptyMcdVault(collType, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -256,6 +272,14 @@ router.post("/open-empty-vault", async (req, res) => {
  *              supplyAmount:
  *                type: integer
  *                example: 50
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -295,7 +319,7 @@ router.post("/supply", async (req, res) => {
         const { forkId, owner, vaultId, supplyAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdSupply(owner, vaultId, supplyAmount);
+        const vaultInfo = await mcdSupply(owner, vaultId, supplyAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -332,6 +356,14 @@ router.post("/supply", async (req, res) => {
  *              withdrawAmount:
  *                type: integer
  *                example: 50
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -371,7 +403,7 @@ router.post("/withdraw", async (req, res) => {
         const { forkId, owner, vaultId, withdrawAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdWithdraw(owner, vaultId, withdrawAmount);
+        const vaultInfo = await mcdWithdraw(owner, vaultId, withdrawAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -408,6 +440,14 @@ router.post("/withdraw", async (req, res) => {
  *              borrowAmount:
  *                type: integer
  *                example: 50000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -447,7 +487,7 @@ router.post("/borrow", async (req, res) => {
         const { forkId, owner, vaultId, borrowAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdBorrow(owner, vaultId, borrowAmount);
+        const vaultInfo = await mcdBorrow(owner, vaultId, borrowAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -484,6 +524,14 @@ router.post("/borrow", async (req, res) => {
  *              paybackAmount:
  *                type: integer
  *                example: 50
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -523,7 +571,7 @@ router.post("/payback", async (req, res) => {
         const { forkId, owner, vaultId, paybackAmount } = req.body;
 
         await setupFork(forkId, [owner]);
-        const vaultInfo = await mcdPayback(owner, vaultId, paybackAmount);
+        const vaultInfo = await mcdPayback(owner, vaultId, paybackAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -557,6 +605,14 @@ router.post("/payback", async (req, res) => {
  *              amount:
  *                type: integer
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -583,7 +639,7 @@ router.post("/dsr-deposit", async (req, res) => {
         const { forkId, sender, amount } = req.body;
 
         await setupFork(forkId, [sender]);
-        const vaultInfo = await mcdDsrDeposit(sender, amount);
+        const vaultInfo = await mcdDsrDeposit(sender, amount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {
@@ -617,6 +673,14 @@ router.post("/dsr-deposit", async (req, res) => {
  *              amount:
  *                type: integer
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -643,7 +707,7 @@ router.post("/dsr-withdraw", async (req, res) => {
         const { forkId, sender, amount } = req.body;
 
         await setupFork(forkId, [sender]);
-        const vaultInfo = await mcdDsrWithdraw(sender, amount);
+        const vaultInfo = await mcdDsrWithdraw(sender, amount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
     } catch (err) {

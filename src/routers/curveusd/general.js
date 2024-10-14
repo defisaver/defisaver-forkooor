@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getProxy, isContract } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { createCurveUsdPosition } = require("../../helpers/curveusd/general");
 const { getUserData } = require("../../helpers/curveusd/view");
@@ -29,7 +29,7 @@ const router = express.Router();
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              controller:
  *                type: string
- *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
@@ -42,6 +42,14 @@ const router = express.Router();
  *              numberOfBands:
  *                type: number
  *                example: 10
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -121,7 +129,7 @@ router.post("/create",
         const { forkId, controller, owner, coll, debt, numberOfBands } = req.body;
 
         await setupFork(forkId, [owner]);
-        createCurveUsdPosition(controller, coll, debt, owner, numberOfBands)
+        createCurveUsdPosition(controller, coll, debt, owner, numberOfBands, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -152,7 +160,7 @@ router.post("/create",
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              controller:
  *                type: string
- *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
  *              owner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -233,17 +241,10 @@ router.post("/get-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
         const { forkId, controller, owner } = req.body;
-        let proxy = owner;
-        const isContractPromise = isContract(owner);
 
         setupFork(forkId);
 
-        if (!await isContractPromise) {
-            const proxyContract = await getProxy(owner);
-
-            proxy = proxyContract.address;
-        }
-        getUserData(controller, proxy)
+        getUserData(controller, owner)
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {

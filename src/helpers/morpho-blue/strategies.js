@@ -5,21 +5,23 @@ const abiCoder = new hre.ethers.utils.AbiCoder();
 
 /**
  * Subscribes to MorphoBlue Repay Bundle
- * @param {Object} owner eoa or proxy
+ * @param {Object} owner wallet owner
  * @param {number} bundleId MorphoBlue repay Bundle Id
  * @param {Object} marketParams market params in []
  * @param {string} marketId id of the MorphoBlue market
  * @param {number} minRatio ratio under which the strategy will trigger
  * @param {number} targetRatio target ratio for repay
  * @param {string} user address of the user who is owner of morphoblue position
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} subId and strategySub
  */
 async function subMorphoBlueRepayBundle(
-    owner, bundleId, marketParams, marketId, minRatio, targetRatio, user
+    owner, bundleId, marketParams, marketId, minRatio, targetRatio, user, proxyAddr, useSafe = true
 ) {
-    const [, proxy] = await getSender(owner);
+    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
-    if (user === "0x0000000000000000000000000000000000000000") {
+    if (user === hre.ethers.constants.AddressZero) {
         // eslint-disable-next-line no-param-reassign
         user = proxy.address;
     }
@@ -53,21 +55,23 @@ async function subMorphoBlueRepayBundle(
 
 /**
  * Subscribes to MorphoBlue Repay Bundle
- * @param {Object} owner eoa or proxy
+ * @param {Object} owner wallet owner
  * @param {number} bundleId MorphoBlue repay Bundle Id
  * @param {Object} marketParams market params in []
  * @param {string} marketId id of the MorphoBlue market
  * @param {number} maxRatio ratio above which the strategy will trigger
  * @param {number} targetRatio target ratio for repay
  * @param {string} user address of the user who is owner of morphoblue position
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} subId and strategySub
  */
 async function subMorphoBlueBoostBundle(
-    owner, bundleId, marketParams, marketId, maxRatio, targetRatio, user
+    owner, bundleId, marketParams, marketId, maxRatio, targetRatio, user, proxyAddr, useSafe = true
 ) {
-    const [, proxy] = await getSender(owner);
+    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
-    if (user === "0x0000000000000000000000000000000000000000") {
+    if (user === hre.ethers.constants.AddressZero) {
         // eslint-disable-next-line no-param-reassign
         user = proxy.address;
     }

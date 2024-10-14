@@ -1,34 +1,39 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
 const { subToStrategy, getSender } = require("../../utils");
-const abiCoder = new hre.ethers.utils.AbiCoder();
 
 const { curveusdControllerAbi } = require("../../abi/curveusd/abis");
+
+const CURVE_USD_ADDRESS = "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E";
 
 /**
  * Subscribes to CurveUsd Repay Bundle
  * @param {Object} owner eoa or proxy
- * @param {number} bundleId CurveUsdRepay Bundle Id
  * @param {string} controllerAddr address of the curveusd controller
  * @param {number} minRatio ratio under which the strategy will trigger
  * @param {number} targetRatio target ratio for repay
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} subId and strategySub
  */
 async function subCurveUsdRepayBundle(
-    owner, bundleId, controllerAddr, minRatio, targetRatio
+    owner, controllerAddr, minRatio, targetRatio, proxyAddr, useSafe = true
 ) {
-    const [senderAcc, proxy] = await getSender(owner);
-    const triggerData = abiCoder.encode(["address", "address", "uint256", "uint8"], [proxy.address, controllerAddr, hre.ethers.utils.parseUnits(minRatio.toString(), 16).toString(), 1]);
-    const ratioStateEncoded = abiCoder.encode(["uint8"], [1]);
-    const targetRatioEncoded = abiCoder.encode(["uint256"], [hre.ethers.utils.parseUnits(targetRatio.toString(), 16).toString()]);
-    const controllerAddressEncoded = abiCoder.encode(["address"], [controllerAddr]);
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+
     const controllerContract = new hre.ethers.Contract(controllerAddr, curveusdControllerAbi, senderAcc);
-    const collateralTokenAddress = await controllerContract.collateral_token();
-    const collTokenAddressEncoded = abiCoder.encode(["address"], [collateralTokenAddress]);
-    const crvUsdAddressEncoded = abiCoder.encode(["address"], ["0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E"]);
-    const strategySub = [bundleId, true, [triggerData],
-        [controllerAddressEncoded, ratioStateEncoded, targetRatioEncoded, collTokenAddressEncoded, crvUsdAddressEncoded]
-    ];
+    const collateralToken = await controllerContract.collateral_token();
+
+    const strategySub = automationSdk.strategySubService.crvUSDEncode.leverageManagement(
+        proxy.address,
+        controllerAddr,
+        1, // ratio state = under
+        targetRatio,
+        minRatio,
+        collateralToken,
+        CURVE_USD_ADDRESS
+    );
+
     const subId = await subToStrategy(proxy, strategySub);
 
     return { subId, strategySub };
@@ -37,27 +42,31 @@ async function subCurveUsdRepayBundle(
 /**
  * Subscribes to CurveUsd Boost Bundle
  * @param {Object} owner eoa or proxy
- * @param {number} bundleId CurveUsdRepay Bundle Id
  * @param {string} controllerAddr address of the curveusd controller
  * @param {number} maxRatio ratio over which the strategy will trigger
  * @param {number} targetRatio target ratio for repay
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} subId and strategySub
  */
 async function subCurveUsdBoostBundle(
-    owner, bundleId, controllerAddr, maxRatio, targetRatio
+    owner, controllerAddr, maxRatio, targetRatio, proxyAddr, useSafe = true
 ) {
-    const [senderAcc, proxy] = await getSender(owner);
-    const triggerData = abiCoder.encode(["address", "address", "uint256", "uint8"], [proxy.address, controllerAddr, hre.ethers.utils.parseUnits(maxRatio.toString(), 16).toString(), 0]);
-    const ratioStateEncoded = abiCoder.encode(["uint8"], [0]);
-    const targetRatioEncoded = abiCoder.encode(["uint256"], [hre.ethers.utils.parseUnits(targetRatio.toString(), 16).toString()]);
-    const controllerAddressEncoded = abiCoder.encode(["address"], [controllerAddr]);
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+
     const controllerContract = new hre.ethers.Contract(controllerAddr, curveusdControllerAbi, senderAcc);
-    const collateralTokenAddress = await controllerContract.collateral_token();
-    const collTokenAddressEncoded = abiCoder.encode(["address"], [collateralTokenAddress]);
-    const crvUsdAddressEncoded = abiCoder.encode(["address"], ["0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E"]);
-    const strategySub = [bundleId, true, [triggerData],
-        [controllerAddressEncoded, ratioStateEncoded, targetRatioEncoded, collTokenAddressEncoded, crvUsdAddressEncoded]
-    ];
+    const collateralToken = await controllerContract.collateral_token();
+
+    const strategySub = automationSdk.strategySubService.crvUSDEncode.leverageManagement(
+        proxy.address,
+        controllerAddr,
+        0, // ratio state = over
+        targetRatio,
+        maxRatio,
+        collateralToken,
+        CURVE_USD_ADDRESS
+    );
+
     const subId = await subToStrategy(proxy, strategySub);
 
     return { subId, strategySub };
@@ -71,6 +80,8 @@ async function subCurveUsdBoostBundle(
  * @param {string} controllerAddr address of the curveusd controller
  * @param {number} minHealthRatio below this ratio strategy will trigger
  * @param {number} amountToPayback amount of crvusd to payback
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} subId and strategySub
  */
 async function subCurveUsdPaybackStrategy(
@@ -79,17 +90,18 @@ async function subCurveUsdPaybackStrategy(
     positionOwner,
     controllerAddr,
     minHealthRatio,
-    amountToPayback
+    amountToPayback,
+    proxyAddr,
+    useSafe = true
 ) {
-    const [, proxy] = await getSender(owner);
+    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
-    const curveUsdAddress = "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E";
     const strategySub = automationSdk.strategySubService.crvUSDEncode.payback(
         proxy.address,
         addressToPullTokensFrom,
         positionOwner,
         amountToPayback.toString(),
-        curveUsdAddress,
+        CURVE_USD_ADDRESS,
         controllerAddr,
         minHealthRatio
     );

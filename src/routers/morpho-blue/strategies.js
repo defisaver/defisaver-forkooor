@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { subMorphoBlueRepayBundle, subMorphoBlueBoostBundle } = require("../../helpers/morpho-blue/strategies");
 const { getMarketId } = require("../../helpers/morpho-blue/view");
@@ -16,7 +16,6 @@ const router = express.Router();
  *     summary: Subscribe to a MorphoBlue Repay strategy
  *     tags:
  *      - MorphoBlue
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -59,6 +58,14 @@ const router = express.Router();
  *              user:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -110,7 +117,7 @@ async (req, res) => {
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueRepayBundle(
-        owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, minRatio, targetRatio, user
+        owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, minRatio, targetRatio, user, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -125,7 +132,6 @@ async (req, res) => {
  *     summary: Subscribe to a MorphoBlue Boost strategy
  *     tags:
  *      - MorphoBlue
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -168,6 +174,14 @@ async (req, res) => {
  *              user:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -219,7 +233,7 @@ async (req, res) => {
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueBoostBundle(
-        owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, maxRatio, targetRatio, user
+        owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, maxRatio, targetRatio, user, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {

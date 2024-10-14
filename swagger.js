@@ -21,7 +21,7 @@ const options = {
         externalDocs: {
             description: "swagger.json",
             url: "/swagger.json"
-        },
+        }
     },
     apis: ["src/routers/**/*.js"]
 };

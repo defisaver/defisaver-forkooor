@@ -1,8 +1,9 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
+const hre = require("hardhat");
 const express = require("express");
-const { setupFork, getProxy, isContract } = require("../../utils");
-const { getLoanData } = require("../../helpers/aavev3/view");
+const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { getLoanData, getSafetyRatio } = require("../../helpers/aavev3/view");
 const {
     aaveV3Supply,
     aaveV3Withdraw,
@@ -39,6 +40,7 @@ const router = express.Router();
  *              owner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                description: "User owning the position. Specify either eoa, if eoa position, or wallet address if position is owned by a wallet"
  *     responses:
  *       '200':
  *         description: OK
@@ -139,25 +141,86 @@ router.post("/get-position",
         }
 
         const { forkId, market, owner } = req.body;
-        let proxy = owner;
-
-        const isContractPromise = isContract(owner);
 
         setupFork(forkId);
 
-        if (!await isContractPromise) {
-            const proxyContract = await getProxy(owner);
-
-            proxy = proxyContract.address;
-        }
-
-        getLoanData(market, proxy)
+        getLoanData(market, owner)
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {
                 res.status(500).send({ error: `Failed to fetch position info with error : ${err.toString()}` });
             });
     });
+
+/**
+ * @swagger
+ * /aave/v3/general/get-safety-ratio:
+ *   post:
+ *     summary: Fetch safety ratio for user's AaveV3 position on a fork
+ *     tags:
+ *      - AaveV3
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *              owner:
+ *                type: string
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                description: "User owning the position. Specify either eoa, if eoa position, or wallet address if position is owned by a wallet"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 ratio:
+ *                   type: string
+ *                   example: "1214255397822228163"
+ *                   description: "Ratio of the user's assets to liabilities"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/get-safety-ratio",
+    body(["forkId", "market", "owner"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { forkId, market, owner } = req.body;
+
+        setupFork(forkId);
+
+        getSafetyRatio(market, owner)
+            .then(pos => {
+                res.status(200).send(pos);
+            }).catch(err => {
+                res.status(500).send({ error: `Failed to fetch safety ratio info with error : ${err.toString()}` });
+            });
+    });
+
 
 /**
  * @swagger
@@ -188,6 +251,7 @@ router.post("/get-position",
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              collToken:
  *                type: string
  *                example: "ETH"
@@ -204,6 +268,14 @@ router.post("/get-position",
  *              debtAmount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -307,7 +379,9 @@ router.post("/create",
 
         await setupFork(forkId, [owner]);
 
-        createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner)
+        createAaveV3Position(
+            useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)
+        )
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -348,6 +422,14 @@ router.post("/create",
  *              amount:
  *                type: number
  *                example: 2
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -451,7 +533,7 @@ router.post("/supply",
 
         await setupFork(forkId, [owner]);
 
-        aaveV3Supply(market, collToken, amount, owner)
+        aaveV3Supply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -492,6 +574,14 @@ router.post("/supply",
  *              amount:
  *                type: number
  *                example: 2
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -594,7 +684,7 @@ router.post("/withdraw",
 
         await setupFork(forkId, [owner]);
 
-        aaveV3Withdraw(market, collToken, amount, owner)
+        aaveV3Withdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -637,6 +727,14 @@ router.post("/withdraw",
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -738,7 +836,7 @@ router.post("/borrow",
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        aaveV3Borrow(market, debtToken, rateMode, amount, owner)
+        aaveV3Borrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -781,6 +879,14 @@ router.post("/borrow",
  *              amount:
  *                type: number
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -883,7 +989,7 @@ router.post("/payback",
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
         await setupFork(forkId, [owner]);
-        aaveV3Payback(market, debtToken, rateMode, amount, owner)
+        aaveV3Payback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

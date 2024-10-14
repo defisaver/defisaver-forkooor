@@ -11,11 +11,13 @@ const { getLoanData } = require("./view");
  * @param {number} collAmount amount of collateral to supply (whole number)
  * @param {string} borrowToken symbol of borrow token e.g USDC
  * @param {number} borrowAmount amount to borrow (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object with load data
  */
-async function createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner, proxyAddr, useSafe) {
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken, chainId);

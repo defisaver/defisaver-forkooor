@@ -50,7 +50,27 @@ async function getLoanData(market, user) {
     };
 }
 
+/**
+ * Return data about a particular users safety ratio on AaveV3 market
+ * @param {string} market address of aave market
+ * @param {string} user address of the user
+ * @returns {Object} information about users safety ratio
+ */
+async function getSafetyRatio(market, user) {
+    const [signer] = await hre.ethers.getSigners();
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const viewAddress = addresses[chainId].AAVE_V3_VIEW;
+    const viewContract = new hre.ethers.Contract(viewAddress, aaveV3ViewAbi, signer);
+
+    const safetyRatio = await viewContract.getSafetyRatio(market, user);
+
+    return {
+        ratio: safetyRatio.toString()
+    };
+}
+
 module.exports = {
     getFullTokensInfo,
-    getLoanData
+    getLoanData,
+    getSafetyRatio
 };

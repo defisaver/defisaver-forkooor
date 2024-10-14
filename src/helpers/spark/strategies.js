@@ -9,10 +9,12 @@ const { getSender, subToSparkStrategy } = require("../../utils");
  * @param {number} targetRepayRatio Target ratio for repay feature (decimal number)
  * @param {number} targetBoostRatio Target ratio for boost feature (decimal number)
  * @param {boolean} boostEnabled Is boost feature enabled
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled) {
-    const [, proxy] = await getSender(owner);
+async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
+    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     try {
         const strategySub = automationSdk.strategySubService.sparkEncode.leverageManagement(

@@ -12,9 +12,11 @@ const MAX_FEE_PERCENTAGE = ethers.utils.parseUnits("0.05");
  * @param {string} params.sender eoa of proxy that will own the trove
  * @param {number} params.collAmount collateral amount in the position
  * @param {number} params.debtAmount debt amount in the position
+ * @param {string} params.proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} params.useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} Obj that contains trove info
  */
-async function openTrove({ sender, collAmount, debtAmount }) {
+async function openTrove({ sender, collAmount, debtAmount, proxyAddr, useSafe = true }) {
     const senderAcc = ethers.provider.getSigner(sender.toString());
 
     senderAcc.address = senderAcc._address;
@@ -23,7 +25,7 @@ async function openTrove({ sender, collAmount, debtAmount }) {
     const collAmountInWei = ethers.utils.parseUnits(collAmount.toString());
     const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString());
 
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
     const { upperHint, lowerHint } = await getInsertPosition(
         collAmountInWei,
         debtAmountInWei
@@ -45,7 +47,7 @@ async function openTrove({ sender, collAmount, debtAmount }) {
     const functionData = liquityOpenAction.encodeForDsProxyCall()[1];
 
     await executeAction("LiquityOpen", functionData, proxy);
-    return getTroveInfo(sender);
+    return getTroveInfo(proxy.address);
 }
 
 /**
@@ -56,9 +58,11 @@ async function openTrove({ sender, collAmount, debtAmount }) {
  * @param {number} params.collAmount amount of collateral to supply/withdraw
  * @param {string} params.debtAction "payback" | "borrow"
  * @param {number} params.debtAmount amount of debt to payback/borrow
+ * @param {string} params.proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} params.useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} Obj that contains trove info
  */
-async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount }) {
+async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount, proxyAddr, useSafe = true }) {
     const senderAcc = await ethers.provider.getSigner(sender.toString());
 
     senderAcc.address = senderAcc._address;
@@ -67,7 +71,7 @@ async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmo
     const collAmountInWei = ethers.utils.parseUnits(collAmount.toString());
     const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString());
 
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
     const { upperHint, lowerHint } = await getHintsForAdjust(
         proxy.address,
         collAction,
@@ -109,7 +113,7 @@ async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmo
     const functionData = liquityAdjustAction.encodeForDsProxyCall()[1];
 
     await executeAction("LiquityAdjust", functionData, proxy);
-    return getTroveInfo(sender);
+    return getTroveInfo(proxy.address);
 }
 
 module.exports = {

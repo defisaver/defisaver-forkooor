@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { getTroveInfo } = require("../../helpers/liquity/view");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { openTrove, adjustTrove } = require("../../helpers/liquity/general");
 
 const router = express.Router();
@@ -25,9 +25,10 @@ const router = express.Router();
  *              forkId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *              owner:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
+ *                description: Address of the trove owner
  *     responses:
  *       '200':
  *         description: OK
@@ -71,10 +72,10 @@ router.post("/get-trove", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, sender } = req.body;
+        const { forkId, owner } = req.body;
 
         await setupFork(forkId);
-        const troveInfo = await getTroveInfo(sender);
+        const troveInfo = await getTroveInfo(owner);
 
         res.status(200).send(troveInfo);
     } catch (err) {
@@ -111,6 +112,14 @@ router.post("/get-trove", async (req, res) => {
  *              debtAmount:
  *                type: integer
  *                example: 4000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -156,8 +165,11 @@ router.post("/open-trove", async (req, res) => {
     try {
         const { forkId, sender, collAmount, debtAmount } = req.body;
 
+        const proxyAddr = getWalletAddr(req);
+        const useSafe = defaultsToSafe(req);
+
         await setupFork(forkId);
-        const troveInfo = await openTrove({ sender, collAmount, debtAmount });
+        const troveInfo = await openTrove({ sender, collAmount, debtAmount, proxyAddr, useSafe });
 
         res.status(200).send(troveInfo);
     } catch (err) {
@@ -200,6 +212,14 @@ router.post("/open-trove", async (req, res) => {
  *              debtAmount:
  *                type: integer
  *                example: 2000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -245,8 +265,11 @@ router.post("/adjust-trove", async (req, res) => {
     try {
         const { forkId, sender, collAction, collAmount, debtAction, debtAmount } = req.body;
 
+        const proxyAddr = getWalletAddr(req);
+        const useSafe = defaultsToSafe(req);
+
         await setupFork(forkId);
-        const troveInfo = await adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount });
+        const troveInfo = await adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount, proxyAddr, useSafe });
 
         res.status(200).send(troveInfo);
     } catch (err) {

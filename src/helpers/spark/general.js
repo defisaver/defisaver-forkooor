@@ -12,11 +12,13 @@ const { getFullTokensInfo, getLoanData } = require("./view");
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} coll amount of collateral to be supplied (whole number)
  * @param {number} debt amount of debt to be generated (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
- * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} object that has users position data in it
  */
-async function createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
     const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
@@ -34,12 +36,14 @@ async function createSparkPosition(market, collToken, debtToken, rateMode, coll,
     const aaveCollInfo = infos[0];
     const aaveDebtInfo = infos[1];
 
-    const nullAddr = "0x0000000000000000000000000000000000000000";
+    const nullAddr = hre.ethers.constants.AddressZero;
     const createPositionRecipe = new dfs.Recipe("CreateSparkPositionRecipe", [
-        // eslint-disable-next-line max-len
-        new dfs.actions.spark.SparkSupplyAction(false, market, amountColl.toString(), senderAcc._address, collTokenData.address, aaveCollInfo.assetId, true, false, nullAddr),
-        // eslint-disable-next-line max-len
-        new dfs.actions.spark.SparkBorrowAction(false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr)
+        new dfs.actions.spark.SparkSupplyAction(
+            false, market, amountColl.toString(), senderAcc._address, collTokenData.address, aaveCollInfo.assetId, true, false, nullAddr
+        ),
+        new dfs.actions.spark.SparkBorrowAction(
+            false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr
+        )
     ]);
     const functionData = createPositionRecipe.encodeForDsProxyCall()[1];
 
@@ -57,11 +61,13 @@ async function createSparkPosition(market, collToken, debtToken, rateMode, coll,
  * @param {string} market market address
  * @param {string} collToken collateral token symbol
  * @param {number} amount amount of collateral to be supplied (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
- * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} object that has users position data in it
  */
-async function sparkSupply(market, collToken, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function sparkSupply(market, collToken, amount, owner, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
 
@@ -76,9 +82,10 @@ async function sparkSupply(market, collToken, amount, owner) {
     const infos = await getFullTokensInfo(market, [collTokenData.address]);
     const aaveCollInfo = infos[0];
 
-    const nullAddr = "0x0000000000000000000000000000000000000000";
-    // eslint-disable-next-line max-len
-    const action = new dfs.actions.spark.SparkSupplyAction(false, market, amountColl.toString(), senderAcc._address, collTokenData.address, aaveCollInfo.assetId, true, false, nullAddr);
+    const nullAddr = hre.ethers.constants.AddressZero;
+    const action = new dfs.actions.spark.SparkSupplyAction(
+        false, market, amountColl.toString(), senderAcc._address, collTokenData.address, aaveCollInfo.assetId, true, false, nullAddr
+    );
 
     try {
         await executeAction("SparkSupply", action.encodeForDsProxyCall()[1], proxy);
@@ -94,11 +101,13 @@ async function sparkSupply(market, collToken, amount, owner) {
  * @param {string} market market address
  * @param {string} collToken collateral token symbol
  * @param {number} amount amount of collateral to be supplied (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
- * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} object that has users position data in it
  */
-async function sparkWithdraw(market, collToken, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function sparkWithdraw(market, collToken, amount, owner, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
     const amountColl = hre.ethers.utils.parseUnits(amount.toString(), collTokenData.decimals);
@@ -106,8 +115,9 @@ async function sparkWithdraw(market, collToken, amount, owner) {
     const infos = await getFullTokensInfo(market, [collTokenData.address]);
     const aaveCollInfo = infos[0];
 
-    // eslint-disable-next-line max-len
-    const action = new dfs.actions.spark.SparkWithdrawAction(false, market, amountColl.toString(), senderAcc._address, aaveCollInfo.assetId);
+    const action = new dfs.actions.spark.SparkWithdrawAction(
+        false, market, amountColl.toString(), senderAcc._address, aaveCollInfo.assetId
+    );
 
     try {
         await executeAction("SparkWithdraw", action.encodeForDsProxyCall()[1], proxy);
@@ -124,11 +134,13 @@ async function sparkWithdraw(market, collToken, amount, owner) {
  * @param {string} debtToken debt token symbol
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be generated (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
- * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} object that has users position data in it
  */
-async function sparkBorrow(market, debtToken, rateMode, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function sparkBorrow(market, debtToken, rateMode, amount, owner, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
 
@@ -137,9 +149,10 @@ async function sparkBorrow(market, debtToken, rateMode, amount, owner) {
     const infos = await getFullTokensInfo(market, [debtTokenData.address]);
     const aaveDebtInfo = infos[0];
 
-    const nullAddr = "0x0000000000000000000000000000000000000000";
-    // eslint-disable-next-line max-len
-    const action = new dfs.actions.spark.SparkBorrowAction(false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr);
+    const nullAddr = hre.ethers.constants.AddressZero;
+    const action = new dfs.actions.spark.SparkBorrowAction(
+        false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr
+    );
 
     try {
         await executeAction("SparkBorrow", action.encodeForDsProxyCall()[1], proxy);
@@ -156,11 +169,13 @@ async function sparkBorrow(market, debtToken, rateMode, amount, owner) {
  * @param {string} debtToken debt token symbol
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be generated (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
- * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} object that has users position data in it
  */
-async function sparkPayback(market, debtToken, rateMode, amount, owner) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function sparkPayback(market, debtToken, rateMode, amount, owner, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
 
@@ -175,9 +190,10 @@ async function sparkPayback(market, debtToken, rateMode, amount, owner) {
     const infos = await getFullTokensInfo(market, [debtTokenData.address]);
     const aaveDebtInfo = infos[0];
 
-    const nullAddr = "0x0000000000000000000000000000000000000000";
-    // eslint-disable-next-line max-len
-    const action = new dfs.actions.spark.SparkPaybackAction(false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), debtTokenData.address, aaveDebtInfo.assetId, false, nullAddr);
+    const nullAddr = hre.ethers.constants.AddressZero;
+    const action = new dfs.actions.spark.SparkPaybackAction(
+        false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), debtTokenData.address, aaveDebtInfo.assetId, false, nullAddr
+    );
 
     try {
         await executeAction("SparkPayback", action.encodeForDsProxyCall()[1], proxy);

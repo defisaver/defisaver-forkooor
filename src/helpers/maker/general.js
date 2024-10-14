@@ -10,9 +10,11 @@ const { getVaultsForUser, getVaultInfo, getMcdManagerAddr, getDsrBalance } = req
  * @param {number} coll amount of collateral to be supplied (whole number)
  * @param {number} debt amount of DAI to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created vault
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function createMcdVault(type, coll, debt, owner) {
+async function createMcdVault(type, coll, debt, owner, proxyAddr, useSafe = true) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -20,7 +22,7 @@ async function createMcdVault(type, coll, debt, owner) {
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     // find coll asset
     const ilkObj = ilks.find(i => i.ilkLabel === type);
@@ -68,9 +70,11 @@ async function createMcdVault(type, coll, debt, owner) {
  * Open an empty MCD Vault
  * @param {string} type ilkLabel
  * @param {string} owner the EOA which will be sending transactions and own the newly created vault
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function openEmptyMcdVault(type, owner) {
+async function openEmptyMcdVault(type, owner, proxyAddr, useSafe = true) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -78,7 +82,7 @@ async function openEmptyMcdVault(type, owner) {
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     // find coll asset
     const ilkObj = ilks.find(i => i.ilkLabel === type);
@@ -112,9 +116,11 @@ async function openEmptyMcdVault(type, owner) {
  * @param {string} sender the EOA which will be supplying collateral to the vault
  * @param {number} vaultId vault ID
  * @param {number} supplyAmount amount of collateral to be supplied (whole number)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdSupply(sender, vaultId, supplyAmount) {
+async function mcdSupply(sender, vaultId, supplyAmount, proxyAddr, useSafe = true) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
@@ -122,7 +128,7 @@ async function mcdSupply(sender, vaultId, supplyAmount) {
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     const mcdManager = await getMcdManagerAddr();
 
@@ -165,9 +171,11 @@ async function mcdSupply(sender, vaultId, supplyAmount) {
  * @param {string} owner the EOA of the vault owner
  * @param {number} vaultId vault ID
  * @param {number} withdrawAmount amount of collateral to be withdrawn (whole number), -1 for whole coll withdraw
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdWithdraw(owner, vaultId, withdrawAmount) {
+async function mcdWithdraw(owner, vaultId, withdrawAmount, proxyAddr, useSafe = true) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -175,7 +183,7 @@ async function mcdWithdraw(owner, vaultId, withdrawAmount) {
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     const mcdManager = await getMcdManagerAddr();
 
@@ -216,9 +224,11 @@ async function mcdWithdraw(owner, vaultId, withdrawAmount) {
  * @param {string} owner the EOA of the vault owner
  * @param {number} vaultId vault ID
  * @param {number} borrowAmount amount of DAI to be generated (whole number)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdBorrow(owner, vaultId, borrowAmount) {
+async function mcdBorrow(owner, vaultId, borrowAmount, proxyAddr, useSafe = true) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
@@ -226,7 +236,7 @@ async function mcdBorrow(owner, vaultId, borrowAmount) {
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     const amountDai = hre.ethers.utils.parseUnits(borrowAmount.toString(), 18);
 
@@ -252,9 +262,11 @@ async function mcdBorrow(owner, vaultId, borrowAmount) {
  * @param {string} sender the EOA of the vault owner
  * @param {number} vaultId vault ID
  * @param {number} paybackAmount amount of DAI to be paid back (whole number), -1 for whole debt payback
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has vaultId, ilkLabel and latest coll and debt amounts in wei
  */
-async function mcdPayback(sender, vaultId, paybackAmount) {
+async function mcdPayback(sender, vaultId, paybackAmount, proxyAddr, useSafe = true) {
 
     // get ethers.Signer object for sender eoa
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
@@ -262,7 +274,7 @@ async function mcdPayback(sender, vaultId, paybackAmount) {
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     const mcdManager = await getMcdManagerAddr();
 
@@ -310,15 +322,17 @@ async function mcdPayback(sender, vaultId, paybackAmount) {
  * Deposit DAI into Maker DSR
  * @param {string} sender the EOA of the vault owner
  * @param {number} amount amount of DAI to be deposited
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {number} amount of dai in DSR, after deposit
  */
-async function mcdDsrDeposit(sender, amount) {
+async function mcdDsrDeposit(sender, amount, proxyAddr, useSafe = true) {
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
 
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     const { chainId } = await hre.ethers.provider.getNetwork();
     const daiAddress = addresses[chainId].DAI_ADDR;
@@ -344,15 +358,17 @@ async function mcdDsrDeposit(sender, amount) {
  * Deposit DAI into Maker DSR
  * @param {string} sender the EOA of the vault owner
  * @param {number} amount amount of DAI to be withdrawn
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {number} amount of dai in DSR, after withdraw
  */
-async function mcdDsrWithdraw(sender, amount) {
+async function mcdDsrWithdraw(sender, amount, proxyAddr, useSafe = true) {
     const senderAcc = await hre.ethers.provider.getSigner(sender.toString());
 
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
     const amountInWei = hre.ethers.utils.parseUnits(amount.toString(), 18);
 
     const action = new dfs.actions.maker.MakerDsrWithdrawAction(amountInWei, senderAcc.address);

@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { subCompoundV3AutomationStrategy } = require("../../helpers/compoundV3/strategies");
 
 const router = express.Router();
@@ -12,7 +12,6 @@ const router = express.Router();
  *     summary: Subscribe to a Compound V3 Automation strategy
  *     tags:
  *      - CompoundV3
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -53,6 +52,14 @@ const router = express.Router();
  *              isEOA:
  *                 type: boolean
  *                 example: false
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -111,7 +118,9 @@ router.post("/dfs-automation", async (req, res) => {
             targetRepayRatio,
             targetBoostRatio,
             boostEnabled,
-            isEOA
+            isEOA,
+            getWalletAddr(req),
+            defaultsToSafe(req)
         );
 
         res.status(200).send(sub);

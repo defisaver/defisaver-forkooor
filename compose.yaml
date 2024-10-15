@@ -1,0 +1,10 @@
+services:
+  web:
+    build:
+      context: .
+    image: forkor
+    environment:
+      NODE_ENV: production
+    ports:
+      - 3002:3000
+    restart: always

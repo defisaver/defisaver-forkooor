@@ -1,7 +1,8 @@
 const hre = require("hardhat");
 
 const {
-    dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi
+    dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi, safeProxyFactoryAbi,
+    safeAbi
 } = require("./abi/general");
 const { sparkSubProxyAbi } = require("./abi/spark/abis");
 
@@ -10,7 +11,8 @@ const { aaveV3SubProxyAbi } = require("./abi/aaveV3/abis");
 const { mcdSubProxyAbi } = require("./abi/maker/views");
 const { liquityLeverageManagementSubProxyAbi } = require("./abi/liquity/abis");
 
-const nullAddress = "0x0000000000000000000000000000000000000000";
+const SAFE_PROXY_FACTORY_ADDR = "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67";
+const SAFE_SINGLETON_ADDR = "0x41675C099F32341bf84BFc5382aF534df5C7461a";
 
 const addresses = {
     1: {
@@ -19,14 +21,17 @@ const addresses = {
         PROXY_REGISTRY: "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
         SUB_PROXY: "0x88B8cEb76b88Ee0Fb7160E6e2Ad86055a32D72d4",
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        SPARK_SUB_PROXY: "0x3730bb1f58087D02Ccf7E0B6696755f588E17A03",
+        SPARK_SUB_PROXY: "0xb6F2FC4039aBB60Cd38a2489A2299366cdb037ae",
         AAVE_V3_SUB_PROXY: "0x7D2250A5CC1b32670d23FcA14D08fF3dC6230f96",
-        MCD_SUB_PROXY: "0xDED2752728227c502E08e51023b1cE0a37F907A2",
-        COMP_V3_VIEW: "0xf522b1588688b9887623b9C666175684d284D363",
-        COMP_V3_SUB_PROXY: "0x39Fce916C420320138dBc1947784667b5Ad88df5",
+        MCD_SUB_PROXY: "0xc044477E9a70a6aFbeDA3B33163710B7fc557eB2",
+        COMP_V3_VIEW: "0x566b1Bd61E4C164DC22f51883942655DaA7Ea297",
+        COMP_V3_SUB_PROXY: "0xf8ED16738cEf95c89F4Ff4790d78F295488f6078",
         LIQUITY_LEVERAGE_MANAGEMENT_SUB_PROXY: "0xE2f4A4629FbbC444964A16438329288C66551c30",
-        AAVE_V3_VIEW: "0x485416D87B6B6B98259c32E789D4f7Ce4CD2959c",
-        AAVE_V3_MARKET: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+        AAVE_V3_VIEW: "0x23Ef4A553fC2Af2784A5bF8CE4345D1f0A355A15",
+        AAVE_V3_MARKET: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e",
+        MORPHO_BLUE_VIEW: "0x10B621823D4f3E85fBDF759e252598e4e097C1fd",
+        MORPHO_BLUE: "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
+        CURVE_USD_VIEW: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -35,7 +40,7 @@ const addresses = {
         SUB_PROXY: "0xFF9f0B8d0a4270f98C52842d163fd34728109692",
         DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
         AAVE_V3_SUB_PROXY: "0xa950a534a6AB01D1FF5C6C82E5E7F515c19500e9",
-        AAVE_V3_VIEW: "0x1BD33a66791ef6278f6d88503F1e65bEbAED59da",
+        AAVE_V3_VIEW: "0xf56A2A8fA68D2E608ED7060BE55e96E008dCc3ca",
         AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb"
     },
     42161: {
@@ -44,13 +49,139 @@ const addresses = {
         PROXY_REGISTRY: "0x283Cc5C26e53D66ed2Ea252D986F094B37E6e895",
         SUB_PROXY: "0x2edB8eb14e29F3CF0bd50958b4664C9EB1583Ec9",
         DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
-        COMP_V3_VIEW: "0x3A07Bb9eb0d71bf03295a84655d82b00A1450CD6",
-        COMP_V3_SUB_PROXY: "0x2F368325C53656BBEE6BDE1C04a39eEd717F1E43",
+        COMP_V3_VIEW: "0xdaAFACe18f75D941041Eef575255A41fdBC50a17",
+        COMP_V3_SUB_PROXY: "0x398129ee7b6B5F62F896998E036Ebb3032451f03",
         AAVE_V3_SUB_PROXY: "0x967b6dFd1485C30521F8311e39E60B9c4D4b6Dbf",
-        AAVE_V3_VIEW: "0x35a329dda803ecced333647d7e6c14bafb14fe8a",
+        AAVE_V3_VIEW: "0x94A36080FaE0e22977aA4928d3D5C733Be744DF1",
         AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb"
+    },
+    8453: {
+        REGISTRY_ADDR: "0x347FB634271F666353F23A3362f3935D96F97476",
+        OWNER_ACC: "0xBaBe2409dBD359453E5292d684fF324A638801bF",
+        PROXY_REGISTRY: "0x425fA97285965E01Cc5F951B62A51F6CDEA5cc0d",
+        SUB_PROXY: "0xbC36AE71e15865f4074B786d992F1105cdd8c196",
+        DAI_ADDR: "0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb",
+        COMP_V3_VIEW: "0xa91a1E214049d97f5c0a2504f5e18744ebBad1Ea",
+        COMP_V3_SUB_PROXY: "0x33Ba53a1367527b09D429EB1392E57A43Cf83f99",
+        AAVE_V3_SUB_PROXY: "0x8489B4e243Ba8062D3351439D560E6AF477867ab",
+        AAVE_V3_VIEW: "0x1882BBB847425335CCe0b81eC10295674A982395",
+        AAVE_V3_MARKET: "0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D"
     }
 };
+
+/**
+ * Returns true if the proxy is a Safe Smart wallet
+ * @param {Object} proxy a proxy object
+ * @returns {boolean} true if the proxy is a Safe Smart wallet
+ */
+function isProxySafe(proxy) {
+    return proxy.functions.nonce;
+}
+
+/** Create a new Safe for the senderAddress
+ * @param {string} senderAddress account that will be the owner of the safe
+ * @returns {string} created safe address
+ */
+async function createSafe(senderAddress) {
+    const abiCoder = new hre.ethers.utils.AbiCoder();
+
+    const safeProxyFactory = await hre.ethers.getContractAt(safeProxyFactoryAbi, SAFE_PROXY_FACTORY_ADDR);
+
+    const saltNonce = Date.now();
+    const setupData = [
+        [senderAddress], // owner
+        1, // threshold
+        hre.ethers.constants.AddressZero, // to module address
+        [], // data for module
+        hre.ethers.constants.AddressZero, // fallback handler
+        hre.ethers.constants.AddressZero, // payment token
+        0, // payment
+        hre.ethers.constants.AddressZero // payment receiver
+    ];
+
+    const safeInterface = await hre.ethers.getContractAt(safeAbi, SAFE_SINGLETON_ADDR);
+    const functionData = safeInterface.interface.encodeFunctionData(
+        "setup",
+        setupData
+    );
+
+    const accSigner = await hre.ethers.getSigner(senderAddress);
+
+    let receipt = await safeProxyFactory.connect(accSigner).createProxyWithNonce(
+        SAFE_SINGLETON_ADDR,
+        functionData,
+        saltNonce
+    );
+
+    receipt = await receipt.wait();
+
+    // fetch deployed safe addr
+    const safeAddr = abiCoder.decode(["address"], receipt.events.reverse()[0].topics[1]);
+
+    return safeAddr[0];
+}
+
+/**
+ * Executes 1/1 safe tx without sig
+ * @param {Object} safeInstance safe object instance
+ * @param {string} targetAddr target contract address for execution
+ * @param {Object} calldata calldata to send to target address
+ * @param {number} callType type of call (1 for delegateCall, 0 for call). Default to DelegateCall
+ * @param {number} ethValue eth value to send. Defaults to 0
+ * @returns {void}
+ */
+async function executeSafeTx(
+    safeInstance,
+    targetAddr,
+    calldata,
+    callType = 1,
+    ethValue = 0
+) {
+    const abiCoder = new hre.ethers.utils.AbiCoder();
+
+    const nonce = await safeInstance.nonce();
+
+    const txHash = await safeInstance.getTransactionHash(
+        targetAddr, // to
+        ethValue, // eth value
+        calldata, // action calldata
+        callType, // 1 is delegate call
+        0, // safeTxGas
+        0, // baseGas
+        0, // gasPrice
+        hre.ethers.constants.AddressZero, // gasToken
+        hre.ethers.constants.AddressZero, // refundReceiver
+        nonce // nonce
+    );
+
+    console.log(`Tx hash of safe ${txHash}`);
+
+    const owners = await safeInstance.getOwners();
+    const ownerAsSigner = await hre.ethers.provider.getSigner(owners[0]);
+
+    // encode r and s
+    let sig = abiCoder.encode(["address", "bytes32"], [owners[0], "0x0000000000000000000000000000000000000000000000000000000000000000"]);
+
+    // add v = 1
+    sig += "01";
+
+    // call safe function
+    const receipt = await safeInstance.connect(ownerAsSigner).execTransaction(
+        targetAddr,
+        ethValue,
+        calldata,
+        callType,
+        0,
+        0,
+        0,
+        hre.ethers.constants.AddressZero,
+        hre.ethers.constants.AddressZero,
+        sig,
+        { gasLimit: 8000000 }
+    );
+
+    return receipt;
+}
 
 /**
  * Create a headers object needed for tenderly API
@@ -93,23 +224,45 @@ async function getAddrFromRegistry(name) {
 }
 
 /**
- * Get an existing or build a new Proxy ethers.Contract object for an EOA
+ * Get an existing or build a new Safe/DsProxy ethers.Contract object for an EOA
  * @param {string} account proxy owner
- * @returns {Object} DSProxy ethers.Contract object
+ * @param {string} proxyAddr address of the proxy that will be used for the position, if not provided a new proxy will be created
+ * @param {boolean} isSafe whether to create a safe or dsproxy if proxyAddr is not provided. Defaults to safe
+ * @returns {Object} Safe/DSProxy ethers.Contract object
  */
-async function getProxy(account) {
+async function getProxy(account, proxyAddr = hre.ethers.constants.AddressZero, isSafe = true) {
     const accSigner = await hre.ethers.getSigner(account);
     const { chainId } = await hre.ethers.provider.getNetwork();
     const [signer] = await hre.ethers.getSigners();
-    let proxyRegistryContract = new hre.ethers.Contract(addresses[chainId].PROXY_REGISTRY, proxyRegistryAbi, signer);
-    let proxyAddr = await proxyRegistryContract.proxies(account);
 
-    if (proxyAddr === nullAddress) {
-        proxyRegistryContract = await proxyRegistryContract.connect(accSigner);
-        await proxyRegistryContract.build(account);
-        proxyAddr = await proxyRegistryContract.proxies(account);
+    if (proxyAddr !== hre.ethers.constants.AddressZero) {
+        let proxy = new hre.ethers.Contract(proxyAddr, safeAbi, accSigner);
+
+        try {
+            await proxy.nonce();
+        } catch (error) {
+            proxy = new hre.ethers.Contract(proxyAddr, proxyAbi, accSigner);
+        }
+        return proxy;
     }
-    const dsProxy = new hre.ethers.Contract(proxyAddr, proxyAbi, accSigner);
+
+    if (isSafe) {
+        const safeAddr = await createSafe(account);
+        const safe = new hre.ethers.Contract(safeAddr, safeAbi, accSigner);
+
+        console.log(`Safe created ${safeAddr}`);
+        return safe;
+    }
+
+    let dsProxyRegistryContract = new hre.ethers.Contract(addresses[chainId].PROXY_REGISTRY, proxyRegistryAbi, signer);
+    let dsProxyAddr = await dsProxyRegistryContract.proxies(account);
+
+    if (dsProxyAddr === hre.ethers.constants.AddressZero) {
+        dsProxyRegistryContract = await dsProxyRegistryContract.connect(accSigner);
+        await dsProxyRegistryContract.build(account);
+        dsProxyAddr = await dsProxyRegistryContract.proxies(account);
+    }
+    const dsProxy = new hre.ethers.Contract(dsProxyAddr, proxyAbi, accSigner);
 
     return dsProxy;
 }
@@ -127,16 +280,18 @@ async function isContract(address) {
 
 /**
  * Get sender account and his proxy
- * @param {string} owner the EOA which will be sending transactions and own the newly created vault
+ * @param {string} owner the EOA which will be sending transactions and own the newly created proxy if proxyAddr is not provided
+ * @param {string} proxyAddr the address of the proxy that will be used for the position, if not provided a new proxy will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} object that has sender account and his proxy
  */
-async function getSender(owner) {
+async function getSender(owner, proxyAddr = hre.ethers.constants.AddressZero, useSafe = true) {
     const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
 
     senderAcc.address = senderAcc._address;
 
     // create Proxy if the sender doesn't already have one
-    const proxy = await getProxy(senderAcc.address);
+    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
 
     return [
         senderAcc,
@@ -165,17 +320,48 @@ async function approve(tokenAddr, to, owner) {
 }
 
 /**
+ * Execute an action through a proxy
+ * @param {Object} proxy user's wallet
+ * @param {string} targetAddr address of the contract we're invoking via proxy
+ * @param {Object} callData encoded function call
+ * @param {number} ethValue eth value to send. Defaults to 0
+ * @returns {void}
+ */
+async function executeActionFromProxy(proxy, targetAddr, callData, ethValue = 0) {
+    let receipt;
+
+    if (isProxySafe(proxy)) {
+        receipt = await executeSafeTx(
+            proxy,
+            targetAddr,
+            callData,
+            1,
+            ethValue
+        );
+    } else {
+        receipt = await proxy["execute(address,bytes)"](targetAddr, callData, {
+            gasLimit: 30000000,
+            value: ethValue
+        });
+    }
+    const txData = await hre.ethers.provider.getTransactionReceipt(receipt.hash);
+
+    if (txData.status !== 1) {
+        throw new Error(`Action execution failed on address: ${targetAddr}`);
+    }
+}
+
+/**
  * Util function for invoking an action via DSProxy
  * @param {string} actionName name of the Contract we're invoking via proxy
  * @param {string} functionData dfs sdk action encoded for proxy
  * @param {Object} proxy DSProxy ethers.Contract object
- * @returns {void}
+ * @returns {Object} receipt of the transaction
  */
 async function executeAction(actionName, functionData, proxy) {
     const actionAddr = await getAddrFromRegistry(actionName);
 
-    await proxy["execute(address,bytes)"](actionAddr, functionData, { gasLimit: 30000000 })
-        .then(e => e.wait());
+    await executeActionFromProxy(proxy, actionAddr, functionData);
 }
 
 /**
@@ -253,6 +439,104 @@ async function lowerSafesThreshold(forkId, safes, thresholds, isVnet = false) {
 }
 
 /**
+ * Find balance slot info for a token
+ * @param {string} tokenAddress address of the token
+ * @returns {Object} slot info
+ */
+async function findBalancesSlot(tokenAddress) {
+    const slotObj = storageSlots[tokenAddress];
+
+    if (slotObj) {
+        return { isVyper: slotObj.isVyper, num: slotObj.num };
+    }
+
+    // eslint-disable-next-line func-style
+    const encode = (types, values) => hre.ethers.utils.defaultAbiCoder.encode(types, values);
+    const account = hre.ethers.constants.AddressZero;
+    const probeA = encode(["uint"], [1]);
+    const probeB = encode(["uint"], [2]);
+
+    const [signer] = await hre.ethers.getSigners();
+    const token = new hre.ethers.Contract(tokenAddress, erc20Abi, signer);
+
+    for (let i = 0; i < 10; i++) {
+        {
+            const probedSlot = hre.ethers.utils.keccak256(
+                encode(["address", "uint"], [account, i])
+            );
+
+            const prev = await hre.ethers.provider.send(
+                "eth_getStorageAt",
+                [tokenAddress, probedSlot, "latest"]
+            );
+
+            // make sure the probe will change the slot value
+            const probe = prev === probeA ? probeB : probeA;
+
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                probe
+            ]);
+
+            const balance = await token.balanceOf(account);
+
+            // reset to previous value
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                prev
+            ]);
+            if (balance.eq(hre.ethers.BigNumber.from(probe))) {
+                const result = { isVyper: false, num: i };
+
+                return result;
+            }
+        }
+        {
+            let probedSlot = hre.ethers.utils.keccak256(
+                encode(["uint", "address"], [i, account])
+            );
+
+
+            // remove padding for JSON RPC
+            while (probedSlot.startsWith("0x0")) {
+                probedSlot = `0x${probedSlot.slice(3)}`;
+            }
+            const prev = await hre.ethers.provider.send(
+                "eth_getStorageAt",
+                [tokenAddress, probedSlot, "latest"]
+            );
+
+            // make sure the probe will change the slot value
+            const probe = prev === probeA ? probeB : probeA;
+
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                probe
+            ]);
+
+            const balance = await token.balanceOf(account);
+
+
+            // reset to previous value
+            await hre.ethers.provider.send("tenderly_setStorageAt", [
+                tokenAddress,
+                probedSlot,
+                prev
+            ]);
+            if (balance.eq(hre.ethers.BigNumber.from(probe))) {
+                const result = { isVyper: true, num: i };
+
+                return result;
+            }
+        }
+    }
+    throw new Error("Failed to find balance storage slot");
+}
+
+/**
  * Grants a desired token balance to an address
  * @param {string} tokenAddr address of the ERC20 token
  * @param {string} userAddr address which we want to receive the desired amount of tokens
@@ -268,7 +552,6 @@ async function setBalance(tokenAddr, userAddr, amount) {
 
     const decimals = await erc20.decimals();
     const value = hre.ethers.utils.parseUnits(amount.toString(), decimals);
-    const inputTokenAddr = tokenAddr;
 
     try {
 
@@ -285,10 +568,10 @@ async function setBalance(tokenAddr, userAddr, amount) {
 
         // bojsa pls
     }
-    const slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
+    let slotObj = storageSlots[chainId][tokenAddr.toString().toLowerCase()];
 
     if (!slotObj) {
-        throw new Error(`Token balance not changeable : ${inputTokenAddr} - ${chainId}`);
+        slotObj = await findBalancesSlot(tokenAddr.toString());
     }
     const slotInfo = { isVyper: slotObj.isVyper, num: slotObj.num };
     let index;
@@ -335,6 +618,7 @@ async function setBalance(tokenAddr, userAddr, amount) {
     // }
 }
 
+
 /**
  * Get latest Subscription ID from SubStorage
  * @returns {number} ID of the latest subscription
@@ -370,9 +654,7 @@ async function subToStrategy(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -397,9 +679,7 @@ async function subToSparkStrategy(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -423,9 +703,7 @@ async function subToAaveV3Automation(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -450,9 +728,7 @@ async function subToMcdAutomation(proxy, strategySub) {
         [strategySub, false]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
@@ -477,13 +753,31 @@ async function subToLiquityLeverageManagementAutomation(proxy, strategySub) {
         [strategySub]
     );
 
-    await proxy["execute(address,bytes)"](subProxyAddr, functionData, {
-        gasLimit: 5000000
-    }).then(e => e.wait());
+    await executeActionFromProxy(proxy, subProxyAddr, functionData);
 
     const latestSubId = await getLatestSubId();
 
     return latestSubId;
+}
+
+/**
+ * Whether to default to Safe or use DSProxy
+ * @param {Object} req request object
+ * @returns {boolean} true if we should default to Safe
+ */
+function defaultsToSafe(req) {
+    const useDsProxy = req.body.walletType && req.body.walletType === "dsproxy";
+
+    return !useDsProxy;
+}
+
+/**
+ * Read walletAddr from request. If not provided, return AddressZero, meaning new wallet will be created
+ * @param {Object} req request object
+ * @returns {string} wallet address
+ */
+function getWalletAddr(req) {
+    return req.body.walletAddr ? req.body.walletAddr : hre.ethers.constants.AddressZero;
 }
 
 module.exports = {
@@ -507,5 +801,9 @@ module.exports = {
     subToLiquityLeverageManagementAutomation,
     isContract,
     lowerSafesThreshold,
+    defaultsToSafe,
+    executeActionFromProxy,
+    getWalletAddr,
+    createSafe,
     getRpc,
 };

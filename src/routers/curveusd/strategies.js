@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { subCurveUsdRepayBundle, subCurveUsdBoostBundle, subCurveUsdPaybackStrategy } = require("../../helpers/curveusd/strategies");
 
@@ -15,7 +15,6 @@ const router = express.Router();
  *     summary: Subscribe to a CurveUsd Repay strategy
  *     tags:
  *      - CurveUsd
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -33,16 +32,21 @@ const router = express.Router();
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              controller:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              bundleId:
- *                  type: integer
- *                  example: 15
+ *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
  *              minRatio:
  *                  type: integer
  *                  example: 250
  *              targetRatio:
  *                  type: integer
  *                  example: 300
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -71,7 +75,6 @@ router.post("/repay", body(
     [
         "forkId",
         "owner",
-        "bundleId",
         "controller",
         "minRatio",
         "targetRatio"
@@ -83,11 +86,11 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, bundleId, controller, minRatio, targetRatio } = req.body;
+    const { forkId, owner, controller, minRatio, targetRatio } = req.body;
 
     await setupFork(forkId, [owner]);
     subCurveUsdRepayBundle(
-        owner, bundleId, controller, minRatio, targetRatio
+        owner, controller, minRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -103,7 +106,6 @@ async (req, res) => {
  *     summary: Subscribe to a CurveUsd Repay strategy
  *     tags:
  *      - CurveUsd
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -121,16 +123,21 @@ async (req, res) => {
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              controller:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              bundleId:
- *                  type: integer
- *                  example: 15
+ *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
  *              maxRatio:
  *                  type: integer
  *                  example: 350
  *              targetRatio:
  *                  type: integer
  *                  example: 300
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -159,7 +166,6 @@ router.post("/boost", body(
     [
         "forkId",
         "owner",
-        "bundleId",
         "controller",
         "maxRatio",
         "targetRatio"
@@ -171,11 +177,11 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, bundleId, controller, maxRatio, targetRatio } = req.body;
+    const { forkId, owner, controller, maxRatio, targetRatio } = req.body;
 
     await setupFork(forkId, [owner]);
     subCurveUsdBoostBundle(
-        owner, bundleId, controller, maxRatio, targetRatio
+        owner, controller, maxRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -190,7 +196,6 @@ async (req, res) => {
  *     summary: Subscribe to a CurveUsd Payback strategy
  *     tags:
  *      - CurveUsd
- *      - Strategies
  *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
@@ -215,13 +220,21 @@ async (req, res) => {
  *                description: "Zero address defaults to wallet"
  *              controller:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
  *              minHealthRatio:
  *                type: integer
  *                example: 15
  *              amountToPayback:
  *                type: integer
  *                example: 20000
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -267,7 +280,7 @@ async (req, res) => {
 
     await setupFork(forkId, [owner]);
     subCurveUsdPaybackStrategy(
-        owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback
+        owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {

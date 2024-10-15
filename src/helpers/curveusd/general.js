@@ -10,15 +10,16 @@ const { getUserData } = require("./view");
  * @param {string} controller Crvusd controller address
  * @param {number} coll amount of collateral to be supplied (whole number)
  * @param {number} debt amount of crvusd debt to be generated (whole number)
- * @param {string} owner the EOA which will be sending transactions and own the newly created dsproxy
+ * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
  * @param {number} numberOfBands number of bands for creating a new curveusd position
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function createCurveUsdPosition(controller, coll, debt, owner, numberOfBands) {
-    const [senderAcc, proxy] = await getSender(owner);
+async function createCurveUsdPosition(controller, coll, debt, owner, numberOfBands, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const controllerContract = new hre.ethers.Contract(controller, curveusdControllerAbi, senderAcc);
     const collateralTokenAddress = await controllerContract.collateral_token();
-
 
     // set coll balance for the user
     await setBalance(collateralTokenAddress, owner, coll);

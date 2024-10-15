@@ -7,6 +7,7 @@
         "no-console": "off",
         "node/no-unpublished-require": "off",
         "no-underscore-dangle": "off",
-        "new-cap" : "off"
+        "new-cap" : "off",
+        "jsdoc/newline-after-description": "off"
     }
 }

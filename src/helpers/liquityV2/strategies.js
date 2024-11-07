@@ -1,4 +1,4 @@
-const { getSender } = require("../../utils");
+const { getSender, validateTriggerPricesForCloseStrategyType } = require("../../utils");
 const { subToStrategy } = require("../../utils");
 const automationSdk = require("@defisaver/automation-sdk");
 const { LIQUITY_V2_MARKETS, BOLD_TOKEN } = require("./view");
@@ -51,8 +51,7 @@ async function subLiquityV2LeverageManagement(
  * @param {string} troveId ID of the trove
  * @param {number} stopLossPrice trigger price for stop loss
  * @param {number} takeProfitPrice trigger price for take profit
- * @param {number} stopLossType Whether to stop loss to collateral (0) or to debt (1)
- * @param {number} takeProfitType Whether to take profit to collateral (0) or to debt (1)
+ * @param {number} closeStrategyType Type of close strategy. See automationSdk.enums.CloseStrategyType
  * @param {number} bundleId Bundle ID
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
@@ -64,8 +63,7 @@ async function subLiquityV2CloseToPrice(
     troveId,
     stopLossPrice,
     takeProfitPrice,
-    stopLossType,
-    takeProfitType,
+    closeStrategyType,
     bundleId,
     proxyAddr,
     useSafe = true
@@ -75,6 +73,11 @@ async function subLiquityV2CloseToPrice(
 
         const collToken = getAssetInfo(market).address;
         const marketAddr = LIQUITY_V2_MARKETS[market];
+
+        const {
+            stopLossType,
+            takeProfitType
+        } = validateTriggerPricesForCloseStrategyType(closeStrategyType, stopLossPrice, takeProfitPrice);
 
         const strategySub = automationSdk.strategySubService.liquityV2Encode.closeOnPrice(
             bundleId,

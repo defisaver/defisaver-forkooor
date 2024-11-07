@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const automationSdk = require("@defisaver/automation-sdk");
 
 const {
     dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi, safeProxyFactoryAbi,
@@ -771,6 +772,68 @@ function getWalletAddr(req) {
     return req.body.walletAddr ? req.body.walletAddr : hre.ethers.constants.AddressZero;
 }
 
+/**
+ * Helper function to validate if trigger prices align with the close strategy type
+ * @param {number} type Close strategy type. See automationSdk.enums.CloseStrategyType
+ * @param {number} stopLossPrice Stop loss price. Zero if not set
+ * @param {number} takeProfitPrice Take profit price. Zero if not set
+ * @returns {Object} stopLossType and takeProfitType (whether close to collateral or debt)
+ */
+function validateTriggerPricesForCloseStrategyType(type, stopLossPrice, takeProfitPrice) {
+    if (
+        type === automationSdk.enums.CloseStrategyType.STOP_LOSS_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.STOP_LOSS_IN_DEBT
+    ) {
+        if (stopLossPrice <= 0 || takeProfitPrice > 0) {
+            throw new Error(`Invalid close strategy id. Stop loss price must be set and take profit price must be zero for close type ID: ${type}`);
+        }
+    }
+
+    if (
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_DEBT
+    ) {
+        if (takeProfitPrice <= 0 || stopLossPrice > 0) {
+            throw new Error(`Invalid close strategy id. Take profit price must be set and stop loss price must be zero for close type ID: ${type}`);
+        }
+    }
+
+    if (
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_DEBT ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_DEBT_AND_STOP_LOSS_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL_AND_STOP_LOSS_IN_DEBT
+    ) {
+        if (stopLossPrice <= 0 || takeProfitPrice <= 0) {
+            throw new Error(`Invalid close strategy id. Both stop loss & take profit prices must be set for close type ID: ${type}`);
+        }
+    }
+
+    const stopLossCollateralIndexes = [
+        automationSdk.enums.CloseStrategyType.STOP_LOSS_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_DEBT_AND_STOP_LOSS_IN_COLLATERAL
+    ];
+    const takeProfitCollateralIndexes = [
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL_AND_STOP_LOSS_IN_DEBT
+    ];
+
+    const stopLossType = stopLossCollateralIndexes.includes(type)
+        ? automationSdk.enums.CloseToAssetType.COLLATERAL
+        : automationSdk.enums.CloseToAssetType.DEBT;
+
+    const takeProfitType = takeProfitCollateralIndexes.includes(type)
+        ? automationSdk.enums.CloseToAssetType.COLLATERAL
+        : automationSdk.enums.CloseToAssetType.DEBT;
+
+    return {
+        stopLossType,
+        takeProfitType
+    };
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -795,5 +858,6 @@ module.exports = {
     defaultsToSafe,
     executeActionFromProxy,
     getWalletAddr,
-    createSafe
+    createSafe,
+    validateTriggerPricesForCloseStrategyType
 };

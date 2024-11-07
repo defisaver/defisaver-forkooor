@@ -160,14 +160,10 @@ router.post("/leverage-management", async (req, res) => {
  *                 type: integer
  *                 example: 4000
  *                 description: "Upper price for take profit. Pass 0 if only subscribing to stop loss."
- *              stopLossType:
+ *              closeStrategyType:
  *                 type: number
- *                 example: 0
- *                 description: "0 for stop loss to collateral and 1 for stop loss to debt."
- *              takeProfitType:
- *                 type: number
- *                 example: 0
- *                 description: "0 for take profit to collateral and 1 for take profit to debt."
+ *                 example: 5
+ *                 description: "0=TakeProfitColl, 1=StopLossColl, 2=TakeProfitDebt, 3=StopLossDebt, 4=TakeProfitCollStopLossColl, 5=TakeProfitCollStopLossDebt, 6=TakeProfitDebtStopLossDebt, 7=TakeProfitDebtStopLossColl"
  *              bundleId:
  *                 type: string
  *                 example: 39
@@ -224,10 +220,7 @@ router.post("/close-on-price", body(
         "owner",
         "market",
         "troveId",
-        "stopLossPrice",
-        "takeProfitPrice",
-        "stopLossType",
-        "takeProfitType",
+        "closeStrategyType",
         "bundleId"
     ]
 ).notEmpty(),
@@ -248,8 +241,7 @@ async (req, res) => {
             troveId,
             stopLossPrice,
             takeProfitPrice,
-            stopLossType,
-            takeProfitType,
+            closeStrategyType,
             bundleId
         } = req.body;
 
@@ -261,8 +253,7 @@ async (req, res) => {
             troveId,
             stopLossPrice,
             takeProfitPrice,
-            stopLossType,
-            takeProfitType,
+            closeStrategyType,
             bundleId,
             getWalletAddr(req),
             defaultsToSafe(req)

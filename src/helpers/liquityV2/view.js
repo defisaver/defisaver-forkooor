@@ -8,7 +8,7 @@ const LIQUITY_V2_MARKETS = {
     wstETH: "0x83b74f12a2894fcf7a4864eff6090d7d8a060c6b"
 };
 
-const BOLD_TOKEN = "0x437245433738c1f320c6b4de1aede588e4fb4748";
+const BOLD_TOKEN = "0x4167ec9e6676876bcbcd1849d04220113bfbaa98";
 
 const COLL_INDEX_BY_MARKET = {
     WETH: 0,

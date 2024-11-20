@@ -26,7 +26,6 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
     const amountColl = hre.ethers.utils.parseUnits(coll.toString(), collTokenInfo.decimals);
     const amountDebt = hre.ethers.utils.parseUnits(debt.toString(), debtTokenInfo.decimals);
 
-    dfs.configure({ chainId });
     const createPositionRecipe = new dfs.Recipe("CreateMorphoBluePosition", [
         new dfs.actions.morphoblue.MorphoBlueSupplyCollateralAction(
             marketParams.loanToken, marketParams.collateralToken, marketParams.oracle, marketParams.irm, marketParams.lltv,

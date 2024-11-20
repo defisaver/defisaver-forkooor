@@ -1,9 +1,8 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
 const { getAssetInfoByAddress } = require("@defisaver/tokens");
-const { getSender, setBalance, approve, executeAction, addresses } = require("../../utils");
+const { getSender, setBalance, approve, executeAction } = require("../../utils");
 const { getUserData } = require("./view");
-const { morphoBlueAbi } = require("../../abi/morpho-blue/abis");
 
 /**
  * Create a MorphoBlue position for sender on his proxy (created if he doesn't have one)
@@ -19,17 +18,15 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const morphoBlueAddress = addresses[chainId].MORPHO_BLUE;
-
-    const [wallet] = await hre.ethers.getSigners();
-
     await setBalance(marketParams.collateralToken, owner, coll);
     await approve(marketParams.collateralToken, proxy.address, owner);
 
-    const collTokenInfo = getAssetInfoByAddress(marketParams.collateralToken);
-    const debtTokenInfo = getAssetInfoByAddress(marketParams.loanToken);
+    const collTokenInfo = getAssetInfoByAddress(marketParams.collateralToken, chainId);
+    const debtTokenInfo = getAssetInfoByAddress(marketParams.loanToken, chainId);
     const amountColl = hre.ethers.utils.parseUnits(coll.toString(), collTokenInfo.decimals);
     const amountDebt = hre.ethers.utils.parseUnits(debt.toString(), debtTokenInfo.decimals);
+
+    dfs.configure({ chainId });
     const createPositionRecipe = new dfs.Recipe("CreateMorphoBluePosition", [
         new dfs.actions.morphoblue.MorphoBlueSupplyCollateralAction(
             marketParams.loanToken, marketParams.collateralToken, marketParams.oracle, marketParams.irm, marketParams.lltv,
@@ -40,19 +37,10 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
             amountDebt, proxy.address, senderAcc.address
         )
     ]);
+    console.log(createPositionRecipe);
 
     const functionData = createPositionRecipe.encodeForDsProxyCall()[1];
 
-    // supply loan token so there's enough liquidity
-    const morphoBlueContract = new hre.ethers.Contract(morphoBlueAddress, morphoBlueAbi, wallet);
-
-    await setBalance(
-        marketParams.loanToken,
-        wallet.address,
-        amountDebt.mul(2)
-    );
-    await approve(marketParams.loanToken, morphoBlueAddress, wallet.address);
-    await morphoBlueContract.supply(marketParams, amountDebt.mul(2), "0", wallet.address, [], { gasLimit: 3000000 });
     await executeAction("RecipeExecutor", functionData, proxy);
     return await getUserData(marketParams, proxy.address);
 }

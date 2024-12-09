@@ -376,10 +376,10 @@ function toBytes32(bn) {
 /**
  * Sets ETH balance of a given address to desired amount on a tenderly fork
  * @param {string} address address whose balance we want to top up
- * @param {integer} amount amount of ETH to top up the address with (whole number)
+ * @param {number} amount amount of ETH to top up the address with (whole number)
  * @returns {void}
  */
-async function topUpAccount(address, amount) {
+async function topUpAccount(address, amount = 100) {
     const weiAmount = hre.ethers.utils.parseUnits(amount.toString(), 18);
     const weiAmountInHexString = weiAmount.toHexString();
 

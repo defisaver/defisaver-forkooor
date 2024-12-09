@@ -92,7 +92,7 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
  * @param {string} tenderlyProject name of the Tenderly project
  * @param {string} tenderlyAccessKey access key for Tenderly project
  * @param {number} chainId ID that represents which chain we want to fork
- * @returns {Promise<string>} RPC URL used as fork id
+ * @returns {Promise<{forkId: *, blockNumber: *, newAccount: *}>} RPC URL used as fork id
  */
 async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId) {
     const body = {
@@ -120,15 +120,7 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId) {
 
     const {
         id: rootForkId,
-        connectivityConfig: {
-            endpoints: [
-                {
-                    // id: forkId,
-                    // uri: rpcUrl,
-                    uri: forkId, // Using RPC URL as forkId
-                },
-            ],
-        },
+        connectivityConfig: { endpoints },
         networkConfig: {
             accounts: [
                 { address: newAccount },
@@ -136,7 +128,12 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId) {
         },
         currentBlockNumber: blockNumber,
     } = forkRes.data.container;
-
+    // DEV endpoints returns 4 RPCs (2 HTTP, 2 WS), 3rd one is public, 1st one is admin (redirects to public)
+    const adminEndpoint = endpoints.find(e => e.private === true && e.transportProtocol === 'HTTP');
+    const publicEndpoint = endpoints.find(e => e.private === false && e.transportProtocol === 'HTTP');
+    if (!adminEndpoint) throw new Error('Error returning fork HTTP endpoint');
+    // Using RPC URL as forkId
+    const { uri: forkId } = adminEndpoint;
 
     return { forkId, blockNumber, newAccount };
 }

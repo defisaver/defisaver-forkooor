@@ -97,7 +97,8 @@ router.post("/new-vnet", async (req, res) => {
             await topUpOwner(forkId);
             await setUpBotAccounts(forkId, botAccounts, true);
         } else if (accounts?.length > 0) {
-            await setupFork(forkId, accounts, true);
+            await setupFork(forkId, [], true);
+            await topUpAccount(accounts[0]);
         }
 
         resObj = { forkId, newAccount, blockNumber };
@@ -369,9 +370,9 @@ router.post("/set-eth-balance", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, account, amount } = req.body;
+        const { forkId, account, amount, isVnet } = req.body;
 
-        await setupFork(forkId);
+        await setupFork(forkId, [], isVnet);
         await topUpAccount(account, amount);
         resObj = {
             account,
@@ -443,9 +444,9 @@ router.post("/set-token-balance", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, token, account, amount } = req.body;
+        const { forkId, token, account, amount, isVnet } = req.body;
 
-        await setupFork(forkId);
+        await setupFork(forkId, [], isVnet);
         await setBalance(token, account, amount);
         resObj = {
             token,

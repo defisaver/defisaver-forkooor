@@ -1,6 +1,7 @@
 /* eslint-disable camelcase */
 const hre = require("hardhat");
 const axios = require("axios");
+const uuid = require("uuid").v4;
 
 const { botAuthAbi } = require("../../abi/general");
 const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork, getRpc} = require("../../utils");
@@ -96,44 +97,48 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
  */
 async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId) {
     const body = {
-        slug: "",
-        displayName: "DFS Simulation",
-        description: "",
-        networkConfig: {
-            networkId: chainId.toString(),
-            blockNumber: "latest",
-            chainConfig: {
-                chainId: chainId.toString()
-            },
-            // baseFeePerGas: "1"
+        slug: uuid(),
+        display_name: "DeFi Saver Simulation",
+        fork_config: {
+            network_id: +chainId,
+            block_number: "latest",
         },
-        explorerPage: "ENABLED",
-        syncState: false
+        virtual_network_config: {
+            chain_config: {
+                chain_id: +chainId,
+            }
+        },
+        sync_state_config: {
+            enabled: false
+        },
+        explorer_page_config: {
+            enabled: true,
+            verification_visibility: "src"
+        }
     };
 
     const headers = getHeaders(tenderlyAccessKey);
 
-    const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/testnet/container`, body, { headers });
-
-    // const forkId = forkRes.data.container.connectivityConfig.endpoints[0].id
-    // const rpc = `https://virtual.mainnet.rpc.tenderly.co/${forkId}`
+    const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/vnets`, body, { headers });
 
     const {
         id: rootForkId,
-        connectivityConfig: { endpoints },
-        networkConfig: {
+        rpcs,
+        virtual_network_config: {
             accounts: [
                 { address: newAccount },
             ],
         },
-        currentBlockNumber: blockNumber,
-    } = forkRes.data.container;
+        fork_config: {
+            block_number: blockNumberHex,
+        },
+    } = forkRes.data;
     // DEV endpoints returns 4 RPCs (2 HTTP, 2 WS), 3rd one is public, 1st one is admin (redirects to public)
-    const adminEndpoint = endpoints.find(e => e.private === true && e.transportProtocol === 'HTTP');
-    const publicEndpoint = endpoints.find(e => e.private === false && e.transportProtocol === 'HTTP');
+    const adminEndpoint = rpcs.find(e => e.name === 'Admin RPC');
+    const publicEndpoint = rpcs.find(e => e.name === 'Public RPC');
     if (!adminEndpoint) throw new Error('Error returning fork HTTP endpoint');
-    // Using RPC URL as forkId
-    const { uri: forkId } = adminEndpoint;
+    const forkId = adminEndpoint.url; // Using RPC URL as forkId
+    const blockNumber = parseInt(blockNumberHex, 16);
 
     return { forkId, blockNumber, newAccount };
 }

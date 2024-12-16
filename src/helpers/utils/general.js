@@ -105,7 +105,7 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId) {
             chainConfig: {
                 chainId: chainId.toString()
             },
-            baseFeePerGas: "1"
+            // baseFeePerGas: "1"
         },
         explorerPage: "ENABLED",
         syncState: false

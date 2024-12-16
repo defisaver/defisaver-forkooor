@@ -190,6 +190,7 @@ async function executeSafeTx(
  */
 function getHeaders(tenderlyAccessKey) {
     return {
+        accept: "*/*",
         "Content-Type": "application/json",
         "X-Access-Key": tenderlyAccessKey
     };
@@ -375,10 +376,10 @@ function toBytes32(bn) {
 /**
  * Sets ETH balance of a given address to desired amount on a tenderly fork
  * @param {string} address address whose balance we want to top up
- * @param {integer} amount amount of ETH to top up the address with (whole number)
+ * @param {number} amount amount of ETH to top up the address with (whole number)
  * @returns {void}
  */
-async function topUpAccount(address, amount) {
+async function topUpAccount(address, amount = 100) {
     const weiAmount = hre.ethers.utils.parseUnits(amount.toString(), 18);
     const weiAmountInHexString = weiAmount.toHexString();
 
@@ -397,13 +398,22 @@ async function topUpAccount(address, amount) {
 }
 
 /**
+ * @param {string} forkId ID of the Tenderly fork
+ * @param {boolean} isVnet Whether fork is legacy or vnet
+ * @returns {string}
+ */
+function getRpc(forkId, isVnet = false) {
+    return isVnet ? forkId : `https://rpc.tenderly.co/fork/${forkId}`;
+}
+/**
  * Sets up hre.ethers.providers object and gives 100 eth to each account
- * @param {string} forkId ID of the tenderly fork
+ * @param {string} forkId ID of the Tenderly fork
  * @param {Array<string>} accounts all the accounts that will be sending transactions
+ * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function setupFork(forkId, accounts = []) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+async function setupFork(forkId, accounts = [], isVnet = false) {
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
     }));
@@ -411,13 +421,14 @@ async function setupFork(forkId, accounts = []) {
 
 /**
  * Lowers safe threshold to 1
- * @param {string} forkId ID of the tenderly fork
+ * @param {string} forkId ID of the Tenderly fork
  * @param {Array<string>} safes  all the accounts that will be sending transactions}
  * @param {Array<number>} thresholds new threshold value that will be set for matching safe
+ * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function lowerSafesThreshold(forkId, safes, thresholds) {
-    const provider = await hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+async function lowerSafesThreshold(forkId, safes, thresholds, isVnet = false) {
+    const provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
     const thresholdSlot = toBytes32(hre.ethers.utils.parseUnits("4", 0)).toString();
 
     for (let i = 0; i < safes.length; i++) {
@@ -577,7 +588,6 @@ async function setBalance(tokenAddr, userAddr, amount) {
         );
     }
     await hre.ethers.provider.send("tenderly_setStorageAt", [tokenAddr, index.toString(), toBytes32(value).toString()]);
-    await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
 
     /**
      * @description
@@ -794,5 +804,6 @@ module.exports = {
     defaultsToSafe,
     executeActionFromProxy,
     getWalletAddr,
-    createSafe
+    createSafe,
+    getRpc,
 };

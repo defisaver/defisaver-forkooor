@@ -83,8 +83,8 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
 
     return {
         forkId: forkRes.data.simulation_fork.id,
-        blockNumber: data.simulation_fork.block_number,
-        newAccount: Object.keys(data.simulation_fork.accounts)[0],
+        blockNumber: forkRes.data.simulation_fork.block_number,
+        newAccount: Object.keys(forkRes.data.simulation_fork.accounts)[0],
     };
 }
 

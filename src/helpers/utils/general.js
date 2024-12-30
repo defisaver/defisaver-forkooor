@@ -102,7 +102,7 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startF
         display_name: "DeFi Saver Simulation",
         fork_config: {
             network_id: +chainId,
-            block_number: startFromBlock | "latest",
+            block_number: startFromBlock || "latest",
         },
         virtual_network_config: {
             chain_config: {

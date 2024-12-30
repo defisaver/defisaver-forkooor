@@ -93,15 +93,16 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
  * @param {string} tenderlyProject name of the Tenderly project
  * @param {string} tenderlyAccessKey access key for Tenderly project
  * @param {number} chainId ID that represents which chain we want to fork
+ * @param {number} [startFromBlock] block number to start the fork from
  * @returns {Promise<{forkId: *, blockNumber: *, newAccount: *}>} RPC URL used as fork id
  */
-async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId) {
+async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock) {
     const body = {
         slug: uuid(),
         display_name: "DeFi Saver Simulation",
         fork_config: {
             network_id: +chainId,
-            block_number: "latest",
+            block_number: startFromBlock | "latest",
         },
         virtual_network_config: {
             chain_config: {

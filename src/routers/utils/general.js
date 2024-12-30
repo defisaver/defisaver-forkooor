@@ -88,9 +88,10 @@ router.post("/new-vnet", async (req, res) => {
             chainId,
             botAccounts = [],
             accounts = [],
+            startFromBlock,
         } = req.body;
 
-        const { forkId, newAccount, blockNumber } = await createNewVnet(tenderlyProject, tenderlyAccessKey, chainId);
+        const { forkId, newAccount, blockNumber } = await createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock);
 
         if (botAccounts?.length > 0) {
             await setupFork(forkId, [], true);

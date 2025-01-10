@@ -19,6 +19,11 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
+    dfs.configure({
+        chainId,
+        testMode: false
+    });
+
     const morphoBlueAddress = addresses[chainId].MORPHO_BLUE;
 
     const [wallet] = await hre.ethers.getSigners();
@@ -26,10 +31,13 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
     await setBalance(marketParams.collateralToken, owner, coll);
     await approve(marketParams.collateralToken, proxy.address, owner);
 
-    const collTokenInfo = getAssetInfoByAddress(marketParams.collateralToken);
-    const debtTokenInfo = getAssetInfoByAddress(marketParams.loanToken);
+    const collTokenInfo = getAssetInfoByAddress(marketParams.collateralToken, chainId);
+    const debtTokenInfo = getAssetInfoByAddress(marketParams.loanToken, chainId);
+
+    console.log(chainId);
     const amountColl = hre.ethers.utils.parseUnits(coll.toString(), collTokenInfo.decimals);
     const amountDebt = hre.ethers.utils.parseUnits(debt.toString(), debtTokenInfo.decimals);
+
     const createPositionRecipe = new dfs.Recipe("CreateMorphoBluePosition", [
         new dfs.actions.morphoblue.MorphoBlueSupplyCollateralAction(
             marketParams.loanToken, marketParams.collateralToken, marketParams.oracle, marketParams.irm, marketParams.lltv,

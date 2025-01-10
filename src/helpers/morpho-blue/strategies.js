@@ -1,6 +1,7 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
 const { subToStrategy, getSender } = require("../../utils");
+const { configure } = require("@defisaver/sdk");
 const abiCoder = new hre.ethers.utils.AbiCoder();
 
 
@@ -21,6 +22,13 @@ async function subMorphoBlueRepayBundle(
     owner, bundleId, marketParams, marketId, minRatio, targetRatio, user, proxyAddr, useSafe = true
 ) {
     const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    configure({
+        chainId,
+        testMode: false
+    });
 
     if (user === hre.ethers.constants.AddressZero) {
         // eslint-disable-next-line no-param-reassign
@@ -72,6 +80,13 @@ async function subMorphoBlueBoostBundle(
 ) {
     const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    configure({
+        chainId,
+        testMode: false
+    });
+
     if (user === hre.ethers.constants.AddressZero) {
         // eslint-disable-next-line no-param-reassign
         user = proxy.address;
@@ -122,6 +137,13 @@ async function subMorphoBlueBoostOnPriceBundle(
 ) {
     const [, proxy] = await getSender(walletOwner, proxyAddr, useSafe);
 
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    configure({
+        chainId,
+        testMode: false
+    });
+
     if (user === hre.ethers.constants.AddressZero) {
         // eslint-disable-next-line no-param-reassign
         user = proxy.address;
@@ -137,7 +159,7 @@ async function subMorphoBlueBoostOnPriceBundle(
         user,
         targetRatio,
         price,
-        priceState.toLowerCase() === 'under'
+        priceState.toLowerCase() === "under"
             ? automationSdk.enums.RatioState.UNDER
             : automationSdk.enums.RatioState.OVER
     );

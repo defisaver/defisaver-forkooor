@@ -43,6 +43,47 @@ async function subLiquityV2LeverageManagement(
     }
 }
 
+/**
+ * Subscribes to Liquity V2 leverage management strategy
+ * @param {string} owner proxy owner
+ * @param {string} market LiquityV2 market symbol. e.g WETH
+ * @param {string} troveId ID of the trove
+ * @param {number} price Threshold for price
+ * @param {number} state 0 for OVER / 1 for UNDER
+ * @param {number} targetRatio Target ratio
+ * @param {number} bundleId Bundle ID (42 REPAY ON PRICE / 43 BOOST ON PRICE)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {boolean} StrategySub object and ID of the subscription
+ */
+async function subLiquityV2LeverageManagementOnPrice(
+    owner, market, troveId, price, state, targetRatio, bundleId, proxyAddr, useSafe
+) {
+    try { 
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const collToken = getAssetInfo(market).address;
+        const marketAddr = LIQUITY_V2_MARKETS[market];
+        const strategySub = automationSdk.strategySubService.liquityV2Encode.leverageManagementOnPrice(
+            bundleId,
+            marketAddr,
+            price,
+            state,
+            troveId,
+            collToken,
+            BOLD_TOKEN,
+            targetRatio
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+    
+}
+
 
 /**
  * Subscribes to Liquity V2 Close to Price strategy
@@ -102,5 +143,6 @@ async function subLiquityV2CloseToPrice(
 
 module.exports = {
     subLiquityV2LeverageManagement,
-    subLiquityV2CloseToPrice
+    subLiquityV2CloseToPrice,
+    subLiquityV2LeverageManagementOnPrice,
 };

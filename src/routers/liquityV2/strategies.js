@@ -229,7 +229,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
             bundleId,
             getWalletAddr(req),
             defaultsToSafe(req)
-        )
+        );
 
         res.status(200).send(sub);
     } catch (err) {

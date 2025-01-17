@@ -23,11 +23,14 @@ async function subLiquityV2LeverageManagement(
     try {
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
+        const collToken = getAssetInfo(market).address;
         const marketAddr = LIQUITY_V2_MARKETS[market];
 
         const strategySub = automationSdk.strategySubService.liquityV2Encode.leverageManagement(
             marketAddr,
             troveId,
+            collToken,
+            BOLD_TOKEN,
             ratioState === 1 ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
             targetRatio,
             ratio,
@@ -59,7 +62,7 @@ async function subLiquityV2LeverageManagement(
 async function subLiquityV2LeverageManagementOnPrice(
     owner, market, troveId, price, state, targetRatio, bundleId, proxyAddr, useSafe
 ) {
-    try { 
+    try {
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
         const collToken = getAssetInfo(market).address;
         const marketAddr = LIQUITY_V2_MARKETS[market];
@@ -81,7 +84,6 @@ async function subLiquityV2LeverageManagementOnPrice(
         console.log(err);
         throw err;
     }
-    
 }
 
 

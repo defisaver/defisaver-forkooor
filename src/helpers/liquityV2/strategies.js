@@ -54,13 +54,14 @@ async function subLiquityV2LeverageManagement(
  * @param {number} price Threshold for price
  * @param {number} state 0 for OVER / 1 for UNDER
  * @param {number} targetRatio Target ratio
+ * @param {number} isRepayOnPrice true for REPAY ON PRICE / false for BOOST ON PRICE
  * @param {number} bundleId Bundle ID (42 REPAY ON PRICE / 43 BOOST ON PRICE)
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {boolean} StrategySub object and ID of the subscription
  */
 async function subLiquityV2LeverageManagementOnPrice(
-    owner, market, troveId, price, state, targetRatio, bundleId, proxyAddr, useSafe
+    owner, market, troveId, price, state, targetRatio, isRepayOnPrice, bundleId, proxyAddr, useSafe
 ) {
     try {
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
@@ -74,7 +75,8 @@ async function subLiquityV2LeverageManagementOnPrice(
             troveId,
             collToken,
             BOLD_TOKEN,
-            targetRatio
+            targetRatio,
+            isRepayOnPrice
         );
 
         const subId = await subToStrategy(proxy, strategySub);

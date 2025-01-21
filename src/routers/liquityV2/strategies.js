@@ -162,6 +162,11 @@ router.post("/leverage-management", async (req, res) => {
  *              targetRatio:
  *                 type: integer
  *                 example: 300
+ *                 description: "Target ratio"
+ *              isRepayOnPrice:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "true for REPAY ON PRICE, false for BOOST ON PRICE"
  *              bundleId:
  *                 type: string
  *                 example: 37
@@ -216,7 +221,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, market, troveId, price, state, targetRatio, bundleId } = req.body;
+        const { forkId, owner, market, troveId, price, state, targetRatio, isRepayOnPrice, bundleId } = req.body;
 
         await setupFork(forkId, [owner]);
         const sub = await subLiquityV2LeverageManagementOnPrice(
@@ -226,6 +231,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
             price,
             state,
             targetRatio,
+            isRepayOnPrice,
             bundleId,
             getWalletAddr(req),
             defaultsToSafe(req)

@@ -1,8 +1,10 @@
+/* eslint-disable camelcase */
 const hre = require("hardhat");
 const axios = require("axios");
+const uuid = require("uuid").v4;
 
 const { botAuthAbi } = require("../../abi/general");
-const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork } = require("../../utils");
+const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork, getRpc} = require("../../utils");
 
 /**
  * Tops up DFS Owner account on a given Tenderly fork
@@ -35,10 +37,11 @@ async function addBotCaller(botAddr) {
  * Sets multiple bot callers so they can execute some DFS related functions
  * @param {string} forkId ID of the Tenderly fork
  * @param {Array<string>} botAccounts array of addresses that we are giving bot auth to
+ * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function setUpBotAccounts(forkId, botAccounts = []) {
-    await setupFork(forkId, botAccounts);
+async function setUpBotAccounts(forkId, botAccounts = [], isVnet = false) {
+    await setupFork(forkId, botAccounts, isVnet);
 
     for (let i = 0; i < botAccounts.length; i++) {
         // eslint-disable-next-line no-await-in-loop
@@ -50,26 +53,27 @@ async function setUpBotAccounts(forkId, botAccounts = []) {
  * Increases timestamp on a given fork
  * @param {string} forkId ID of the Tenderly fork
  * @param {number} timeIncrease how much to increase the current timestamp in seconds
+ * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {Object} returns timestamp before the change and updated timestamp
  */
-async function timeTravel(forkId, timeIncrease) {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(`https://rpc.tenderly.co/fork/${forkId}`);
+async function timeTravel(forkId, timeIncrease, isVnet = false) {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
     await hre.ethers.provider.send("evm_increaseTime", [timeIncrease]);
-    await hre.ethers.provider.send("evm_mine", []); // Just mines to the next block
     const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
     return { oldTimestamp, newTimestamp };
 }
 
 /**
+ * @deprecated
  * Creates a new Tenderly fork in defisaver-v2 organisation using provided input
  * @param {string} tenderlyProject name of the Tenderly project
  * @param {string} tenderlyAccessKey access key for Tenderly project
  * @param {number} chainId ID that represents which chain we want to fork
- * @returns {string} Tenderly fork id of the newly created fork
+ * @returns {Promise<string>} Tenderly fork id of the newly created fork
  */
 async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
     // eslint-disable-next-line camelcase
@@ -77,15 +81,76 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
     const headers = getHeaders(tenderlyAccessKey);
     const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork`, body, { headers });
 
-    return forkRes.data.simulation_fork.id;
+    return {
+        forkId: forkRes.data.simulation_fork.id,
+        blockNumber: forkRes.data.simulation_fork.block_number,
+        newAccount: Object.keys(forkRes.data.simulation_fork.accounts)[0],
+    };
 }
 
 /**
+ * Creates a new Tenderly fork in defisaver-v2 organisation using provided input
+ * @param {string} tenderlyProject name of the Tenderly project
+ * @param {string} tenderlyAccessKey access key for Tenderly project
+ * @param {number} chainId ID that represents which chain we want to fork
+ * @param {number} [startFromBlock] block number to start the fork from
+ * @returns {Promise<{forkId: *, blockNumber: *, newAccount: *}>} RPC URL used as fork id
+ */
+async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock) {
+    const body = {
+        slug: uuid(),
+        display_name: "DeFi Saver Simulation",
+        fork_config: {
+            network_id: +chainId,
+            block_number: startFromBlock || "latest",
+        },
+        virtual_network_config: {
+            chain_config: {
+                chain_id: +chainId,
+            }
+        },
+        sync_state_config: {
+            enabled: false
+        },
+        explorer_page_config: {
+            enabled: true,
+            verification_visibility: "src"
+        }
+    };
+
+    const headers = getHeaders(tenderlyAccessKey);
+
+    const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/vnets`, body, { headers });
+
+    const {
+        id: rootForkId,
+        rpcs,
+        virtual_network_config: {
+            accounts: [
+                { address: newAccount },
+            ],
+        },
+        fork_config: {
+            block_number: blockNumberHex,
+        },
+    } = forkRes.data;
+    // DEV endpoints returns 4 RPCs (2 HTTP, 2 WS), 3rd one is public, 1st one is admin (redirects to public)
+    const adminEndpoint = rpcs.find(e => e.name === 'Admin RPC');
+    const publicEndpoint = rpcs.find(e => e.name === 'Public RPC');
+    if (!adminEndpoint) throw new Error('Error returning fork HTTP endpoint');
+    const forkId = adminEndpoint.url; // Using RPC URL as forkId
+    const blockNumber = parseInt(blockNumberHex, 16);
+
+    return { forkId, blockNumber, newAccount };
+}
+
+/**
+ * @deprecated
  * Forks an existing Tenderly fork in defisaver-v2 organisation using provided input
  * @param {string} cloningForkId fork ID of an existing fork
  * @param {string} tenderlyProject name of the Tenderly project
  * @param {string} tenderlyAccessKey access key for Tenderly project
- * @returns {string} Tenderly fork id of the newly created fork
+ * @returns {Promise<string>} Tenderly fork id of the newly created fork
  */
 async function cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey) {
     const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/clone-fork`;
@@ -99,6 +164,30 @@ async function cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey) {
 }
 
 /**
+ * Forks an existing Tenderly fork in defisaver-v2 organisation using provided input
+ * @param {string} cloningForkId fork ID of an existing fork
+ * @param {string} tenderlyProject name of the Tenderly project
+ * @param {string} tenderlyAccessKey access key for Tenderly project
+ * @returns {Promise<string>} RPC URL used as fork id
+ */
+async function cloneVnet(cloningForkId, tenderlyProject, tenderlyAccessKey) {
+    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/testnet/clone`;
+
+    // eslint-disable-next-line camelcase
+    const body = {
+        srcContainerId: cloningForkId,
+        dstContainerDisplayName: ""
+    };
+    const headers = getHeaders(tenderlyAccessKey);
+    const forkRes = await axios.post(url, body, { headers });
+
+    const forkId = forkRes.data.container.connectivityConfig.endpoints[0].id
+    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${forkId}`
+
+    return rpc;
+}
+
+/**
  * Creates a new Ethereum address
  * @returns {string} Newly created Ethereum address
  */
@@ -108,7 +197,9 @@ async function newAddress() {
 
 module.exports = {
     createNewFork,
+    createNewVnet,
     cloneFork,
+    cloneVnet,
     topUpOwner,
     topUpAccount,
     setUpBotAccounts,

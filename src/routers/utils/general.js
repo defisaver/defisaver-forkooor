@@ -2,8 +2,8 @@
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress } = require("../../helpers/utils/general");
-const { setBalance, setupFork, lowerSafesThreshold, approve, createSafe } = require("../../utils");
+const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress, createNewVnet } = require("../../helpers/utils/general");
+const { setBalance, setupFork, lowerSafesThreshold, approve, createSafe, getProxy } = require("../../utils");
 
 const router = express.Router();
 
@@ -64,13 +64,45 @@ router.post("/new-fork", async (req, res) => {
     try {
         const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts } = req.body;
 
-        const forkId = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
+        const { forkId, newAccount, blockNumber } = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
 
         await setupFork(forkId);
         await topUpOwner(forkId);
         await setUpBotAccounts(forkId, botAccounts);
 
-        resObj = { forkId };
+        resObj = { forkId, newAccount, blockNumber };
+        res.status(200).send(resObj);
+    } catch (err) {
+        resObj = { error: `Failed to create a new fork with error : ${err.toString()}` };
+        res.status(500).send(resObj);
+    }
+});
+
+router.post("/new-vnet", async (req, res) => {
+    let resObj;
+
+    try {
+        const {
+            tenderlyProject,
+            tenderlyAccessKey,
+            chainId,
+            botAccounts = [],
+            accounts = [],
+            startFromBlock,
+        } = req.body;
+
+        const { forkId, newAccount, blockNumber } = await createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock);
+
+        if (botAccounts?.length > 0) {
+            await setupFork(forkId, [], true);
+            await topUpOwner(forkId);
+            await setUpBotAccounts(forkId, botAccounts, true);
+        } else if (accounts?.length > 0) {
+            await setupFork(forkId, [], true);
+            await topUpAccount(accounts[0]);
+        }
+
+        resObj = { forkId, newAccount, blockNumber };
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to create a new fork with error : ${err.toString()}` };
@@ -141,7 +173,7 @@ router.post("/clone-fork", async (req, res) => {
         await topUpOwner(forkId);
         await setUpBotAccounts(forkId, botAccounts);
 
-        resObj = { forkId };
+        resObj = { forkInfoObject };
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to clone a fork with error : ${err.toString()}` };
@@ -270,13 +302,13 @@ router.post("/set-safe-thresholds", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, safes, thresholds } = req.body;
+        const { forkId, safes, thresholds, isVnet = false } = req.body;
 
         if (safes.length !== thresholds.length) {
             throw new Error("Arrays not the same size");
         }
 
-        await lowerSafesThreshold(forkId, safes, thresholds);
+        await lowerSafesThreshold(forkId, safes, thresholds, isVnet);
 
         resObj = { safes };
         res.status(200).send(resObj);
@@ -339,9 +371,9 @@ router.post("/set-eth-balance", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, account, amount } = req.body;
+        const { forkId, account, amount, isVnet } = req.body;
 
-        await setupFork(forkId);
+        await setupFork(forkId, [], isVnet);
         await topUpAccount(account, amount);
         resObj = {
             account,
@@ -413,9 +445,9 @@ router.post("/set-token-balance", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, token, account, amount } = req.body;
+        const { forkId, token, account, amount, isVnet } = req.body;
 
-        await setupFork(forkId);
+        await setupFork(forkId, [], isVnet);
         await setBalance(token, account, amount);
         resObj = {
             token,
@@ -572,7 +604,7 @@ router.post("/time-travel", async (req, res) => {
     try {
         const { forkId, amount } = req.body;
 
-        resObj = await timeTravel(forkId, amount);
+        resObj = await timeTravel(forkId, amount); // TODO add isVnet
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to time travel with error : ${err.toString()}` };

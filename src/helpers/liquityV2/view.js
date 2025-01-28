@@ -4,16 +4,17 @@ const { liquityV2ViewAbi, addressRegistryAbi, sortedTrovesAbi, hintHelpersAbi } 
 const { addresses } = require("../../utils");
 
 const LIQUITY_V2_MARKETS = {
-    WETH: "0xc3fe668b43439525f70fe860f89882f0be312504",
-    wstETH: "0x9b27787ff66aa3cea8dbc47772328459a1fa05ac",
-    rETH: "0xde524be191de806011e98c8d36d50d7a88391a3e",
+    WETH: "0x38e1F07b954cFaB7239D7acab49997FBaAD96476",
+    wstETH: "0x2D4ef56cb626E9a4C90c156018BA9CE269573c61",
+    rETH: "0x3b48169809DD827F22C9e0F2d71ff12Ea7A94a2F"
 };
 
-const BOLD_TOKEN = "0xed5c9d3b9884d24b4f0e97969e7e4ea57632c567";
+const BOLD_TOKEN = "0xb01dd87B29d187F3E3a4Bf6cdAebfb97F3D9aB98";
 
 const COLL_INDEX_BY_MARKET = {
     WETH: 0,
-    wstETH: 1
+    wstETH: 1,
+    rETH: 2
 };
 
 const ETH_GAS_COMPENSATION = "0.0375";

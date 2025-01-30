@@ -20,6 +20,7 @@ async function getPositionByNftId(ntfId) {
             isSupplyPosition: data.position.isSupplyPosition,
             supply: data.position.supply.toString(),
             borrow: data.position.borrow.toString(),
+            ratio: data.position.ratio.toString(),
             tick: data.position.tick.toString(),
             tickId: data.position.tickId.toString()
         },

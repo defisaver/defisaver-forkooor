@@ -65,6 +65,10 @@ const router = express.Router();
  *                       type: string
  *                       example: "28140473070287130764889"
  *                       description: "Amount of debt borrowed in the position"
+ *                     ratio:
+ *                       type: string
+ *                       example: "1600000000000000000"
+ *                       description: "Current collateral ratio of the position"
  *                     tick:
  *                       type: string
  *                       example: "44"
@@ -389,6 +393,10 @@ router.post("/get-position-by-nft",
  *                       type: string
  *                       example: "28140473070287130764889"
  *                       description: "Amount of debt borrowed in the position"
+ *                     ratio:
+ *                       type: string
+ *                       example: "1600000000000000000"
+ *                       description: "Current collateral ratio of the position"
  *                     tick:
  *                       type: string
  *                       example: "44"

@@ -1,6 +1,7 @@
 const hre = require("hardhat");
 const { morphoBlueViewAbi } = require("../../abi/morpho-blue/abis");
 const { addresses } = require("../../utils");
+const { configure } = require("@defisaver/sdk");
 
 /**
  * returns MorphoBlue position info
@@ -11,6 +12,11 @@ const { addresses } = require("../../utils");
 async function getUserData(marketParams, user) {
     const [signer] = await hre.ethers.getSigners();
     const { chainId } = await hre.ethers.provider.getNetwork();
+
+    configure({
+        chainId,
+        testMode: false
+    });
 
     const morphoBlueViewAddress = addresses[chainId].MORPHO_BLUE_VIEW;
 

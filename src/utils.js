@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const automationSdk = require("@defisaver/automation-sdk");
 
 const {
     dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi, safeProxyFactoryAbi,
@@ -31,7 +32,8 @@ const addresses = {
         AAVE_V3_MARKET: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e",
         MORPHO_BLUE_VIEW: "0x10B621823D4f3E85fBDF759e252598e4e097C1fd",
         MORPHO_BLUE: "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
-        CURVE_USD_VIEW: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701"
+        CURVE_USD_VIEW: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701",
+        LIQUITY_V2_VIEW: "0x9C43F5ED37042Fd4bA7f98aa734026c6C7Fb1Db0"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -397,14 +399,15 @@ async function topUpAccount(address, amount = 100) {
     }
 }
 
-/**
+/** Get the RPC URL for a Tenderly fork or vnet
  * @param {string} forkId ID of the Tenderly fork
  * @param {boolean} isVnet Whether fork is legacy or vnet
- * @returns {string}
+ * @returns {string} RPC URL
  */
 function getRpc(forkId, isVnet = false) {
     return isVnet ? forkId : `https://rpc.tenderly.co/fork/${forkId}`;
 }
+
 /**
  * Sets up hre.ethers.providers object and gives 100 eth to each account
  * @param {string} forkId ID of the Tenderly fork
@@ -780,6 +783,68 @@ function getWalletAddr(req) {
     return req.body.walletAddr ? req.body.walletAddr : hre.ethers.constants.AddressZero;
 }
 
+/**
+ * Helper function to validate if trigger prices align with the close strategy type
+ * @param {number} type Close strategy type. See automationSdk.enums.CloseStrategyType
+ * @param {number} stopLossPrice Stop loss price. Zero if not set
+ * @param {number} takeProfitPrice Take profit price. Zero if not set
+ * @returns {Object} stopLossType and takeProfitType (whether close to collateral or debt)
+ */
+function validateTriggerPricesForCloseStrategyType(type, stopLossPrice, takeProfitPrice) {
+    if (
+        type === automationSdk.enums.CloseStrategyType.STOP_LOSS_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.STOP_LOSS_IN_DEBT
+    ) {
+        if (stopLossPrice <= 0 || takeProfitPrice > 0) {
+            throw new Error(`Invalid close strategy id. Stop loss price must be set and take profit price must be zero for close type ID: ${type}`);
+        }
+    }
+
+    if (
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_DEBT
+    ) {
+        if (takeProfitPrice <= 0 || stopLossPrice > 0) {
+            throw new Error(`Invalid close strategy id. Take profit price must be set and stop loss price must be zero for close type ID: ${type}`);
+        }
+    }
+
+    if (
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_DEBT ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_DEBT_AND_STOP_LOSS_IN_COLLATERAL ||
+        type === automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL_AND_STOP_LOSS_IN_DEBT
+    ) {
+        if (stopLossPrice <= 0 || takeProfitPrice <= 0) {
+            throw new Error(`Invalid close strategy id. Both stop loss & take profit prices must be set for close type ID: ${type}`);
+        }
+    }
+
+    const stopLossCollateralIndexes = [
+        automationSdk.enums.CloseStrategyType.STOP_LOSS_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_DEBT_AND_STOP_LOSS_IN_COLLATERAL
+    ];
+    const takeProfitCollateralIndexes = [
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_AND_STOP_LOSS_IN_COLLATERAL,
+        automationSdk.enums.CloseStrategyType.TAKE_PROFIT_IN_COLLATERAL_AND_STOP_LOSS_IN_DEBT
+    ];
+
+    const stopLossType = stopLossCollateralIndexes.includes(type)
+        ? automationSdk.enums.CloseToAssetType.COLLATERAL
+        : automationSdk.enums.CloseToAssetType.DEBT;
+
+    const takeProfitType = takeProfitCollateralIndexes.includes(type)
+        ? automationSdk.enums.CloseToAssetType.COLLATERAL
+        : automationSdk.enums.CloseToAssetType.DEBT;
+
+    return {
+        stopLossType,
+        takeProfitType
+    };
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -805,5 +870,6 @@ module.exports = {
     executeActionFromProxy,
     getWalletAddr,
     createSafe,
-    getRpc,
+    validateTriggerPricesForCloseStrategyType,
+    getRpc
 };

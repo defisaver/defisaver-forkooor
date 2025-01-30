@@ -148,5 +148,5 @@ async function subLiquityV2CloseToPrice(
 module.exports = {
     subLiquityV2LeverageManagement,
     subLiquityV2CloseToPrice,
-    subLiquityV2LeverageManagementOnPrice,
+    subLiquityV2LeverageManagementOnPrice
 };

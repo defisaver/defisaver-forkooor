@@ -199,7 +199,10 @@ router.post("/clone-fork", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
+ *              isVnet:
+ *                type: boolean
+ *                example: true
  *              botAccounts:
  *                type: array
  *                items:
@@ -232,11 +235,11 @@ router.post("/set-bot-auth", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, botAccounts } = req.body;
+        const { forkId, botAccounts, isVnet } = req.body;
 
-        await setupFork(forkId);
-        await topUpOwner(forkId);
-        await setUpBotAccounts(forkId, botAccounts);
+        await setupFork(forkId, [], isVnet);
+        await topUpOwner();
+        await setUpBotAccounts(forkId, botAccounts, isVnet);
 
         resObj = { botAccounts };
         res.status(200).send(resObj);
@@ -264,7 +267,10 @@ router.post("/set-bot-auth", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
+ *              isVnet:
+ *                type: boolean
+ *                example: true
  *              safes:
  *                type: array
  *                items:
@@ -336,7 +342,10 @@ router.post("/set-safe-thresholds", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
+ *              isVnet:
+ *                type: boolean
+ *                example: true
  *              account:
  *                type: string
  *                example: "0x000000000000000000000000000000000000dEaD"
@@ -404,7 +413,10 @@ router.post("/set-eth-balance", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
+ *              isVnet:
+ *                type: boolean
+ *                example: true
  *              token:
  *                type: string
  *                example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
@@ -668,7 +680,10 @@ router.get("/new-address", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
+ *              isVnet:
+ *                type: boolean
+ *                example: true
  *              owner:
  *                type: string
  *                example: "0xc78E09653fb412264321653468bF56244D00153E"
@@ -694,9 +709,9 @@ router.post("/create-safe", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner } = req.body;
+        const { forkId, owner, isVnet } = req.body;
 
-        await setupFork(forkId);
+        await setupFork(forkId, [], isVnet);
 
         resObj = await createSafe(owner);
         res.status(200).send(resObj);

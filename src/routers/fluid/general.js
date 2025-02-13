@@ -171,22 +171,6 @@ const router = express.Router();
  *                       type: string
  *                       example: "1191962749225013727000000000"
  *                       description: "Price of the collateral token used for liquidations"
- *                     priceOfSupplyToken0InUSD:
- *                       type: string
- *                       example: "372620254461"
- *                       description: "USD price of the primary collateral token"
- *                     priceOfSupplyToken1InUSD:
- *                       type: string
- *                       example: "0"
- *                       description: "USD price of the secondary collateral token"
- *                     priceOfBorrowToken0InUSD:
- *                       type: string
- *                       example: "313072747541"
- *                       description: "USD price of the primary borrow token"
- *                     priceOfBorrowToken1InUSD:
- *                       type: string
- *                       example: "0"
- *                       description: "USD price of the secondary borrow token"
  *                     vaultSupplyExchangePrice:
  *                       type: string
  *                       example: "1004337808574"
@@ -502,22 +486,6 @@ router.post("/get-position-by-nft",
  *                       type: string
  *                       example: "1191962749225013727000000000"
  *                       description: "Price of the collateral token used for liquidations"
- *                     priceOfSupplyToken0InUSD:
- *                       type: string
- *                       example: "372620254461"
- *                       description: "USD price of the primary collateral token"
- *                     priceOfSupplyToken1InUSD:
- *                       type: string
- *                       example: "0"
- *                       description: "USD price of the secondary collateral token"
- *                     priceOfBorrowToken0InUSD:
- *                       type: string
- *                       example: "313072747541"
- *                       description: "USD price of the primary borrow token"
- *                     priceOfBorrowToken1InUSD:
- *                       type: string
- *                       example: "0"
- *                       description: "USD price of the secondary borrow token"
  *                     vaultSupplyExchangePrice:
  *                       type: string
  *                       example: "1004337808574"

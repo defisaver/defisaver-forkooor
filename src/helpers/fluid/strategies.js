@@ -3,7 +3,7 @@ const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
 const { getSender, subToStrategy, addresses, isWalletSafe, getWalletOwner } = require("../../utils");
 const { getPositionByNftId } = require("./view");
-const { fluidVaultResolverAbi, fluidVaultT1Abi } = require("../../abi/fluid/abis");
+const { fluidVaultResolverAbi } = require("../../abi/fluid/abis");
 
 /**
  * Subscribes to Fluid T1 Leverage Management Automation strategy
@@ -34,14 +34,9 @@ async function subFluidT1LeverageManagement(nftId, ratio, targetRatio, ratioStat
             throw new Error("Vault type is not T1 (1 coll : 1 debt)");
         }
 
-        const vaultContract = await hre.ethers.getContractAt(fluidVaultT1Abi, vaultAddress);
-        const constantsView = await vaultContract.constantsView();
-
         const strategySub = automationSdk.strategySubService.fluidEncode.leverageManagement(
             nftId,
             vaultAddress,
-            constantsView.supplyToken,
-            constantsView.borrowToken,
             ratioState.toLocaleLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
             targetRatio,
             ratio,

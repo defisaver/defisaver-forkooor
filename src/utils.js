@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
 
@@ -33,7 +34,9 @@ const addresses = {
         MORPHO_BLUE_VIEW: "0x10B621823D4f3E85fBDF759e252598e4e097C1fd",
         MORPHO_BLUE: "0xBBBBBbbBBb9cC5e90e3b3Af64bdAF62C37EEFFCb",
         CURVE_USD_VIEW: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701",
-        LIQUITY_V2_VIEW: "0x9C43F5ED37042Fd4bA7f98aa734026c6C7Fb1Db0"
+        LIQUITY_V2_VIEW: "0x9C43F5ED37042Fd4bA7f98aa734026c6C7Fb1Db0",
+        FLUID_VAULT_RESOLVER: "0x814c8C7ceb1411B364c2940c4b9380e739e06686",
+        FLUID_VIEW: "0xf8e3bbf7c95057be1fD5E741a9ADb73E956dC724"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -55,7 +58,9 @@ const addresses = {
         COMP_V3_SUB_PROXY: "0x398129ee7b6B5F62F896998E036Ebb3032451f03",
         AAVE_V3_SUB_PROXY: "0x967b6dFd1485C30521F8311e39E60B9c4D4b6Dbf",
         AAVE_V3_VIEW: "0x94A36080FaE0e22977aA4928d3D5C733Be744DF1",
-        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb"
+        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+        FLUID_VAULT_RESOLVER: "0xD6373b375665DE09533478E8859BeCF12427Bb5e",
+        FLUID_VIEW: "0x2d51BB6Ac5c1eC8DD6432e1FF980fC864B626e01"
     },
     8453: {
         REGISTRY_ADDR: "0x347FB634271F666353F23A3362f3935D96F97476",
@@ -67,9 +72,13 @@ const addresses = {
         COMP_V3_SUB_PROXY: "0x33Ba53a1367527b09D429EB1392E57A43Cf83f99",
         AAVE_V3_SUB_PROXY: "0x8489B4e243Ba8062D3351439D560E6AF477867ab",
         AAVE_V3_VIEW: "0x1882BBB847425335CCe0b81eC10295674A982395",
-        AAVE_V3_MARKET: "0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D"
+        AAVE_V3_MARKET: "0xe20fCBdBfFC4Dd138cE8b2E6FBb6CB49777ad64D",
+        FLUID_VAULT_RESOLVER: "0x79B3102173EB84E6BCa182C7440AfCa5A41aBcF8",
+        FLUID_VIEW: "0x5835CaDbA8843CD6d6d55782908351E9c74221aD"
     }
 };
+
+const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
 
 /**
  * Returns true if the proxy is a Safe Smart wallet
@@ -784,6 +793,42 @@ function getWalletAddr(req) {
 }
 
 /**
+ * Check if provided wallet address is safe smart wallet
+ * @param {string} walletAddr wallet address
+ * @returns {boolean} true if wallet is safe smart wallet
+ */
+async function isWalletSafe(walletAddr) {
+    const proxy = await hre.ethers.getContractAt(safeAbi, walletAddr);
+
+    try {
+        await proxy.nonce();
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+/**
+ * Get wallet owner address
+ * @param {string} walletAddr wallet address
+ * @returns {string} wallet owner
+ */
+async function getWalletOwner(walletAddr) {
+    let proxy = await hre.ethers.getContractAt(safeAbi, walletAddr);
+
+    try {
+        await proxy.nonce();
+        const owners = await proxy.getOwners();
+
+        return owners[0];
+    } catch (error) {
+        proxy = await hre.ethers.getContractAt(proxyAbi, walletAddr);
+
+        return await proxy.owner();
+    }
+}
+
+/**
  * Helper function to validate if trigger prices align with the close strategy type
  * @param {number} type Close strategy type. See automationSdk.enums.CloseStrategyType
  * @param {number} stopLossPrice Stop loss price. Zero if not set
@@ -845,6 +890,22 @@ function validateTriggerPricesForCloseStrategyType(type, stopLossPrice, takeProf
     };
 }
 
+/**
+ * Send eth from one address to another
+ * @param {from} from address to send eth from
+ * @param {to} to address to send eth to
+ * @param {amount} amount amount of eth to send
+ * @returns {void}
+ */
+async function sendEth(from, to, amount) {
+    const fromAcc = await hre.ethers.provider.getSigner(from);
+
+    await fromAcc.sendTransaction({
+        to,
+        value: hre.ethers.utils.parseUnits(amount, 18)
+    });
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -871,5 +932,9 @@ module.exports = {
     getWalletAddr,
     createSafe,
     validateTriggerPricesForCloseStrategyType,
-    getRpc
+    getRpc,
+    sendEth,
+    isWalletSafe,
+    getWalletOwner,
+    ETH_ADDRESS
 };

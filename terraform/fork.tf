@@ -15,11 +15,12 @@ module "dfs-tx-info" {
   datadog_monitoring_secret_arn    = data.terraform_remote_state.general_infra.outputs.datadog_api_key_arn
   datadog_agent_version            = "7.42.2"
   datadog_team_tag                 = "front"
+  load_balancer_container_port     = 3000
 
   port_mappings = [
     {
-      containerPort = 80
-      hostPort      = 80
+      containerPort = 3000
+      hostPort      = 3000
       protocol      = "tcp"
     }
   ]

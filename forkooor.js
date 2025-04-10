@@ -37,7 +37,7 @@ app.use("/swagger.json", (req, res) => {
 app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 
-const port = 80;
+const port = 3000;
 
 app.listen(port, () => {
     console.log(`App listening on port ${port}`);

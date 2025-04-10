@@ -2,13 +2,13 @@ name: Build and Deploy
 
 on:
   push:
-    branches: feature/ecs
+    branches: main
   workflow_dispatch:
     inputs:
       release:
         description: "Enter the release number."
         type: string
-        required: true
+        required: false
 
 jobs:
   build:

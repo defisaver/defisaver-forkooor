@@ -44,7 +44,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker compose -f ${{ env.DOCKER_COMPOSE_FILE }} build
-          docker tag fork:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }}
+          docker tag forkor:latest ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.run_number }}
 
       - name: Push Docker image to ECR
         run: |

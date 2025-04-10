@@ -12,3 +12,10 @@ artifacts
 
 .yarnrc.yml
 .yarn/releases
+
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*

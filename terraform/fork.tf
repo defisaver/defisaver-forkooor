@@ -1,4 +1,4 @@
-module "dfs-tx-info" {
+module "fork" {
 
   source = "git@github.com:defisaver/ecs-terraform-module?ref=main"
 

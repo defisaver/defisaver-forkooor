@@ -59,8 +59,8 @@ jobs:
         working-directory: terraform/
 
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.DFS_INFRA_AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.DFS_INFRA_AWS_SECRET_ACCESS_KEY }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.DFS_INFRA_PUBLIC_AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DFS_INFRA_PUBLIC_AWS_SECRET_ACCESS_KEY }}
       AWS_REGION: us-west-2
       GH_TOKEN: ${{ github.token }}
 

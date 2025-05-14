@@ -4,9 +4,9 @@ const { liquityV2ViewAbi, addressRegistryAbi, sortedTrovesAbi, hintHelpersAbi } 
 const { addresses } = require("../../utils");
 
 const LIQUITY_V2_MARKETS = {
-    WETH: "0xc3fe668b43439525f70fe860f89882f0be312504",
-    wstETH: "0x9b27787ff66aa3cea8dbc47772328459a1fa05ac",
-    rETH: "0xde524be191de806011e98c8d36d50d7a88391a3e"
+    WETH: "0xde524be191de806011e98c8d36d50d7a88391a3e",
+    wstETH: "0x1649ccb966c90ff524a15231bc177d77a275fda1",
+    rETH: "0x6809ac46fa55e4d86be368c589427684616f91c2"
 };
 
 const BOLD_TOKEN = "0xbfe297dacb7a2b16df0c9d2b942d127dfb26fd59";
@@ -29,7 +29,7 @@ async function getTroveInfo(market, troveId) {
     const { chainId } = await hre.ethers.provider.getNetwork();
     const liquityView = await hre.ethers.getContractAt(liquityV2ViewAbi, addresses[chainId].LIQUITY_V2_VIEW);
     const marketAddr = LIQUITY_V2_MARKETS[market];
-    const troveInfo = await liquityView.getTroveInfo(marketAddr, troveId);
+    const troveInfo = await liquityView.callStatic.getTroveInfo(marketAddr, troveId);
 
     return {
         troveId: troveInfo.troveId.toString(),

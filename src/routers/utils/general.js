@@ -2,7 +2,7 @@
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress, createNewVnet } = require("../../helpers/utils/general");
+const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress, createNewVnet, setTime } = require("../../helpers/utils/general");
 const { setBalance, setupFork, lowerSafesThreshold, approve, createSafe, getProxy } = require("../../utils");
 
 const router = express.Router();
@@ -582,10 +582,13 @@ router.post("/give-approval", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
  *              amount:
  *                type: integer
  *                example: 10000000
+ *              isVnet:
+ *                type: boolean
+ *                example: true
  *     responses:
  *       '200':
  *         description: OK
@@ -614,9 +617,10 @@ router.post("/time-travel", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, amount } = req.body;
+        const { forkId, amount, isVnet } = req.body;
 
-        resObj = await timeTravel(forkId, amount); // TODO add isVnet
+        await setupFork(forkId, [], isVnet);
+        resObj = await timeTravel(forkId, amount, isVnet);
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to time travel with error : ${err.toString()}` };
@@ -717,6 +721,72 @@ router.post("/create-safe", async (req, res) => {
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to create safe smart wallet: ${err.toString()}` };
+        res.status(500).send(resObj);
+    }
+});
+
+/**
+ * @swagger
+ * /utils/general/set-time:
+ *   post:
+ *     summary: Sets the timestamp on a fork to a specific value
+ *     tags:
+ *      - Utils
+ *     description: Sets the timestamp on a fork to a specific value, allowing movement forward or backward in time
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
+ *              timestamp:
+ *                type: integer
+ *                example: 1679424065
+ *                description: Unix timestamp to set the blockchain time to
+ *              isVnet:
+ *                type: boolean
+ *                example: true
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 oldTimestamp:
+ *                   type: integer
+ *                   example: 1679424065
+ *                 newTimestamp:
+ *                   type: integer
+ *                   example: 1689424065
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/set-time", async (req, res) => {
+    let resObj;
+
+    try {
+        const { forkId, timestamp, isVnet } = req.body;
+        
+        await setupFork(forkId, [], isVnet);
+        resObj = await setTime(forkId, timestamp, isVnet);
+        
+        res.status(200).send(resObj);
+    } catch (err) {
+        resObj = { error: `Failed to set time with error: ${err.toString()}` };
         res.status(500).send(resObj);
     }
 });

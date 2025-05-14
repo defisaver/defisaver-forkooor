@@ -79,7 +79,7 @@ async function setTime(forkId, timestamp, isVnet = true) {
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
-    await hre.ethers.provider.send("evm_setTime", [timestamp * 1000]); // Convert to milliseconds
+    await hre.ethers.provider.send("evm_setNextBlockTimestamp", [timestamp]); // Convert to milliseconds
     await hre.ethers.provider.send("evm_mine", []);
 
     const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;

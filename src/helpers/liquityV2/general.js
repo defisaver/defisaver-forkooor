@@ -99,8 +99,8 @@ async function openTroveV2(
         await tx.wait();
     }
     const encodedData = hre.ethers.utils.defaultAbiCoder.encode(
-        ["address", "uint256"],
-        [troveOwner, troveOwnerIndex]
+        ["address", "address", "uint256"],
+        [troveOwner, troveOwner, troveOwnerIndex]
     );
     const troveId = hre.ethers.utils.keccak256(encodedData);
     const troveInfo = await getTroveInfo(market, troveId);

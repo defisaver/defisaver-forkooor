@@ -56,12 +56,32 @@ async function setUpBotAccounts(forkId, botAccounts = [], isVnet = false) {
  * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {Object} returns timestamp before the change and updated timestamp
  */
-async function timeTravel(forkId, timeIncrease, isVnet = false) {
+async function timeTravel(forkId, timeIncrease, isVnet = true) {
     hre.ethers.provider = hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
     await hre.ethers.provider.send("evm_increaseTime", [timeIncrease]);
+    const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
+
+    return { oldTimestamp, newTimestamp };
+}
+
+/**
+ * Sets timestamp on a given fork to a specific value
+ * @param {string} forkId ID of the Tenderly fork
+ * @param {number} timestamp Unix timestamp to set the blockchain time to
+ * @param {boolean} isVnet Whether fork is legacy or vnet
+ * @returns {Object} returns timestamp before the change and updated timestamp
+ */
+async function setTime(forkId, timestamp, isVnet = true) {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
+
+    const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
+
+    await hre.ethers.provider.send("evm_setNextBlockTimestamp", [timestamp]); // Convert to milliseconds
+    await hre.ethers.provider.send("evm_mine", []);
+
     const newTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
     return { oldTimestamp, newTimestamp };
@@ -204,5 +224,6 @@ module.exports = {
     topUpAccount,
     setUpBotAccounts,
     timeTravel,
+    setTime,
     newAddress
 };

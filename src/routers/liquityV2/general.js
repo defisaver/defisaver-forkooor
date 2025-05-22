@@ -14,7 +14,7 @@ const router = express.Router();
  *     summary: Fetch info about liquityV2 trove on a fork
  *     tags:
  *      - LiquityV2
- *     description:
+ *     description: Fetch info about liquityV2 trove
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -124,7 +124,7 @@ router.post("/get-trove",
  *               forkId:
  *                 type: string
  *                 example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *              isVnet:
+ *               isVnet:
  *                 type: boolean
  *                 example: true
  *               sender:

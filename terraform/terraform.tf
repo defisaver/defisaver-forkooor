@@ -20,6 +20,16 @@ terraform {
   }
 }
 
+data "terraform_remote_state" "observability" {
+  backend = "s3"
+
+  config = {
+    bucket = "dfs-observability-terraform-state"
+    key    = "tfstate-s3-bucket"
+    region = "us-west-2"
+  }
+}
+
 resource "aws_s3_bucket" "terraform_state" {
   bucket = "defisaver-app-terraform-state-fork"
   tags   = local.common_tags

@@ -166,8 +166,34 @@ async function createCompoundV3EOAPosition(
     return await getLoanData(market, senderAcc.address);
 }
 
+/**
+ * Add a manager to a Compound V3 position for EOA
+ * @param {string} marketSymbol symbol of the market e.g USDC, USDT, etc.
+ * @param {string} eoa the EOA which will be sending transactions and allowing the manager to manage the position
+ * @param {string} manager the address of the manager to add
+ * @returns {Object} object with data
+ */
+async function addManager(marketSymbol, eoa, manager) {
+    const senderAcc = await hre.ethers.provider.getSigner(eoa.toString());
+
+    senderAcc.address = senderAcc._address;
+
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    const market = COMP_V3_MARKETS[chainId][marketSymbol];
+
+    let cometContract = new hre.ethers.Contract(market, cometAbi, senderAcc);
+
+    cometContract = cometContract.connect(senderAcc);
+
+    await cometContract.allow(manager, true);
+
+    return { eoa, manager };
+}
+
 module.exports = {
     createCompoundV3Position,
     createCompoundV3ProxyPosition,
-    createCompoundV3EOAPosition
+    createCompoundV3EOAPosition,
+    addManager
 };

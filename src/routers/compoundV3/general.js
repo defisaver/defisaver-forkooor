@@ -6,7 +6,8 @@ const { getLoanData } = require("../../helpers/compoundV3/view");
 const {
     createCompoundV3Position,
     createCompoundV3ProxyPosition,
-    createCompoundV3EOAPosition
+    createCompoundV3EOAPosition,
+    addManager
 } = require("../../helpers/compoundV3/general");
 const { body, validationResult } = require("express-validator");
 
@@ -510,6 +511,85 @@ router.post("/create-eoa-position",
             })
             .catch(err => {
                 res.status(500).send({ error: `Failed to create compV3 eoa position info with error : ${err.toString()}` });
+            });
+    });
+
+/**
+ * @swagger
+ * /compound/v3/general/add-manager:
+ *   post:
+ *     summary: Add a manager that can manage a Compound V3 position for an EOA
+ *     tags:
+ *      - CompoundV3
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *              marketSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Symbol of the market e.g USDC, USDT, etc."
+ *              eoa:
+ *                type: string
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and allowing the manager to manage the position"
+ *              manager:
+ *                type: string
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                description: "The address of the manager to add"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 eoa:
+ *                   type: string
+ *                   example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                   description: "The EOA address that authorized the manager"
+ *                 manager:
+ *                   type: string
+ *                   example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                   description: "The manager address that was authorized"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/add-manager",
+    body(["forkId", "marketSymbol", "eoa", "manager"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { forkId, marketSymbol, eoa, manager } = req.body;
+
+        await setupFork(forkId, [eoa], true);
+
+        addManager(marketSymbol, eoa, manager)
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to add manager. Info with error : ${err.toString()}` });
             });
     });
 

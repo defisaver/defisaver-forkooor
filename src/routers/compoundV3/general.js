@@ -5,7 +5,8 @@ const { setupFork, getProxy, isContract, getWalletAddr, defaultsToSafe } = requi
 const { getLoanData } = require("../../helpers/compoundV3/view");
 const {
     createCompoundV3Position,
-    createCompoundV3ProxyPosition
+    createCompoundV3ProxyPosition,
+    createCompoundV3EOAPosition
 } = require("../../helpers/compoundV3/general");
 const { body, validationResult } = require("express-validator");
 
@@ -383,7 +384,132 @@ router.post("/create-proxy-position",
                 res.status(200).send(pos);
             })
             .catch(err => {
-                res.status(500).send({ error: `Failed to create position info with error : ${err.toString()}` });
+                res.status(500).send({ error: `Failed to create compV3 proxy position info with error : ${err.toString()}` });
+            });
+    });
+
+/**
+ * @swagger
+ * /compound/v3/general/create-eoa-position:
+ *   post:
+ *     summary: Create CompoundV3 EOA position on a fork
+ *     tags:
+ *      - CompoundV3
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *              collTokenSymbol:
+ *                type: string
+ *                example: "WETH"
+ *                description: "Symbol of collateral token e.g WETH, USDC, USDT"
+ *              collAmount:
+ *                type: number
+ *                example: 3
+ *                description: "Amount of collateral to supply (whole number)"
+ *              borrowTokenSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Symbol of borrow token e.g USDC"
+ *              borrowAmount:
+ *                type: number
+ *                example: 2000
+ *                description: "Amount to borrow (whole number)"
+ *              eoa:
+ *                type: string
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the position"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: string
+ *                   example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                   description: "Ethereum address of the user"
+ *                 collAddr:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example:
+ *                    - "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+ *                    - "0x0000000000000000000000000000000000000000"
+ *                   description: "Array of collateral addresses"
+ *                 collAmounts:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   example:
+ *                     - "3794452463777"
+ *                     - "0"
+ *                   description: "Array of collateral amounts corresponding to each collateral address"
+ *                 depositAmount:
+ *                   type: string
+ *                   example: "3794452463777"
+ *                   description: "deposit amount"
+ *                 depositValue:
+ *                   type: string
+ *                   example: "3794452463777"
+ *                   description: "deposit value"
+ *                 borrowAmount:
+ *                   type: string
+ *                   example: "3794452463777"
+ *                   description: "borrow amount"
+ *                 borrowValue:
+ *                   type: string
+ *                   example: "3794452463777"
+ *                   description: "borrow value"
+ *                 collValue:
+ *                   type: string
+ *                   example: "3794452463777"
+ *                   description: "coll value"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/create-eoa-position",
+    body(["forkId", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { forkId, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
+
+        await setupFork(forkId, [eoa], true);
+
+        createCompoundV3EOAPosition(
+            collTokenSymbol,
+            collAmount,
+            borrowTokenSymbol,
+            borrowAmount,
+            eoa
+        )
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to create compV3 eoa position info with error : ${err.toString()}` });
             });
     });
 

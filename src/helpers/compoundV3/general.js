@@ -3,6 +3,7 @@ const dfs = require("@defisaver/sdk");
 const { getAssetInfo } = require("@defisaver/tokens");
 const { getSender, setBalance, executeAction, approve } = require("../../utils");
 const { getLoanData, COMP_V3_MARKETS } = require("./view");
+const { cometAbi } = require("../../abi/general");
 
 /**
  * Create a Compound V3 position for sender on his proxy (created if he doesn't have one)
@@ -123,7 +124,50 @@ async function createCompoundV3ProxyPosition(
     return await getLoanData(market, proxy.address);
 }
 
+/**
+ * Create a Compound V3 position for EOA
+ * @param {string} collTokenSymbol symbol of collateral token e.g WETH, USDC, USDT, etc.
+ * @param {number} collAmount amount of collateral to supply (whole number)
+ * @param {string} borrowTokenSymbol symbol of borrow token e.g USDC
+ * @param {number} borrowAmount amount to borrow (whole number)
+ * @param {string} eoa the EOA which will be sending transactions and own the position
+ * @returns {Object} object with load data
+ */
+async function createCompoundV3EOAPosition(
+    collTokenSymbol,
+    collAmount,
+    borrowTokenSymbol,
+    borrowAmount,
+    eoa
+) {
+    const senderAcc = await hre.ethers.provider.getSigner(eoa.toString());
+
+    senderAcc.address = senderAcc._address;
+
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    const collTokenData = getAssetInfo(collTokenSymbol === "ETH" ? "WETH" : collTokenSymbol, chainId);
+    const borrowTokenData = getAssetInfo(borrowTokenSymbol === "ETH" ? "WETH" : borrowTokenSymbol, chainId);
+    const collAmountParsed = hre.ethers.utils.parseUnits(collAmount.toString(), collTokenData.decimals);
+    const borrowAmountParsed = hre.ethers.utils.parseUnits(borrowAmount.toString(), borrowTokenData.decimals);
+
+    const market = COMP_V3_MARKETS[chainId][borrowTokenSymbol];
+
+    await setBalance(collTokenData.address, eoa, collAmount);
+    await approve(collTokenData.address, market, eoa);
+
+    let cometContract = new hre.ethers.Contract(market, cometAbi, senderAcc);
+
+    cometContract = cometContract.connect(senderAcc);
+
+    await cometContract.supplyTo(senderAcc.address, collTokenData.address, collAmountParsed);
+    await cometContract.withdrawFrom(senderAcc.address, senderAcc.address, borrowTokenData.address, borrowAmountParsed);
+
+    return await getLoanData(market, senderAcc.address);
+}
+
 module.exports = {
     createCompoundV3Position,
-    createCompoundV3ProxyPosition
+    createCompoundV3ProxyPosition,
+    createCompoundV3EOAPosition
 };

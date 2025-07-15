@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
-const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagementOnPrice } = require("../../helpers/compoundV3/strategies");
+const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagementOnPrice, subCompoundV3CloseOnPrice } = require("../../helpers/compoundV3/strategies");
 
 const router = express.Router();
 
@@ -249,6 +249,129 @@ router.post("/leverage-management-on-price", async (req, res) => {
     } catch (err) {
         const e = {
             error: `Failed to subscribe to Compound V3 leverage management on price strategy with error : ${err.toString()}`
+        };
+
+        res.status(500).send(e);
+    }
+});
+
+/**
+ * @swagger
+ * /compound/v3/strategies/close-on-price:
+ *   post:
+ *     summary: Subscribe to a Compound V3 close on price strategy
+ *     tags:
+ *      - CompoundV3
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *              bundleId:
+ *                type: string
+ *                example: "42"
+ *                description: "ID of the bundle to subscribe to"
+ *              debtTokenSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Symbol of the debt token (e.g., USDC, ETH, WETH)"
+ *              collTokenSymbol:
+ *                type: string
+ *                example: "WETH"
+ *                description: "Symbol of the collateral token (e.g., WETH, USDC)"
+ *              stopLossPrice:
+ *                type: integer
+ *                example: 1500
+ *                description: "Lower price for stop loss. Pass 0 if only subscribing to take profit."
+ *              takeProfitPrice:
+ *                 type: integer
+ *                 example: 4000
+ *                 description: "Upper price for take profit. Pass 0 if only subscribing to stop loss."
+ *              closeStrategyType:
+ *                 type: number
+ *                 example: 5
+ *                 description: "0=TakeProfitColl, 1=StopLossColl, 2=TakeProfitDebt, 3=StopLossDebt, 4=TakeProfitCollStopLossColl, 5=TakeProfitCollStopLossDebt, 6=TakeProfitDebtStopLossDebt, 7=TakeProfitDebtStopLossColl"
+ *              eoa:
+ *                type: string
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions"
+ *              proxyAddr:
+ *                type: string
+ *                example: "0xAA28CaFdd40a8156E23b64b75C8fD9fdF28064Ed"
+ *                description: "The address of the wallet"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "230"
+ *                   description: "ID of the created subscription"
+ *                 strategySub:
+ *                   type: array
+ *                   description: "Strategy subscription details"
+ *                   example: [
+ *                     "42",
+ *                     "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+ *                     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+ *                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+ *                     "1800",
+ *                     "0",
+ *                     "2200",
+ *                     "1"
+ *                   ]
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/close-on-price", async (req, res) => {
+    try {
+        const {
+            forkId,
+            bundleId,
+            debtTokenSymbol,
+            collTokenSymbol,
+            stopLossPrice,
+            takeProfitPrice,
+            closeStrategyType,
+            eoa,
+            proxyAddr
+        } = req.body;
+
+        await setupFork(forkId, [eoa], true);
+
+        const sub = await subCompoundV3CloseOnPrice(
+            bundleId,
+            debtTokenSymbol,
+            collTokenSymbol,
+            stopLossPrice,
+            takeProfitPrice,
+            closeStrategyType,
+            eoa,
+            proxyAddr
+        );
+
+        res.status(200).send(sub);
+    } catch (err) {
+        const e = {
+            error: `Failed to subscribe to Compound V3 close on price strategy with error : ${err.toString()}`
         };
 
         res.status(500).send(e);

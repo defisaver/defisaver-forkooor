@@ -12,7 +12,7 @@ module "fork" {
   subnet_ids                       = [data.terraform_remote_state.general_infra.outputs.stage_subnets.ids[0], data.terraform_remote_state.general_infra.outputs.stage_subnets.ids[3]]
   vpc_id                           = data.terraform_remote_state.general_infra.outputs.automation_stage_vpc.id
   datadog_enabled                  = false
-  datadog_monitoring_secret_arn    = data.terraform_remote_state.general_infra.outputs.datadog_api_key_arn
+  datadog_monitoring_secret_arn    = data.terraform_remote_state.observability.outputs.datadog_api_key_arn
   datadog_agent_version            = "7.42.2"
   datadog_team_tag                 = "front"
   load_balancer_container_port     = 3000

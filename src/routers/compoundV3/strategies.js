@@ -154,7 +154,7 @@ router.post("/dfs-automation", async (req, res) => {
  *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
  *              bundleId:
  *                type: string
- *                example: "42"
+ *                example: "for mainnet 46 = repayOnPrice; 47 = boostOnPrice; 49 = eoa repayOnPrice; 50 = eoa boostOnPrice"
  *                description: "ID of the bundle to subscribe to"
  *              debtTokenSymbol:
  *                type: string
@@ -276,7 +276,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
  *              bundleId:
  *                type: string
- *                example: "42"
+ *                example: "for mainnet 48 = closeOnPrice; 51 = eoa closeOnPrice"
  *                description: "ID of the bundle to subscribe to"
  *              debtTokenSymbol:
  *                type: string

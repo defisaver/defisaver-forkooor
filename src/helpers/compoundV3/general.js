@@ -97,7 +97,7 @@ async function createCompoundV3ProxyPosition(
     const collAmountParsed = hre.ethers.utils.parseUnits(collAmount.toString(), collTokenData.decimals);
     const borrowAmountParsed = hre.ethers.utils.parseUnits(borrowAmount.toString(), borrowTokenData.decimals);
 
-    const market = COMP_V3_MARKETS[chainId][borrowTokenSymbol];
+    const market = COMP_V3_MARKETS[chainId][borrowTokenSymbol === "ETH" ? "WETH" : borrowTokenSymbol];
 
     const supplyAction = new dfs.actions.compoundV3.CompoundV3SupplyAction(
         market,
@@ -151,7 +151,7 @@ async function createCompoundV3EOAPosition(
     const collAmountParsed = hre.ethers.utils.parseUnits(collAmount.toString(), collTokenData.decimals);
     const borrowAmountParsed = hre.ethers.utils.parseUnits(borrowAmount.toString(), borrowTokenData.decimals);
 
-    const market = COMP_V3_MARKETS[chainId][borrowTokenSymbol];
+    const market = COMP_V3_MARKETS[chainId][borrowTokenSymbol === "ETH" ? "WETH" : borrowTokenSymbol];
 
     await setBalance(collTokenData.address, eoa, collAmount);
     await approve(collTokenData.address, market, eoa);
@@ -180,7 +180,7 @@ async function addManager(marketSymbol, eoa, manager) {
 
     const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const market = COMP_V3_MARKETS[chainId][marketSymbol];
+    const market = COMP_V3_MARKETS[chainId][marketSymbol === "ETH" ? "WETH" : marketSymbol];
 
     let cometContract = new hre.ethers.Contract(market, cometAbi, senderAcc);
 

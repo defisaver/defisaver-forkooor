@@ -1,8 +1,10 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, addresses, getLatestSubId, executeActionFromProxy } = require("../../utils");
+const { getSender, addresses, getLatestSubId, executeActionFromProxy, subToStrategy } = require("../../utils");
 const { compoundV3SubProxyAbi } = require("../../abi/compoundV3/abis");
 const { compoundV3SubProxyL2Abi } = require("../../abi/compoundV3/abis");
+const { COMP_V3_MARKETS } = require("./view");
+const { getAssetInfo } = require("@defisaver/tokens");
 
 /**
  * Helper method for getting compound sub proxy contract
@@ -96,6 +98,58 @@ async function subCompoundV3AutomationStrategy(
     }
 }
 
+/**
+ * Subscribes to Compound V3 leverage management on price strategy
+ * @param {string} bundleId bundleId
+ * @param {string} debtTokenSymbol symbol of the debt token
+ * @param {string} collTokenSymbol symbol of the collateral token
+ * @param {number} targetRatio target ratio
+ * @param {number} price price
+ * @param {string} priceState price state
+ * @param {string} eoa EOA address
+ * @param {string} proxyAddr proxy address
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subCompoundV3LeverageManagementOnPrice(
+    bundleId,
+    debtTokenSymbol,
+    collTokenSymbol,
+    targetRatio,
+    price,
+    priceState,
+    eoa,
+    proxyAddr
+) {
+    try {
+        const [, proxy] = await getSender(eoa, proxyAddr, true);
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+
+        const market = COMP_V3_MARKETS[chainId][debtTokenSymbol === "ETH" ? "WETH" : debtTokenSymbol];
+
+        const collTokenData = getAssetInfo(collTokenSymbol === "ETH" ? "WETH" : collTokenSymbol, chainId);
+        const debtTokenData = getAssetInfo(debtTokenSymbol === "ETH" ? "WETH" : debtTokenSymbol, chainId);
+
+        const strategySub = automationSdk.strategySubService.compoundV3Encode.leverageManagementOnPrice(
+            bundleId,
+            market,
+            collTokenData.address,
+            debtTokenData.address,
+            targetRatio,
+            price,
+            priceState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
 module.exports = {
-    subCompoundV3AutomationStrategy
+    subCompoundV3AutomationStrategy,
+    subCompoundV3LeverageManagementOnPrice
 };

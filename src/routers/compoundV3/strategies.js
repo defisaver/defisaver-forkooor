@@ -23,7 +23,7 @@ const router = express.Router();
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/{}"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -107,7 +107,7 @@ router.post("/dfs-automation", async (req, res) => {
             isEOA
         } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
 
         const sub = await subCompoundV3AutomationStrategy(
             owner,

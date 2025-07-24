@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
-const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagementOnPrice, subCompoundV3CloseOnPrice } = require("../../helpers/compoundV3/strategies");
+const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagementOnPrice, subCompoundV3CloseOnPrice, subCompoundV3LeverageManagement } = require("../../helpers/compoundV3/strategies");
 
 const router = express.Router();
 
@@ -127,6 +127,125 @@ router.post("/dfs-automation", async (req, res) => {
     } catch (err) {
         const e = {
             error: `Failed to subscribe to Compound V3 automation strategy with error : ${err.toString()}`
+        };
+
+        res.status(500).send(e);
+    }
+});
+
+/**
+ * @swagger
+ * /compound/v3/strategies/leverage-management:
+ *   post:
+ *     summary: Subscribe to a Compound V3 leverage management strategy
+ *     tags:
+ *      - CompoundV3
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *              bundleId:
+ *                type: string
+ *                example: "28"
+ *                description: "For mainnet 28 = sw repay; 29 = sw boost; 30 = eoa repay; 31 = eoa boost"
+ *              marketSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Symbol of the market token (e.g., USDC, ETH, WETH)"
+ *              triggerRatio:
+ *                type: number
+ *                example: 200
+ *                description: "Ratio at which the strategy will trigger"
+ *              targetRatio:
+ *                type: number
+ *                example: 250
+ *                description: "Target ratio after the strategy executes"
+ *              ratioState:
+ *                type: string
+ *                example: "under"
+ *                description: "Ratio state trigger condition ('under' or 'over')"
+ *              eoa:
+ *                type: string
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions"
+ *              proxyAddr:
+ *                type: string
+ *                example: "0xAA28CaFdd40a8156E23b64b75C8fD9fdF28064Ed"
+ *                description: "The address of the wallet"
+ *              isEOA:
+ *                type: boolean
+ *                example: false
+ *                description: "Whether the subscription is for an EOA"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "230"
+ *                   description: "ID of the created subscription"
+ *                 strategySub:
+ *                   type: array
+ *                   description: "Strategy subscription details"
+ *                   example: [
+ *                     "28",
+ *                     true,
+ *                     ["0x..."],
+ *                     ["0x...", "0x...", "0x...", "0x..."]
+ *                   ]
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/leverage-management", async (req, res) => {
+    try {
+        const {
+            forkId,
+            bundleId,
+            marketSymbol,
+            triggerRatio,
+            targetRatio,
+            ratioState,
+            eoa,
+            proxyAddr,
+            isEOA
+        } = req.body;
+
+        await setupFork(forkId, [eoa], true);
+
+        const sub = await subCompoundV3LeverageManagement(
+            bundleId,
+            marketSymbol,
+            triggerRatio,
+            targetRatio,
+            ratioState,
+            eoa,
+            proxyAddr,
+            isEOA
+        );
+
+        res.status(200).send(sub);
+    } catch (err) {
+        const e = {
+            error: `Failed to subscribe to Compound V3 leverage management strategy with error : ${err.toString()}`
         };
 
         res.status(500).send(e);

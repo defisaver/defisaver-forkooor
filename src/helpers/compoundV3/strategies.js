@@ -99,6 +99,75 @@ async function subCompoundV3AutomationStrategy(
 }
 
 /**
+ * Subscribes to Compound V3 leverage management
+ * @param {string} bundleId bundleId
+ * @param {string} marketSymbol market symbol
+ * @param {number} triggerRatio trigger ratio
+ * @param {number} targetRatio target ratio
+ * @param {string} ratioState ratio state
+ * @param {string} eoa EOA address
+ * @param {string} proxyAddr proxy address
+ * @param {boolean} isEOA whether the subscription is for an EOA
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subCompoundV3LeverageManagement(
+    bundleId,
+    marketSymbol,
+    triggerRatio,
+    targetRatio,
+    ratioState,
+    eoa,
+    proxyAddr,
+    isEOA
+) {
+    try {
+        const [, proxy] = await getSender(eoa, proxyAddr, true);
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+
+        const market = COMP_V3_MARKETS[chainId][marketSymbol === "ETH" ? "WETH" : marketSymbol];
+
+        const debtTokenData = getAssetInfo(marketSymbol === "ETH" ? "WETH" : marketSymbol, chainId);
+
+        // --------------------ENCODE SUB DATA---------------------
+        // @dev We don't want to use the automation sdk here to simplify encoding and differentiate between repay and boost
+
+        const abiCoder = new hre.ethers.utils.AbiCoder();
+
+        const targetRatioFormatted = hre.ethers.utils.parseUnits(targetRatio.toString(), 18);
+        const triggerRatioFormatted = hre.ethers.utils.parseUnits(triggerRatio.toString(), 18);
+        const ratioStateFormatted = ratioState.toLocaleLowerCase() === "under"
+            ? automationSdk.enums.RatioState.UNDER
+            : automationSdk.enums.RatioState.OVER;
+        const user = isEOA ? eoa : proxyAddr;
+        const isBundle = true;
+
+        const triggerDataEncoded = abiCoder.encode(
+            ["address", "address", "uint256", "uint8"],
+            [user, market, triggerRatioFormatted, ratioStateFormatted]
+        );
+
+        const subDataEncoded = [
+            abiCoder.encode(["address"], [market]),
+            abiCoder.encode(["address"], [debtTokenData.address]),
+            abiCoder.encode(["uint8"], [ratioStateFormatted]),
+            abiCoder.encode(["uint256"], [targetRatioFormatted])
+        ];
+
+        const strategySub = [bundleId, isBundle, [triggerDataEncoded], subDataEncoded];
+
+        // --------------------FINISH ENCODING---------------------
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
+/**
  * Subscribes to Compound V3 leverage management on price strategy
  * @param {string} bundleId bundleId
  * @param {string} debtTokenSymbol symbol of the debt token
@@ -208,6 +277,7 @@ async function subCompoundV3CloseOnPrice(
 
 module.exports = {
     subCompoundV3AutomationStrategy,
+    subCompoundV3LeverageManagement,
     subCompoundV3LeverageManagementOnPrice,
     subCompoundV3CloseOnPrice
 };

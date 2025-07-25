@@ -425,7 +425,7 @@ function getRpc(forkId, isVnet = false) {
  * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function setupFork(forkId, accounts = [], isVnet = false) {
+async function setupFork(forkId, accounts = [], isVnet = true) {
     hre.ethers.provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);

@@ -79,3 +79,13 @@ data "terraform_remote_state" "ecs_state" {
     region = "us-west-2"
   }
 }
+
+data "terraform_remote_state" "stage_services" {
+  backend = "s3"
+
+  config = {
+    bucket = "dfs-stage-services-terraform-state"
+    key    = "tfstate-s3-bucket"
+    region = "us-west-2"
+  }
+}

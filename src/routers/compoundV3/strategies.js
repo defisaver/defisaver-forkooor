@@ -140,7 +140,18 @@ router.post("/dfs-automation", async (req, res) => {
  *     summary: Subscribe to a Compound V3 leverage management strategy
  *     tags:
  *      - CompoundV3
- *     description:
+ *     description: >
+ *      MAINNNET BUNDLES:<br/>
+ *          &nbsp;&nbsp;SW_REPAY = 28 [15, 82]<br/>
+ *          &nbsp;&nbsp;SW_BOOST = 29 [19, 83]<br/>
+ *          &nbsp;&nbsp;EOA_REPAY = 30 [23, 84]<br/>
+ *          &nbsp;&nbsp;EOA_BOOST = 31 [27, 85]<br/><br/>
+ *      ARBITRUM BUNDLES:<br/>
+ *          &nbsp;&nbsp;SW_REPAY = 4 [10, 11]<br/>
+ *          &nbsp;&nbsp;SW_BOOST = 5 [12, 13]<br/><br/>
+ *      BASE BUNDLES:<br/>
+ *          &nbsp;&nbsp;SW_REPAY = 4 [10, 11]<br/>
+ *          &nbsp;&nbsp;SW_BOOST = 5 [12, 13]<br/><br/>
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true

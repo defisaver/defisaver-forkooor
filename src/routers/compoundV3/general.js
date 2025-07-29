@@ -110,7 +110,7 @@ router.post("/get-position",
 
         const isContractPromise = isContract(owner);
 
-        setupFork(forkId);
+        await setupFork(forkId, []);
 
         if (!await isContractPromise) {
             const proxyContract = await getProxy(owner);

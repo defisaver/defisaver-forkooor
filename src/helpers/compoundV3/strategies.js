@@ -134,8 +134,8 @@ async function subCompoundV3LeverageManagement(
 
         const abiCoder = new hre.ethers.utils.AbiCoder();
 
-        const targetRatioFormatted = hre.ethers.utils.parseUnits(targetRatio.toString(), 18);
-        const triggerRatioFormatted = hre.ethers.utils.parseUnits(triggerRatio.toString(), 18);
+        const targetRatioFormatted = hre.ethers.utils.parseUnits(targetRatio.toString(), 16);
+        const triggerRatioFormatted = hre.ethers.utils.parseUnits(triggerRatio.toString(), 16);
         const ratioStateFormatted = ratioState.toLocaleLowerCase() === "under"
             ? automationSdk.enums.RatioState.UNDER
             : automationSdk.enums.RatioState.OVER;

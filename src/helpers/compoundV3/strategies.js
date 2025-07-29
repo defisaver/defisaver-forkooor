@@ -175,8 +175,10 @@ async function subCompoundV3LeverageManagement(
  * @param {number} targetRatio target ratio
  * @param {number} price price
  * @param {string} priceState price state
+ * @param {string} ratioState ratio state
  * @param {string} eoa EOA address
  * @param {string} proxyAddr proxy address
+ * @param {boolean} isEOASubscription whether the subscription is for an EOA position or not
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCompoundV3LeverageManagementOnPrice(
@@ -186,8 +188,10 @@ async function subCompoundV3LeverageManagementOnPrice(
     targetRatio,
     price,
     priceState,
+    ratioState,
     eoa,
-    proxyAddr
+    proxyAddr,
+    isEOASubscription
 ) {
     try {
         const [, proxy] = await getSender(eoa, proxyAddr, true);
@@ -206,7 +210,9 @@ async function subCompoundV3LeverageManagementOnPrice(
             debtTokenData.address,
             targetRatio,
             price,
-            priceState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER
+            priceState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
+            ratioState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
+            isEOASubscription ? eoa : proxyAddr
         );
 
         const subId = await subToStrategy(proxy, strategySub);

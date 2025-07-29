@@ -275,6 +275,10 @@ router.post("/leverage-management", async (req, res) => {
  *                type: string
  *                example: "for mainnet 46 = repayOnPrice; 47 = boostOnPrice; 49 = eoa repayOnPrice; 50 = eoa boostOnPrice"
  *                description: "ID of the bundle to subscribe to"
+ *              isEOA:
+ *                type: boolean
+ *                example: false
+ *                description: "Whether the subscription is for an EOA"
  *              debtTokenSymbol:
  *                type: string
  *                example: "USDC"
@@ -295,6 +299,10 @@ router.post("/leverage-management", async (req, res) => {
  *                type: string
  *                example: "under"
  *                description: "Price state trigger condition ('under' or 'over')"
+ *              ratioState:
+ *                type: string
+ *                example: "under"
+ *                description: "'under' for repay on price or 'over' for boost on price"
  *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
@@ -342,11 +350,13 @@ router.post("/leverage-management-on-price", async (req, res) => {
         const {
             forkId,
             bundleId,
+            isEOA,
             debtTokenSymbol,
             collTokenSymbol,
             targetRatio,
             price,
             priceState,
+            ratioState,
             eoa,
             proxyAddr
         } = req.body;
@@ -360,8 +370,10 @@ router.post("/leverage-management-on-price", async (req, res) => {
             targetRatio,
             price,
             priceState,
+            ratioState,
             eoa,
-            proxyAddr
+            proxyAddr,
+            isEOA
         );
 
         res.status(200).send(sub);

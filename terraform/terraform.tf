@@ -89,3 +89,13 @@ data "terraform_remote_state" "stage_services" {
     region = "us-west-2"
   }
 }
+
+data "terraform_remote_state" "stage_networking" {
+  backend = "s3"
+
+  config = {
+    bucket = "dfs-stage-networking-terraform-state"
+    key    = "tfstate-s3-bucket"
+    region = "us-west-2"
+  }
+}

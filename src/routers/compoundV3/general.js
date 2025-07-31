@@ -2,7 +2,7 @@
 /* eslint-disable consistent-return */
 const express = require("express");
 const { setupFork, getProxy, isContract, getWalletAddr, defaultsToSafe } = require("../../utils");
-const { getLoanData } = require("../../helpers/compoundV3/view");
+const { getLoanData, COMP_V3_MARKETS } = require("../../helpers/compoundV3/view");
 const {
     createCompoundV3Position,
     createCompoundV3ProxyPosition,
@@ -10,6 +10,7 @@ const {
     addManager
 } = require("../../helpers/compoundV3/general");
 const { body, validationResult } = require("express-validator");
+const hre = require("hardhat");
 
 const router = express.Router();
 
@@ -97,7 +98,7 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-position",
-    body(["forkId", "market", "owner"]).notEmpty(),
+    body(["forkId", "marketSymbol", "owner", "isEOA"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -105,18 +106,23 @@ router.post("/get-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, owner } = req.body;
+        const { forkId, marketSymbol, owner, isEOA } = req.body;
         let proxy = owner;
-
-        const isContractPromise = isContract(owner);
 
         await setupFork(forkId, []);
 
-        if (!await isContractPromise) {
-            const proxyContract = await getProxy(owner);
+        if (isEOA === false) {
+            const isContractPromise = isContract(owner);
 
-            proxy = proxyContract.address;
+            if (!await isContractPromise) {
+                const proxyContract = await getProxy(owner);
+
+                proxy = proxyContract.address;
+            }
         }
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const market = COMP_V3_MARKETS[chainId][marketSymbol === "ETH" ? "WETH" : marketSymbol];
 
         await getLoanData(market, proxy)
             .then(pos => {

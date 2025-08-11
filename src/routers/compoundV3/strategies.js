@@ -420,6 +420,10 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *                type: string
  *                example: "for mainnet 48 = closeOnPrice; 51 = eoa closeOnPrice"
  *                description: "ID of the bundle to subscribe to"
+ *              isEOA:
+ *                type: boolean
+ *                example: false
+ *                description: "Whether the subscription is for an EOA"
  *              debtTokenSymbol:
  *                type: string
  *                example: "USDC"
@@ -488,6 +492,7 @@ router.post("/close-on-price", async (req, res) => {
         const {
             forkId,
             bundleId,
+            isEOA,
             debtTokenSymbol,
             collTokenSymbol,
             stopLossPrice,
@@ -507,7 +512,8 @@ router.post("/close-on-price", async (req, res) => {
             takeProfitPrice,
             closeStrategyType,
             eoa,
-            proxyAddr
+            proxyAddr,
+            isEOA
         );
 
         res.status(200).send(sub);

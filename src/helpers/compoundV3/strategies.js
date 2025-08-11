@@ -178,7 +178,7 @@ async function subCompoundV3LeverageManagement(
  * @param {string} ratioState ratio state
  * @param {string} eoa EOA address
  * @param {string} proxyAddr proxy address
- * @param {boolean} isEOASubscription whether the subscription is for an EOA position or not
+ * @param {boolean} isEOA whether the subscription is for an EOA position or not
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCompoundV3LeverageManagementOnPrice(
@@ -191,7 +191,7 @@ async function subCompoundV3LeverageManagementOnPrice(
     ratioState,
     eoa,
     proxyAddr,
-    isEOASubscription
+    isEOA
 ) {
     try {
         const [, proxy] = await getSender(eoa, proxyAddr, true);
@@ -212,7 +212,7 @@ async function subCompoundV3LeverageManagementOnPrice(
             price,
             priceState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
             ratioState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
-            isEOASubscription ? eoa : proxyAddr
+            isEOA ? eoa : proxyAddr
         );
 
         const subId = await subToStrategy(proxy, strategySub);
@@ -234,6 +234,7 @@ async function subCompoundV3LeverageManagementOnPrice(
  * @param {number} closeStrategyType Type of close strategy. See automationSdk.enums.CloseStrategyType
  * @param {string} eoa EOA address
  * @param {string} proxyAddr proxy address
+ * @param {boolean} isEOA whether the subscription is for an EOA position or not
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCompoundV3CloseOnPrice(
@@ -244,7 +245,8 @@ async function subCompoundV3CloseOnPrice(
     takeProfitPrice,
     closeStrategyType,
     eoa,
-    proxyAddr
+    proxyAddr,
+    isEOA
 ) {
     try {
         const [, proxy] = await getSender(eoa, proxyAddr, true);
@@ -269,7 +271,8 @@ async function subCompoundV3CloseOnPrice(
             stopLossPrice,
             stopLossType,
             takeProfitPrice,
-            takeProfitType
+            takeProfitType,
+            isEOA ? eoa : proxyAddr
         );
 
         const subId = await subToStrategy(proxy, strategySub);

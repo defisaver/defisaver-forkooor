@@ -34,7 +34,6 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
     const collTokenInfo = getAssetInfoByAddress(marketParams.collateralToken, chainId);
     const debtTokenInfo = getAssetInfoByAddress(marketParams.loanToken, chainId);
 
-    console.log(chainId);
     const amountColl = hre.ethers.utils.parseUnits(coll.toString(), collTokenInfo.decimals);
     const amountDebt = hre.ethers.utils.parseUnits(debt.toString(), debtTokenInfo.decimals);
 

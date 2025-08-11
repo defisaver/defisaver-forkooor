@@ -659,7 +659,6 @@ router.get("/new-address", async (req, res) => {
 
     try {
         resObj = await newAddress();
-        console.log('created new address:', resObj);
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to create new address with error : ${err.toString()}` };
@@ -719,7 +718,6 @@ router.post("/create-safe", async (req, res) => {
         await setupFork(forkId, [], isVnet);
 
         resObj = await createSafe(owner);
-        console.log('created new safe:', resObj);
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to create safe smart wallet: ${err.toString()}` };

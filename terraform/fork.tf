@@ -3,7 +3,7 @@ module "fork" {
   source = "git@github.com:defisaver/ecs-terraform-module?ref=main"
 
   environment                      = "prod"
-  cluster_id                       = data.terraform_remote_state.prod_services.outputs.web_services[0].arn
+  cluster_id                       = data.terraform_remote_state.prod_services.outputs.web_services.arn
   security_group_ingress_cidr_list = [local.stage_subnet_cidr[1], local.stage_subnet_cidr[0]]
   load_balancer_target_arn         = data.terraform_remote_state.stage_services.outputs.alb_fork_target_group_arn
   load_balancer_security_group_id  = data.terraform_remote_state.stage_services.outputs.alb_security_group_id

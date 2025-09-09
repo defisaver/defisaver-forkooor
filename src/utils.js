@@ -471,7 +471,7 @@ async function findBalancesSlot(tokenAddress) {
     const [signer] = await hre.ethers.getSigners();
     const token = new hre.ethers.Contract(tokenAddress, erc20Abi, signer);
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 52; i++) {
         {
             const probedSlot = hre.ethers.utils.keccak256(
                 encode(["address", "uint"], [account, i])
@@ -506,15 +506,10 @@ async function findBalancesSlot(tokenAddress) {
             }
         }
         {
-            let probedSlot = hre.ethers.utils.keccak256(
+            const probedSlot = hre.ethers.utils.keccak256(
                 encode(["uint", "address"], [i, account])
             );
 
-
-            // remove padding for JSON RPC
-            while (probedSlot.startsWith("0x0")) {
-                probedSlot = `0x${probedSlot.slice(3)}`;
-            }
             const prev = await hre.ethers.provider.send(
                 "eth_getStorageAt",
                 [tokenAddress, probedSlot, "latest"]

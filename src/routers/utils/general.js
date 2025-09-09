@@ -780,10 +780,10 @@ router.post("/set-time", async (req, res) => {
 
     try {
         const { forkId, timestamp, isVnet } = req.body;
-        
+
         await setupFork(forkId, [], isVnet);
         resObj = await setTime(forkId, timestamp, isVnet);
-        
+
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to set time with error: ${err.toString()}` };

@@ -954,5 +954,31 @@
          "isVyper":false,
          "num":51
       }
+   },
+   "59144":{
+      "0x3aab2285ddcddad8edf438c1bab47e1a9d05a9b4":{
+         "isVyper":false,
+         "num":51
+      },
+      "0xb5bedd42000b71fdde22d3ee8a79bd49a568fc8f": {
+         "isVyper": false,
+         "num": 51
+      },
+      "0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f": {
+         "isVyper": false,
+         "num": 3
+      },
+      "0x176211869ca2b568f2a7d4ee941e073a821ee1ff": {
+         "isVyper": false,
+         "num": 9
+      },
+      "0x2416092f143378750bb29b79ed961ab195cceea5": {
+         "isVyper": false,
+         "num": 51
+      },
+      "0xa219439258ca9da29e9cc4ce5596924745e12b93": {
+         "isVyper": false,
+         "num": 51
+      }
    }
 }

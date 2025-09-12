@@ -183,9 +183,47 @@ async function subLiquityV2Payback(
     }
 }
 
+/**
+ * Subscribes to Liquity V2 interest rate adjustment strategy
+ * @param {string} owner proxy owner
+ * @param {string} market LiquityV2 market symbol. e.g WETH
+ * @param {string} troveId ID of the trove
+ * @param {number} criticalDebtInFrontLimit Critical debt in front limit
+ * @param {number} nonCriticalDebtInFrontLimit Non-critical debt in front limit
+ * @param {number} interestRateChange Interest rate change
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subLiquityV2InterestRateAdjustmentBundle(
+    owner, market, troveId, criticalDebtInFrontLimit, nonCriticalDebtInFrontLimit, interestRateChange, proxyAddr, useSafe = true
+) {
+    try {
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+
+        const marketAddr = LIQUITY_V2_MARKETS[market];
+
+        const strategySub = automationSdk.strategySubService.liquityV2Encode.interestRateAdjustment(
+            marketAddr,
+            troveId,
+            criticalDebtInFrontLimit,
+            nonCriticalDebtInFrontLimit,
+            interestRateChange
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
 module.exports = {
     subLiquityV2LeverageManagement,
     subLiquityV2CloseToPrice,
     subLiquityV2LeverageManagementOnPrice,
-    subLiquityV2Payback
+    subLiquityV2Payback,
+    subLiquityV2InterestRateAdjustmentBundle
 };

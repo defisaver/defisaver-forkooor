@@ -3,6 +3,7 @@ const dfs = require("@defisaver/sdk");
 const { getAssetInfo } = require("@defisaver/tokens");
 const { getSender, approve, executeAction, setBalance, addresses } = require("../../utils");
 const { getFullTokensInfo, getLoanData } = require("./view");
+const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = require("../../abi/aaveV3/abis");
 
 /**
  * Create a Aave position for sender on his proxy (created if he doesn't have one)
@@ -15,10 +16,11 @@ const { getFullTokensInfo, getLoanData } = require("./view");
  * @param {number} debtAmount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} isEOA Whether to create an EOA or SW position
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, proxyAddr, useSafe = true) {
+async function createAaveV3Position(useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, proxyAddr, isEOA, useSafe = true) {
     const { chainId } = await hre.ethers.provider.getNetwork();
 
     let marketAddress = market;
@@ -29,6 +31,9 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
 
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
+    // Determine user field based on isEOA parameter
+    const user = isEOA ? owner : proxy.address;
+
     const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken, chainId);
     const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken, chainId);
 
@@ -37,6 +42,31 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
 
     // approve coll asset for proxy to pull
     await approve(collTokenData.address, proxy.address, owner);
+
+    // Get market contract and pool address for EOA debt delegation
+    const aaveMarketContract = new hre.ethers.Contract(
+        marketAddress,
+        IPoolAddressesProviderAbi,
+        senderAcc
+    );
+    const poolAddress = await aaveMarketContract.getPool();
+
+    // Use the appropriate interface based on network
+    const network = hre.network.name;
+    const poolAbi = network !== "mainnet" ? IL2PoolV3Abi : IPoolV3Abi;
+    const poolContract = new hre.ethers.Contract(poolAddress, poolAbi, senderAcc);
+    const debtReserveData = await poolContract.getReserveData(debtTokenData.address);
+
+    // If EOA position, give proxy additional permissions - debt delegation
+    if (isEOA) {
+
+        // Approve variable debt token delegation to proxy
+        const debtTokenContract = new hre.ethers.Contract(debtReserveData.variableDebtTokenAddress, IDebtTokenAbi, senderAcc);
+        const amountDebt = hre.ethers.utils.parseUnits(debtAmount.toString(), debtTokenData.decimals);
+
+        await debtTokenContract.approveDelegation(proxy.address, amountDebt);
+        console.log("Debt token approved for delegation to proxy");
+    }
 
     const amountColl = hre.ethers.utils.parseUnits(collAmount.toString(), collTokenData.decimals);
     const amountDebt = hre.ethers.utils.parseUnits(debtAmount.toString(), debtTokenData.decimals);
@@ -53,8 +83,8 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
         collTokenData.address,
         aaveCollInfo.assetId,
         true,
-        false,
-        proxy.address
+        true,
+        user
     );
 
     const borrowAction = new dfs.actions.aaveV3.AaveV3BorrowAction(
@@ -64,8 +94,8 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
         senderAcc._address,
         rateMode.toString(),
         aaveDebtInfo.assetId,
-        false,
-        proxy.address
+        true,
+        user
     );
 
     const createPositionRecipe = new dfs.Recipe("CreateAaveV3PositionRecipe", [
@@ -77,7 +107,7 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
 
     await executeAction("RecipeExecutor", functionData, proxy);
 
-    return await getLoanData(marketAddress, proxy.address);
+    return await getLoanData(marketAddress, user);
 }
 
 /**

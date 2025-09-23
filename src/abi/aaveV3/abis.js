@@ -3,7 +3,150 @@ const aaveV3ViewAbi = [{ inputs: [], name: "AAVE_REFERRAL_CODE", outputs: [{ int
 
 const aaveV3SubProxyAbi = [{ inputs: [], name: "NonContractCall", type: "error" }, { inputs: [{ internalType: "uint128", name: "ratio", type: "uint128" }, { internalType: "uint128", name: "targetRatio", type: "uint128" }], name: "RangeTooClose", type: "error" }, { inputs: [], name: "SenderNotAdmin", type: "error" }, { inputs: [], name: "SenderNotOwner", type: "error" }, { inputs: [{ internalType: "uint128", name: "minRatio", type: "uint128" }, { internalType: "uint128", name: "maxRatio", type: "uint128" }], name: "WrongSubParams", type: "error" }, { inputs: [], name: "AAVE_MARKET", outputs: [{ internalType: "address", name: "", type: "address" }], stateMutability: "view", type: "function" }, { inputs: [], name: "BOOST_BUNDLE_ID", outputs: [{ internalType: "uint64", name: "", type: "uint64" }], stateMutability: "view", type: "function" }, { inputs: [], name: "EXECUTE_SELECTOR", outputs: [{ internalType: "bytes4", name: "", type: "bytes4" }], stateMutability: "view", type: "function" }, { inputs: [], name: "REPAY_BUNDLE_ID", outputs: [{ internalType: "uint64", name: "", type: "uint64" }], stateMutability: "view", type: "function" }, { inputs: [{ internalType: "bytes", name: "encodedInput", type: "bytes" }], name: "activateSub", outputs: [], stateMutability: "nonpayable", type: "function" }, { inputs: [], name: "adminVault", outputs: [{ internalType: "contract AdminVault", name: "", type: "address" }], stateMutability: "view", type: "function" }, { inputs: [{ internalType: "bytes", name: "encodedInput", type: "bytes" }], name: "deactivateSub", outputs: [], stateMutability: "nonpayable", type: "function" }, { inputs: [{ components: [{ internalType: "uint128", name: "minRatio", type: "uint128" }, { internalType: "uint128", name: "maxRatio", type: "uint128" }, { internalType: "uint128", name: "targetRatioBoost", type: "uint128" }, { internalType: "uint128", name: "targetRatioRepay", type: "uint128" }, { internalType: "bool", name: "boostEnabled", type: "bool" }], internalType: "struct AaveSubProxy.AaveSubData", name: "_user", type: "tuple" }], name: "formatBoostSub", outputs: [{ components: [{ internalType: "uint64", name: "strategyOrBundleId", type: "uint64" }, { internalType: "bool", name: "isBundle", type: "bool" }, { internalType: "bytes[]", name: "triggerData", type: "bytes[]" }, { internalType: "bytes32[]", name: "subData", type: "bytes32[]" }], internalType: "struct StrategyModel.StrategySub", name: "boostSub", type: "tuple" }], stateMutability: "view", type: "function" }, { inputs: [{ components: [{ internalType: "uint128", name: "minRatio", type: "uint128" }, { internalType: "uint128", name: "maxRatio", type: "uint128" }, { internalType: "uint128", name: "targetRatioBoost", type: "uint128" }, { internalType: "uint128", name: "targetRatioRepay", type: "uint128" }, { internalType: "bool", name: "boostEnabled", type: "bool" }], internalType: "struct AaveSubProxy.AaveSubData", name: "_user", type: "tuple" }], name: "formatRepaySub", outputs: [{ components: [{ internalType: "uint64", name: "strategyOrBundleId", type: "uint64" }, { internalType: "bool", name: "isBundle", type: "bool" }, { internalType: "bytes[]", name: "triggerData", type: "bytes[]" }, { internalType: "bytes32[]", name: "subData", type: "bytes32[]" }], internalType: "struct StrategyModel.StrategySub", name: "repaySub", type: "tuple" }], stateMutability: "view", type: "function" }, { inputs: [{ internalType: "address", name: "_contractAddr", type: "address" }], name: "givePermission", outputs: [], stateMutability: "nonpayable", type: "function" }, { inputs: [], name: "kill", outputs: [], stateMutability: "nonpayable", type: "function" }, { inputs: [{ internalType: "bytes", name: "encodedInput", type: "bytes" }], name: "parseSubData", outputs: [{ components: [{ internalType: "uint128", name: "minRatio", type: "uint128" }, { internalType: "uint128", name: "maxRatio", type: "uint128" }, { internalType: "uint128", name: "targetRatioBoost", type: "uint128" }, { internalType: "uint128", name: "targetRatioRepay", type: "uint128" }, { internalType: "bool", name: "boostEnabled", type: "bool" }], internalType: "struct AaveSubProxy.AaveSubData", name: "user", type: "tuple" }], stateMutability: "pure", type: "function" }, { inputs: [{ internalType: "bytes", name: "encodedInput", type: "bytes" }], name: "parseSubIds", outputs: [{ internalType: "uint32", name: "subId1", type: "uint32" }, { internalType: "uint32", name: "subId2", type: "uint32" }], stateMutability: "pure", type: "function" }, { inputs: [{ internalType: "address", name: "_contractAddr", type: "address" }], name: "removePermission", outputs: [], stateMutability: "nonpayable", type: "function" }, { inputs: [{ internalType: "bytes", name: "encodedInput", type: "bytes" }], name: "subToAaveAutomation", outputs: [], stateMutability: "nonpayable", type: "function" }, { inputs: [{ internalType: "bytes", name: "encodedInput", type: "bytes" }], name: "updateSubData", outputs: [], stateMutability: "nonpayable", type: "function" }, { inputs: [{ internalType: "address", name: "_token", type: "address" }, { internalType: "address", name: "_receiver", type: "address" }, { internalType: "uint256", name: "_amount", type: "uint256" }], name: "withdrawStuckFunds", outputs: [], stateMutability: "nonpayable", type: "function" }];
 
+// Aave V3 Interface ABIs
+const IPoolAddressesProviderAbi = [
+    {
+        "inputs": [],
+        "name": "getPool",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
+
+const IPoolV3Abi = [
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "asset",
+                "type": "address"
+            }
+        ],
+        "name": "getReserveData",
+        "outputs": [
+            {
+                "components": [
+                    {
+                        "internalType": "uint256",
+                        "name": "configuration",
+                        "type": "uint256"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "liquidityIndex",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "currentLiquidityRate",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "variableBorrowIndex",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "currentVariableBorrowRate",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "currentStableBorrowRate",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint40",
+                        "name": "lastUpdateTimestamp",
+                        "type": "uint40"
+                    },
+                    {
+                        "internalType": "uint16",
+                        "name": "id",
+                        "type": "uint16"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "aTokenAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "stableDebtTokenAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "variableDebtTokenAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "interestRateStrategyAddress",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "accruedToTreasury",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "unbacked",
+                        "type": "uint128"
+                    },
+                    {
+                        "internalType": "uint128",
+                        "name": "isolationModeTotalDebt",
+                        "type": "uint128"
+                    }
+                ],
+                "internalType": "struct DataTypes.ReserveData",
+                "name": "",
+                "type": "tuple"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
+
+const IL2PoolV3Abi = IPoolV3Abi; // L2Pool has the same interface as PoolV3
+
+const IDebtTokenAbi = [
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "delegatee",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "approveDelegation",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+];
+
 module.exports = {
     aaveV3ViewAbi,
-    aaveV3SubProxyAbi
+    aaveV3SubProxyAbi,
+    IPoolAddressesProviderAbi,
+    IPoolV3Abi,
+    IL2PoolV3Abi,
+    IDebtTokenAbi
 };

@@ -240,7 +240,7 @@ router.post("/get-safety-ratio",
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -272,6 +272,10 @@ router.post("/get-safety-ratio",
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              isEOA:
+ *                type: boolean
+ *                example: true
+ *                description: "Whether to create an EOA or SW position"
  *              walletType:
  *                type: string
  *                example: "safe"
@@ -367,7 +371,7 @@ router.post("/get-safety-ratio",
  *                   type: string
  */
 router.post("/create",
-    body(["forkId", "useDefaultMarket", "market", "collToken", "debtToken", "rateMode", "collAmount", "debtAmount", "owner"]).notEmpty(),
+    body(["forkId", "useDefaultMarket", "market", "collToken", "debtToken", "rateMode", "collAmount", "debtAmount", "owner", "isEOA"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -375,12 +379,12 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner } = req.body;
+        const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, isEOA } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
 
         createAaveV3Position(
-            useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)
+            useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), isEOA, defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);

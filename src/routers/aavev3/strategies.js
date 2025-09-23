@@ -2,7 +2,15 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
-const { subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy, subAaveCloseToCollStrategy, subAaveV3OpenOrderFromCollateral, subAaveV3RepayOnPrice } = require("../../helpers/aavev3/strategies");
+const {
+    subAaveV3CloseWithMaximumGasPriceStrategy,
+    subAaveAutomationStrategy,
+    subAaveCloseToCollStrategy,
+    subAaveV3OpenOrderFromCollateral,
+    subAaveV3RepayOnPrice,
+    subAaveV3GenericAutomationStrategy,
+    subAaveV3LeverageManagementOnPriceGeneric,
+} = require("../../helpers/aavev3/strategies");
 const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
@@ -649,5 +657,320 @@ async (req, res) => {
         res.status(500).send({ error: `Failed to subscribe to Aave V3 repay on price strategy with error: ${err.toString()}` });
     });
 });
+
+/**
+ * @swagger
+ * /aave/v3/strategies/generic-automation:
+ *   post:
+ *     summary: Subscribe to Aave V3 Generic Automation strategy (EOA or Smart Wallet)
+ *     tags:
+ *       - AaveV3
+ *     description: Subscribes to Aave V3 Generic Automation strategy. Supports both EOA and Smart Wallet strategies.
+ *     requestBody:
+ *       description: Request body for subscribing to Aave V3 Generic Automation strategy
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - forkId
+ *               - owner
+ *               - bundleId
+ *               - market
+ *               - isEOA
+ *               - ratioState
+ *               - targetRatio
+ *               - triggerRatio
+ *               - isGeneric
+ *             properties:
+ *               forkId:
+ *                 type: string
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                 description: "Unique identifier for the fork"
+ *               owner:
+ *                 type: string
+ *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                 description: "EOA address that will own the strategy"
+ *               bundleId:
+ *                 type: integer
+ *                 example: 53
+ *                 description: "Bundle ID for the strategy"
+ *               market:
+ *                 type: string
+ *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                 description: "Aave V3 market address"
+ *               isEOA:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "If true, creates EOA strategy. If false, creates Smart Wallet strategy"
+ *               ratioState:
+ *                 type: integer
+ *                 example: 0
+ *                 description: "If it is boost or repay. 0 for boost, 1 for repay"
+ *               targetRatio:
+ *                 type: integer
+ *                 example: 1800000000000000000
+ *                 description: "Target ratio for the strategy"
+ *               triggerRatio:
+ *                 type: integer
+ *                 example: 1900000000000000000
+ *                 description: "Trigger ratio for the strategy"
+ *               isGeneric:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "If it is new type of subbing that supports EOA strategies"
+ *               proxyAddr:
+ *                 type: string
+ *                 example: "0x0000000000000000000000000000000000000000"
+ *                 description: "Optional proxy address. If not provided, a new wallet will be created"
+ *               useSafe:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
+ *     responses:
+ *       '200':
+ *         description: Strategy subscribed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "12345"
+ *                   description: "ID of the subscription"
+ *                 strategySub:
+ *                   type: object
+ *                   description: "StrategySub object"
+ *       '400':
+ *         description: Bad request - validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Failed to subscribe to Aave V3 Generic Automation strategy with error: ..."
+ */
+router.post("/generic-automation",
+    body(["forkId", "owner", "bundleId", "market", "isEOA", "ratioState", "targetRatio", "triggerRatio", "isGeneric"]).notEmpty(),
+    body("isEOA").isBoolean(),
+    body("isGeneric").isBoolean(),
+    body("bundleId").isInt(),
+    body("ratioState").isInt(),
+    body("targetRatio").isInt(),
+    body("triggerRatio").isInt(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { forkId, owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric } = req.body;
+
+        await setupFork(forkId, [owner], true);
+
+        subAaveV3GenericAutomationStrategy(
+            owner,
+            bundleId,
+            market,
+            isEOA,
+            ratioState,
+            targetRatio,
+            triggerRatio,
+            isGeneric,
+            getWalletAddr(req),
+            defaultsToSafe(req)
+        )
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Aave V3 Generic Automation strategy with error: ${err.toString()}` });
+            });
+    });
+
+/**
+ * @swagger
+ * /aave/v3/strategies/leverage-management-on-price:
+ *   post:
+ *     summary: Subscribe to Aave V3 Leverage Management On Price strategy (EOA or Smart Wallet)
+ *     tags:
+ *       - AaveV3
+ *     description: Subscribes to Aave V3 Leverage Management On Price strategy. Supports both EOA and Smart Wallet strategies.
+ *     requestBody:
+ *       description: Request body for subscribing to Aave V3 Leverage Management On Price strategy
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - forkId
+ *               - owner
+ *               - bundleId
+ *               - market
+ *               - isEOA
+ *               - collAssetSymbol
+ *               - debtAssetSymbol
+ *               - triggerBaseAssetSymbol
+ *               - triggerQuoteAssetSymbol
+ *               - triggerPrice
+ *               - priceState
+ *               - targetRatio
+ *               - isGeneric
+ *             properties:
+ *               forkId:
+ *                 type: string
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                 description: "Unique identifier for the fork"
+ *               owner:
+ *                 type: string
+ *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                 description: "EOA address that will own the strategy"
+ *               bundleId:
+ *                 type: integer
+ *                 example: 53
+ *                 description: "Bundle ID for the strategy"
+ *               market:
+ *                 type: string
+ *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                 description: "Aave V3 market address"
+ *               isEOA:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "If true, creates EOA strategy. If false, creates Smart Wallet strategy"
+ *               collAssetSymbol:
+ *                 type: string
+ *                 example: "WETH"
+ *                 description: "Collateral asset symbol"
+ *               debtAssetSymbol:
+ *                 type: string
+ *                 example: "USDC"
+ *                 description: "Debt asset symbol"
+ *               triggerPrice:
+ *                 type: integer
+ *                 example: 2000000000000000000
+ *                 description: "Trigger price"
+ *               priceState:
+ *                 type: integer
+ *                 example: 0
+ *                 description: "Price state (0 for under, 1 for over)"
+ *               targetRatio:
+ *                 type: integer
+ *                 example: 1800000000000000000
+ *                 description: "Target ratio for the strategy"
+ *               isGeneric:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "If it is new type of subbing that supports EOA strategies"
+ *               proxyAddr:
+ *                 type: string
+ *                 example: "0x0000000000000000000000000000000000000000"
+ *                 description: "Optional proxy address. If not provided, a new wallet will be created"
+ *               useSafe:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
+ *     responses:
+ *       '200':
+ *         description: Strategy subscribed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "12345"
+ *                   description: "ID of the subscription"
+ *                 strategySub:
+ *                   type: object
+ *                   description: "StrategySub object"
+ *       '400':
+ *         description: Bad request - validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ..."
+ */
+router.post("/leverage-management-on-price",
+    body(["forkId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
+    body("isEOA").isBoolean(),
+    body("bundleId").isInt(),
+    body("priceState").isInt(),
+    body("triggerPrice").isInt(),
+    body("targetRatio").isInt(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const {
+            forkId,
+            owner,
+            bundleId,
+            market,
+            isEOA,
+            collAssetSymbol,
+            debtAssetSymbol,
+            triggerPrice,
+            priceState,
+            targetRatio
+        } = req.body;
+
+        await setupFork(forkId, [owner], true);
+
+        subAaveV3LeverageManagementOnPriceGeneric(
+            owner,
+            bundleId,
+            market,
+            isEOA,
+            collAssetSymbol,
+            debtAssetSymbol,
+            triggerPrice,
+            priceState,
+            targetRatio,
+            getWalletAddr(req),
+            defaultsToSafe(req)
+        )
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ${err.toString()}` });
+            });
+    });
 
 module.exports = router;

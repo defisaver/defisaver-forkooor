@@ -190,6 +190,75 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
 }
 
 /**
+ * Subscribes to Aave V3 Close On Price Generic strategy. Supports EOA and SW subbing
+ * @param {string} owner proxy owner
+ * @param {uint} bundleId bundle ID
+ * @param {string} market address of the market
+ * @param {boolean} isEOA if it is EOA or SW strategy
+ * @param {string} collAssetSymbol collateral asset symbol
+ * @param {string} debtAssetSymbol debt asset symbol
+ * @param {uint} stopLossPrice stop loss price (0 if not used)
+ * @param {uint} stopLossType stop loss type (0 for debt, 1 for collateral)
+ * @param {uint} takeProfitPrice take profit price (0 if not used)
+ * @param {uint} takeProfitType take profit type (0 for debt, 1 for collateral)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subAaveV3CloseOnPriceGeneric(
+    owner,
+    bundleId,
+    market,
+    isEOA,
+    collAssetSymbol,
+    debtAssetSymbol,
+    stopLossPrice,
+    stopLossType,
+    takeProfitPrice,
+    takeProfitType,
+    proxyAddr,
+    useSafe = true
+) {
+    try {
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+
+        // Determine user field based on isEOA parameter
+        const user = isEOA ? owner : proxy.address;
+
+        // Get asset info
+        const collAssetData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
+        const debtAssetData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+
+        // Get full tokens info for asset IDs
+        const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
+        const collAssetInfo = infos[0];
+        const debtAssetInfo = infos[1];
+
+        const strategySub = automationSdk.strategySubService.aaveV3Encode.closeOnPriceGeneric(
+            bundleId,
+            collAssetData.address,
+            collAssetInfo.assetId,
+            debtAssetData.address,
+            debtAssetInfo.assetId,
+            market,
+            user,
+            stopLossPrice,
+            stopLossType,
+            takeProfitPrice,
+            takeProfitType
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
+/**
  * Subscribes to Aave V3 Close To Coll strategy
  * @param {boolean} useDefaultMarket whether to use the default market or not
  * @param {string} market aaveV3 market address
@@ -419,5 +488,6 @@ module.exports = {
     subAaveV3OpenOrderFromCollateral,
     subAaveV3RepayOnPrice,
     subAaveV3GenericAutomationStrategy,
-    subAaveV3LeverageManagementOnPriceGeneric
+    subAaveV3LeverageManagementOnPriceGeneric,
+    subAaveV3CloseOnPriceGeneric
 };

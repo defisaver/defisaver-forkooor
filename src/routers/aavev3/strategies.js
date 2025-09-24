@@ -10,6 +10,7 @@ const {
     subAaveV3RepayOnPrice,
     subAaveV3GenericAutomationStrategy,
     subAaveV3LeverageManagementOnPriceGeneric,
+    subAaveV3CloseOnPriceGeneric
 } = require("../../helpers/aavev3/strategies");
 const { body, validationResult } = require("express-validator");
 
@@ -695,7 +696,7 @@ async (req, res) => {
  *               bundleId:
  *                 type: integer
  *                 example: 53
- *                 description: "Bundle ID for the strategy"
+ *                 description: "Bundle ID for the strategy. 52 - Repay on price, 53 - Boost on price"
  *               market:
  *                 type: string
  *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -827,12 +828,9 @@ router.post("/generic-automation",
  *               - isEOA
  *               - collAssetSymbol
  *               - debtAssetSymbol
- *               - triggerBaseAssetSymbol
- *               - triggerQuoteAssetSymbol
  *               - triggerPrice
  *               - priceState
  *               - targetRatio
- *               - isGeneric
  *             properties:
  *               forkId:
  *                 type: string
@@ -844,8 +842,8 @@ router.post("/generic-automation",
  *                 description: "EOA address that will own the strategy"
  *               bundleId:
  *                 type: integer
- *                 example: 53
- *                 description: "Bundle ID for the strategy"
+ *                 example: 54
+ *                 description: "Bundle ID for the strategy. 54 - Repay on price, 55 - Boost on price"
  *               market:
  *                 type: string
  *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -874,10 +872,6 @@ router.post("/generic-automation",
  *                 type: integer
  *                 example: 1800000000000000000
  *                 description: "Target ratio for the strategy"
- *               isGeneric:
- *                 type: boolean
- *                 example: true
- *                 description: "If it is new type of subbing that supports EOA strategies"
  *               proxyAddr:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
@@ -970,6 +964,176 @@ router.post("/leverage-management-on-price",
             })
             .catch(err => {
                 res.status(500).send({ error: `Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ${err.toString()}` });
+            });
+    });
+
+/**
+ * @swagger
+ * /aave/v3/strategies/close-on-price:
+ *   post:
+ *     summary: Subscribe to Aave V3 Close On Price strategy (EOA or Smart Wallet)
+ *     tags:
+ *       - AaveV3
+ *     description: Subscribes to Aave V3 Close On Price strategy with stop loss and take profit functionality. Supports both EOA and Smart Wallet strategies.
+ *     requestBody:
+ *       description: Request body for subscribing to Aave V3 Close On Price strategy
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - forkId
+ *               - owner
+ *               - bundleId
+ *               - market
+ *               - isEOA
+ *               - collAssetSymbol
+ *               - debtAssetSymbol
+ *               - stopLossPrice
+ *               - stopLossType
+ *               - takeProfitPrice
+ *               - takeProfitType
+ *             properties:
+ *               forkId:
+ *                 type: string
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                 description: "Unique identifier for the fork"
+ *               owner:
+ *                 type: string
+ *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                 description: "EOA address that will own the strategy"
+ *               bundleId:
+ *                 type: integer
+ *                 example: 56
+ *                 description: "Bundle ID for the strategy. 56 - Close on price"
+ *               market:
+ *                 type: string
+ *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                 description: "Aave V3 market address"
+ *               isEOA:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "If true, creates EOA strategy. If false, creates Smart Wallet strategy"
+ *               collAssetSymbol:
+ *                 type: string
+ *                 example: "WETH"
+ *                 description: "Collateral asset symbol"
+ *               debtAssetSymbol:
+ *                 type: string
+ *                 example: "USDC"
+ *                 description: "Debt asset symbol"
+ *               stopLossPrice:
+ *                 type: integer
+ *                 example: 1800000000000000000
+ *                 description: "Stop loss price (0 if not used)"
+ *               stopLossType:
+ *                 type: integer
+ *                 example: 0
+ *                 description: "Stop loss type (0 for debt, 1 for collateral)"
+ *               takeProfitPrice:
+ *                 type: integer
+ *                 example: 2200000000000000000
+ *                 description: "Take profit price (0 if not used)"
+ *               takeProfitType:
+ *                 type: integer
+ *                 example: 1
+ *                 description: "Take profit type (0 for debt, 1 for collateral)"
+ *               proxyAddr:
+ *                 type: string
+ *                 example: "0x0000000000000000000000000000000000000000"
+ *                 description: "Optional proxy address. If not provided, a new wallet will be created"
+ *               useSafe:
+ *                 type: boolean
+ *                 example: true
+ *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
+ *     responses:
+ *       '200':
+ *         description: Strategy subscribed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "12345"
+ *                   description: "ID of the subscription"
+ *                 strategySub:
+ *                   type: object
+ *                   description: "StrategySub object"
+ *       '400':
+ *         description: Bad request - validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Failed to subscribe to Aave V3 Close On Price strategy with error: ..."
+ */
+router.post("/close-on-price",
+    body(["forkId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body("isEOA").isBoolean(),
+    body("bundleId").isInt(),
+    body("stopLossPrice").isInt(),
+    body("stopLossType").isInt(),
+    body("takeProfitPrice").isInt(),
+    body("takeProfitType").isInt(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const {
+            forkId,
+            owner,
+            bundleId,
+            market,
+            isEOA,
+            collAssetSymbol,
+            debtAssetSymbol,
+            stopLossPrice,
+            stopLossType,
+            takeProfitPrice,
+            takeProfitType
+        } = req.body;
+
+        await setupFork(forkId, [owner], true);
+
+        subAaveV3CloseOnPriceGeneric(
+            owner,
+            bundleId,
+            market,
+            isEOA,
+            collAssetSymbol,
+            debtAssetSymbol,
+            stopLossPrice,
+            stopLossType,
+            takeProfitPrice,
+            takeProfitType,
+            getWalletAddr(req),
+            defaultsToSafe(req)
+        )
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Aave V3 Close On Price strategy with error: ${err.toString()}` });
             });
     });
 

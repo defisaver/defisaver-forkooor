@@ -34,10 +34,10 @@ const router = express.Router();
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              owner:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              strategyOrBundleId:
  *                  type: integer
  *                  example: 24
@@ -130,7 +130,7 @@ async (req, res) => {
     }
     const { forkId, strategyOrBundleId, owner, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(forkId, [owner], true);
     subAaveV3CloseWithMaximumGasPriceStrategy(
         owner,
         strategyOrBundleId,
@@ -163,7 +163,7 @@ async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -173,7 +173,7 @@ async (req, res) => {
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              triggerData:
  *                  type: object
  *                  properties:
@@ -252,7 +252,7 @@ async (req, res) => {
     }
     const { forkId, useDefaultMarket, market, owner, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(forkId, [owner], true);
 
     subAaveCloseToCollStrategy(
         useDefaultMarket,
@@ -291,10 +291,10 @@ async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              owner:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              minRatio:
  *                type: integer
  *                example: 200
@@ -356,7 +356,7 @@ router.post("/dfs-automation", async (req, res) => {
     try {
         const { forkId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
 
         const sub = await subAaveAutomationStrategy(
             owner,
@@ -389,7 +389,7 @@ router.post("/dfs-automation", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -399,7 +399,7 @@ router.post("/dfs-automation", async (req, res) => {
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              bundleId:
  *                type: integer
  *                example: 36
@@ -494,7 +494,7 @@ async (req, res) => {
     }
     const { forkId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(forkId, [owner], true);
 
     subAaveV3OpenOrderFromCollateral(
         useDefaultMarket,
@@ -533,7 +533,7 @@ async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -543,7 +543,7 @@ async (req, res) => {
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              bundleId:
  *                type: integer
  *                example: 36
@@ -638,7 +638,7 @@ async (req, res) => {
     }
     const { forkId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(forkId, [owner], true);
 
     subAaveV3RepayOnPrice(
         useDefaultMarket,

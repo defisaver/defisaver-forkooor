@@ -51,14 +51,15 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
     );
     const poolAddress = await aaveMarketContract.getPool();
 
-    // Use the appropriate interface based on network
-    const network = hre.network.name;
-    const poolAbi = network !== "mainnet" ? IL2PoolV3Abi : IPoolV3Abi;
-    const poolContract = new hre.ethers.Contract(poolAddress, poolAbi, senderAcc);
-    const debtReserveData = await poolContract.getReserveData(debtTokenData.address);
-
     // If EOA position, give proxy additional permissions - debt delegation
     if (isEOA) {
+
+        // Use the appropriate interface based on network
+        const network = hre.network.name;
+        const poolAbi = network !== "mainnet" ? IL2PoolV3Abi : IPoolV3Abi;
+        const poolContract = new hre.ethers.Contract(poolAddress, poolAbi, senderAcc);
+        const debtReserveData = await poolContract.getReserveData(debtTokenData.address);
+
 
         // Approve variable debt token delegation to proxy
         const debtTokenContract = new hre.ethers.Contract(debtReserveData.variableDebtTokenAddress, IDebtTokenAbi, senderAcc);

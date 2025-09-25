@@ -33,7 +33,7 @@ const router = express.Router();
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -142,7 +142,7 @@ router.post("/get-position",
 
         const { forkId, market, owner } = req.body;
 
-        setupFork(forkId);
+        setupFork(forkId, [owner], true);
 
         getLoanData(market, owner)
             .then(pos => {
@@ -170,7 +170,7 @@ router.post("/get-position",
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -211,7 +211,7 @@ router.post("/get-safety-ratio",
 
         const { forkId, market, owner } = req.body;
 
-        setupFork(forkId);
+        setupFork(forkId, [owner], true);
 
         getSafetyRatio(market, owner)
             .then(pos => {
@@ -250,7 +250,7 @@ router.post("/get-safety-ratio",
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              collToken:
  *                type: string
@@ -413,13 +413,13 @@ router.post("/create",
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              collToken:
  *                type: string
  *                example: "ETH"
@@ -535,7 +535,7 @@ router.post("/supply",
 
         const { forkId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
 
         aaveV3Supply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -565,13 +565,13 @@ router.post("/supply",
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              collToken:
  *                type: string
  *                example: "ETH"
@@ -686,7 +686,7 @@ router.post("/withdraw",
         }
         const { forkId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
 
         aaveV3Withdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -715,13 +715,13 @@ router.post("/withdraw",
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              debtToken:
  *                type: string
  *                example: "DAI"
@@ -839,7 +839,7 @@ router.post("/borrow",
         }
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
         aaveV3Borrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -867,13 +867,13 @@ router.post("/borrow",
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *              owner:
  *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              debtToken:
  *                type: string
  *                example: "DAI"
@@ -992,7 +992,7 @@ router.post("/payback",
 
         const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
         aaveV3Payback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);

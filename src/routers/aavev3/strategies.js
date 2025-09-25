@@ -661,14 +661,14 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/generic-automation:
+ * /aave/v3/strategies/leverage-management-generic:
  *   post:
- *     summary: Subscribe to Aave V3 Generic Automation strategy (EOA or Smart Wallet)
+ *     summary: Subscribe to Aave V3 Leverage Management Generic strategy (EOA or Smart Wallet)
  *     tags:
  *       - AaveV3
- *     description: Subscribes to Aave V3 Generic Automation strategy. Supports both EOA and Smart Wallet strategies.
+ *     description: Subscribes to Aave V3 Leverage Management Generic strategy. Supports both EOA and Smart Wallet strategies.
  *     requestBody:
- *       description: Request body for subscribing to Aave V3 Generic Automation strategy
+ *       description: Request body for subscribing to Aave V3 Leverage Management Generic strategy
  *       required: true
  *       content:
  *         application/json:
@@ -764,9 +764,9 @@ async (req, res) => {
  *               properties:
  *                 error:
  *                   type: string
- *                   example: "Failed to subscribe to Aave V3 Generic Automation strategy with error: ..."
+ *                   example: "Failed to subscribe to Aave V3 Leverage Management Generic strategy with error: ..."
  */
-router.post("/generic-automation",
+router.post("/leverage-management-generic",
     body(["forkId", "owner", "bundleId", "market", "isEOA", "ratioState", "targetRatio", "triggerRatio", "isGeneric"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("isGeneric").isBoolean(),
@@ -807,7 +807,7 @@ router.post("/generic-automation",
 
 /**
  * @swagger
- * /aave/v3/strategies/leverage-management-on-price:
+ * /aave/v3/strategies/leverage-management-on-price-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Leverage Management On Price strategy (EOA or Smart Wallet)
  *     tags:
@@ -917,7 +917,7 @@ router.post("/generic-automation",
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ..."
  */
-router.post("/leverage-management-on-price",
+router.post("/leverage-management-on-price-generic",
     body(["forkId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
@@ -969,7 +969,7 @@ router.post("/leverage-management-on-price",
 
 /**
  * @swagger
- * /aave/v3/strategies/close-on-price:
+ * /aave/v3/strategies/close-on-price-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Close On Price strategy (EOA or Smart Wallet)
  *     tags:
@@ -1084,7 +1084,7 @@ router.post("/leverage-management-on-price",
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Close On Price strategy with error: ..."
  */
-router.post("/close-on-price",
+router.post("/close-on-price-generic",
     body(["forkId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),

@@ -99,10 +99,16 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
         user
     );
 
-    const createPositionRecipe = new dfs.Recipe("CreateAaveV3PositionRecipe", [
-        supplyAction,
-        borrowAction
+    let createPositionRecipe = new dfs.Recipe("CreateAaveV3PositionRecipe", [
+        supplyAction
     ]);
+
+    if (debtAmount !== 0) {
+        createPositionRecipe = new dfs.Recipe("CreateAaveV3PositionRecipe", [
+            supplyAction,
+            borrowAction
+        ]);
+    }
 
     const functionData = createPositionRecipe.encodeForDsProxyCall()[1];
 

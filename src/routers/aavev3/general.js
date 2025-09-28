@@ -379,7 +379,7 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, isEOA } = req.body;
+        const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount = 0, owner, isEOA } = req.body;
 
         await setupFork(forkId, [owner], true);
 

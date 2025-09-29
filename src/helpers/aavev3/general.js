@@ -119,7 +119,11 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
 
     await executeAction("RecipeExecutor", functionData, proxy);
 
-    return await getLoanData(marketAddress, user);
+    return {
+        // eslint-disable-next-line node/no-unsupported-features/es-syntax
+        ...(await getLoanData(marketAddress, user)),
+        proxy: proxy.address
+    };
 }
 
 /**

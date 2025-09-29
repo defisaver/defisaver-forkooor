@@ -58,8 +58,13 @@ async function createAaveV3Position(useDefaultMarket, market, collToken, debtTok
         const network = hre.network.name;
         const poolAbi = network !== "mainnet" ? IL2PoolV3Abi : IPoolV3Abi;
         const poolContract = new hre.ethers.Contract(poolAddress, poolAbi, senderAcc);
-        const debtReserveData = await poolContract.getReserveData(debtTokenData.address);
+        const collReserveData = await poolContract.getReserveData(collTokenData.address);
 
+        // Approve aCollToken from EOA to Smart Wallet
+        await approve(collReserveData.aTokenAddress, proxy.address, owner);
+        console.log("aCollToken approved from EOA to Smart Wallet");
+
+        const debtReserveData = await poolContract.getReserveData(debtTokenData.address);
 
         // Approve variable debt token delegation to proxy
         const debtTokenContract = new hre.ethers.Contract(debtReserveData.variableDebtTokenAddress, IDebtTokenAbi, senderAcc);

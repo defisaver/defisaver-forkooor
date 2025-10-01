@@ -721,7 +721,7 @@ async (req, res) => {
  *                 type: boolean
  *                 example: true
  *                 description: "If it is new type of subbing that supports EOA strategies"
- *               proxyAddr:
+ *               walletAddr:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"

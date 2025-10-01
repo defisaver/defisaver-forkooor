@@ -103,7 +103,7 @@ async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
-        const user = isEOA ? owner : proxy;
+        const user = isEOA ? owner : proxy.address;
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementWithoutSubProxy(
             bundleId, market, user, ratioState, targetRatio, triggerRatio, isGeneric

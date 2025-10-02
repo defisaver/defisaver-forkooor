@@ -1,8 +1,62 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToStrategy, subToAaveV3Automation, addresses } = require("../../utils");
-const { getFullTokensInfo } = require("./view");
+const { getSender, subToStrategy, subToAaveV3Automation, addresses, approve } = require("../../utils");
+const { getFullTokensInfo, getLoanData } = require("./view");
 const { getAssetInfo } = require("@defisaver/tokens");
+const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = require("../../abi/aaveV3/abis");
+
+/**
+ * Give all necessary approvals from EOA to Smart Wallet for Aave V3 positions
+ * @param {string} market address of the Aave market
+ * @param {string} user address of the user (EOA)
+ * @param {string} proxyAddress address of the smart wallet proxy
+ * @param {Object} senderAcc signer account
+ * @returns {void}
+ */
+async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, senderAcc) {
+
+    // Get user position data to identify all tokens in position
+    const userLoanData = await getLoanData(market, user);
+
+    // Get market contract and pool address for getting reserve data
+    const aaveMarketContract = new hre.ethers.Contract(market, IPoolAddressesProviderAbi, senderAcc);
+    const poolAddress = await aaveMarketContract.getPool();
+
+    // Use the appropriate interface based on network
+    const network = hre.network.name;
+    const poolAbi = network !== "mainnet" ? IL2PoolV3Abi : IPoolV3Abi;
+    const poolContract = new hre.ethers.Contract(poolAddress, poolAbi, senderAcc);
+
+    // Get all collateral token addresses with non-zero balances
+    const collTokens = userLoanData.collAddr.filter((addr, index) =>
+        userLoanData.collAmounts[index] !== "0");
+
+    // Get all collateral aToken approvals for MAX_UINT
+    for (let i = 0; i < collTokens.length; i++) {
+        const collTokenAddr = collTokens[i];
+        const reserveData = await poolContract.getReserveData(collTokenAddr);
+
+        // Approve aToken for MAX_UINT
+        await approve(reserveData.aTokenAddress, proxyAddress, user);
+        console.log(`aToken ${reserveData.aTokenAddress} approved from EOA to Smart Wallet`);
+    }
+
+    // Get all debt token addresses with non-zero balances
+    const debtTokens = userLoanData.borrowAddr.filter((addr, index) =>
+        userLoanData.borrowVariableAmounts[index] !== "0");
+
+    // Get delegation approvals for all debt tokens
+    for (let i = 0; i < debtTokens.length; i++) {
+        const debtTokenAddr = debtTokens[i];
+        const reserveData = await poolContract.getReserveData(debtTokenAddr);
+
+        // Approve debt token delegation for MAX_UINT
+        const debtTokenContract = new hre.ethers.Contract(reserveData.variableDebtTokenAddress, IDebtTokenAbi, senderAcc);
+
+        await debtTokenContract.approveDelegation(proxyAddress, hre.ethers.constants.MaxUint256);
+        console.log(`Debt token ${reserveData.variableDebtTokenAddress} approved for delegation to proxy`);
+    }
+}
 
 /**
  * Subscribes to Aave V3 Close With Maximum Gas Price strategy
@@ -100,7 +154,7 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
 async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric, proxyAddr, useSafe = true) {
 
     try {
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
         const user = isEOA ? owner : proxy.address;
@@ -108,6 +162,10 @@ async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementWithoutSubProxy(
             bundleId, market, user, ratioState, targetRatio, triggerRatio, isGeneric
         );
+
+        if (isEOA) {
+            await giveApprovalsFromEOAToSmartWallet(market, owner, proxy.address, senderAcc);
+        }
 
         const subId = await subToStrategy(proxy, strategySub);
 
@@ -148,7 +206,7 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
 ) {
     try {
         const { chainId } = await hre.ethers.provider.getNetwork();
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
         const user = isEOA ? owner : proxy.address;
@@ -161,6 +219,10 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
         const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
         const collAssetInfo = infos[0];
         const debtAssetInfo = infos[1];
+
+        if (isEOA) {
+            await giveApprovalsFromEOAToSmartWallet(market, owner, proxy.address, senderAcc);
+        }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPriceGeneric(
             bundleId,
@@ -216,7 +278,7 @@ async function subAaveV3CloseOnPriceGeneric(
 ) {
     try {
         const { chainId } = await hre.ethers.provider.getNetwork();
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
         const user = isEOA ? owner : proxy.address;
@@ -229,6 +291,10 @@ async function subAaveV3CloseOnPriceGeneric(
         const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
         const collAssetInfo = infos[0];
         const debtAssetInfo = infos[1];
+
+        if (isEOA) {
+            await giveApprovalsFromEOAToSmartWallet(market, owner, proxy.address, senderAcc);
+        }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.closeOnPriceGeneric(
             bundleId,

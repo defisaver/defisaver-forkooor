@@ -772,8 +772,8 @@ router.post("/leverage-management-generic",
     body("isGeneric").isBoolean(),
     body("bundleId").isInt(),
     body("ratioState").isInt(),
-    body("targetRatio").isInt(),
-    body("triggerRatio").isInt(),
+    body("targetRatio").isFloat({ gt: 0 }),
+    body("triggerRatio").isFloat({ gt: 0 }),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -861,9 +861,9 @@ router.post("/leverage-management-generic",
  *                 example: "USDC"
  *                 description: "Debt asset symbol"
  *               triggerPrice:
- *                 type: integer
- *                 example: 2000000000000000000
- *                 description: "Trigger price"
+ *                 type: number
+ *                 example: 0.0005
+ *                 description: "Trigger price (supports decimals)"
  *               priceState:
  *                 type: integer
  *                 example: 0
@@ -922,8 +922,8 @@ router.post("/leverage-management-on-price-generic",
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
     body("priceState").isInt(),
-    body("triggerPrice").isInt(),
-    body("targetRatio").isInt(),
+    body("triggerPrice").isFloat({ gt: 0 }),
+    body("targetRatio").isFloat({ gt: 0 }),
     async (req, res) => {
         const validationErrors = validationResult(req);
 

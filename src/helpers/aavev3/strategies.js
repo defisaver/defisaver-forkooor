@@ -255,9 +255,9 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
  * @param {string} collAssetSymbol collateral asset symbol
  * @param {string} debtAssetSymbol debt asset symbol
  * @param {uint} stopLossPrice stop loss price (0 if not used)
- * @param {uint} stopLossType stop loss type (0 for debt, 1 for collateral)
+ * @param {uint} stopLossType stop loss type (0 for collateral, 1 for debt)
  * @param {uint} takeProfitPrice take profit price (0 if not used)
- * @param {uint} takeProfitType take profit type (0 for debt, 1 for collateral)
+ * @param {uint} takeProfitType take profit type (0 for collateral, 1 for debt)
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription

@@ -1088,10 +1088,10 @@ router.post("/close-on-price-generic",
     body(["forkId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
-    body("stopLossPrice").isInt(),
-    body("stopLossType").isInt(),
-    body("takeProfitPrice").isInt(),
-    body("takeProfitType").isInt(),
+    body("stopLossPrice").isFloat(),
+    body("stopLossType").isFloat(),
+    body("takeProfitPrice").isFloat(),
+    body("takeProfitType").isFloat(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 

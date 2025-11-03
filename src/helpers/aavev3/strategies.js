@@ -306,10 +306,82 @@ async function subAaveV3RepayOnPrice(
     }
 }
 
+
+/**
+ * Subscribes to Aave V3 Collateral Switch strategy
+ * @param {string} owner proxy owner
+ * @param {number} strategyId strategy ID
+ * @param {boolean} useDefaultMarket whether to use the default market or not
+ * @param {string} market aaveV3 market address
+ * @param {string} fromAssetSymbol symbol of the collateral asset to switch from
+ * @param {string} toAssetSymbol symbol of the collateral asset to switch to
+ * @param {number} amountToSwitch amount of collateral to switch
+ * @param {number} triggerPrice trigger price
+ * @param {string} triggerState 'under' or 'over'
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subAaveV3CollateralSwitch(
+    owner,
+    strategyId,
+    useDefaultMarket,
+    market,
+    fromAssetSymbol,
+    toAssetSymbol,
+    amountToSwitch,
+    triggerPrice,
+    triggerState,
+    proxyAddr,
+    useSafe = true
+) {
+    try {
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+
+        const marketAddress = useDefaultMarket ? addresses[chainId].AAVE_V3_MARKET : market;
+        const fromTokenData = getAssetInfo(fromAssetSymbol === "ETH" ? "WETH" : fromAssetSymbol, chainId);
+        const toTokenData = getAssetInfo(toAssetSymbol === "ETH" ? "WETH" : toAssetSymbol, chainId);
+        const fromAddr = fromTokenData.address;
+        const toAddr = toTokenData.address;
+
+        const infos = await getFullTokensInfo(marketAddress, [fromAddr, toAddr]);
+        const fromId = infos[0].assetId;
+        const toId = infos[1].assetId;
+
+        const amountToSwitchFormatted = hre.ethers.utils.parseUnits(amountToSwitch.toString(), fromTokenData.decimals);
+
+        const strategySub = automationSdk.strategySubService.aaveV3Encode.collateralSwitch(
+            strategyId,
+            fromAddr,
+            fromId,
+            toAddr,
+            toId,
+            marketAddress,
+            amountToSwitchFormatted,
+            fromAddr,
+            toAddr,
+            triggerPrice,
+            (triggerState.toString().toLowerCase() === "under")
+                ? automationSdk.enums.RatioState.UNDER
+                : automationSdk.enums.RatioState.OVER
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
+
 module.exports = {
     subAaveV3CloseWithMaximumGasPriceStrategy,
     subAaveAutomationStrategy,
     subAaveCloseToCollStrategy,
     subAaveV3OpenOrderFromCollateral,
-    subAaveV3RepayOnPrice
+    subAaveV3RepayOnPrice,
+    subAaveV3CollateralSwitch
 };

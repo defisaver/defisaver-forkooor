@@ -2,7 +2,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
-const { subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy, subAaveCloseToCollStrategy, subAaveV3OpenOrderFromCollateral, subAaveV3RepayOnPrice } = require("../../helpers/aavev3/strategies");
+const { subAaveV3CloseWithMaximumGasPriceStrategy, subAaveAutomationStrategy, subAaveCloseToCollStrategy, subAaveV3OpenOrderFromCollateral, subAaveV3RepayOnPrice, subAaveV3CollateralSwitch } = require("../../helpers/aavev3/strategies");
 const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
@@ -647,6 +647,153 @@ async (req, res) => {
         res.status(200).send(sub);
     }).catch(err => {
         res.status(500).send({ error: `Failed to subscribe to Aave V3 repay on price strategy with error: ${err.toString()}` });
+    });
+});
+
+/**
+ * @swagger
+ * /aave/v3/strategies/collateral-switch:
+ *   post:
+ *     summary: Subscribe to a Aave V3 Collateral Switch strategy
+ *     tags:
+ *      - AaveV3
+ *     description:
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{id}"
+ *              useDefaultMarket:
+ *                type: boolean
+ *                example: true
+ *                description: "If true, the default market will be used, ignoring the value of market parameter"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *              owner:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              strategyId:
+ *                type: integer
+ *                example: 135
+ *              triggerData:
+ *                  type: object
+ *                  properties:
+ *                     price:
+ *                         type: integer
+ *                         example: 2000
+ *                     ratioState:
+ *                         type: string
+ *                         description: "'OVER' or 'UNDER'"
+ *                         example: "UNDER"
+ *              subData:
+ *                  type: object
+ *                  properties:
+ *                      fromAssetSymbol:
+ *                          type: string
+ *                          example: "WETH"
+ *                          description: "Symbol of the collateral asset to switch from"
+ *                      toAssetSymbol:
+ *                          type: string
+ *                          example: "USDC"
+ *                          description: "Symbol of the collateral asset to switch to"
+ *                      amountToSwitch:
+ *                          type: number
+ *                          example: 1.5
+ *                          description: "Amount of collateral to switch"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *     responses:
+ *       '201':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "427"
+ *                 strategySub:
+ *                   type: Array
+ *                   example: [
+ *                        135,
+ *                        false,
+ *                        [
+ *                          "0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000000000000000000000000000000000002e90edd0000000000000000000000000000000000000000000000000000000000000000001"
+ *                        ],
+ *                        [
+ *                          "0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+ *                          "0x0000000000000000000000000000000000000000000000000000000000000000",
+ *                          "0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f",
+ *                          "0x0000000000000000000000000000000000000000000000000000000000000004",
+ *                          "0x0000000000000000000000002f39d218133afab8f2b819b1066c7e434ad94e9e",
+ *                          "0x00000000000000000000000000000000000000000000000014d1120d7b160000",
+ *                          "0x0000000000000000000000000000000000000000000000000000000000000000"
+ *                        ]
+ *                   ]
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/collateral-switch", body(
+    [
+        "forkId",
+        "useDefaultMarket",
+        "market",
+        "owner",
+        "strategyId",
+        "triggerData.price",
+        "triggerData.ratioState",
+        "subData.fromAssetSymbol",
+        "subData.toAssetSymbol",
+        "subData.amountToSwitch"
+    ]
+).notEmpty(),
+async (req, res) => {
+    const validationErrors = validationResult(req);
+
+    if (!validationErrors.isEmpty()) {
+        return res.status(400).send({ error: validationErrors.array() });
+    }
+    const { forkId, useDefaultMarket, market, owner, strategyId, triggerData, subData } = req.body;
+
+    await setupFork(forkId, [owner], true);
+
+    subAaveV3CollateralSwitch(
+        owner,
+        strategyId,
+        useDefaultMarket,
+        market,
+        subData.fromAssetSymbol,
+        subData.toAssetSymbol,
+        subData.amountToSwitch,
+        triggerData.price,
+        triggerData.ratioState,
+        getWalletAddr(req),
+        defaultsToSafe(req)
+    ).then(sub => {
+        res.status(200).send(sub);
+    }).catch(err => {
+        res.status(500).send({ error: `Failed to subscribe to Aave V3 collateral switch strategy with error: ${err.toString()}` });
     });
 });
 

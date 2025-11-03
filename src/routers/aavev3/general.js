@@ -377,7 +377,7 @@ router.post("/create",
 
         const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
 
         createAaveV3Position(
             useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)

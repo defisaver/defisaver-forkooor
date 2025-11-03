@@ -315,7 +315,8 @@ async function subAaveV3RepayOnPrice(
  * @param {string} market aaveV3 market address
  * @param {string} fromAssetSymbol symbol of the collateral asset to switch from
  * @param {string} toAssetSymbol symbol of the collateral asset to switch to
- * @param {number} amountToSwitch amount of collateral to switch
+ * @param {number} amountToSwitch amount of collateral to switch (ignored if isMaxUintSwitch is true)
+ * @param {boolean} isMaxUintSwitch if true, use MaxUint256 instead of amountToSwitch
  * @param {number} triggerPrice trigger price
  * @param {string} triggerState 'under' or 'over'
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
@@ -330,6 +331,7 @@ async function subAaveV3CollateralSwitch(
     fromAssetSymbol,
     toAssetSymbol,
     amountToSwitch,
+    isMaxUintSwitch,
     triggerPrice,
     triggerState,
     proxyAddr,
@@ -349,7 +351,9 @@ async function subAaveV3CollateralSwitch(
         const fromId = infos[0].assetId;
         const toId = infos[1].assetId;
 
-        const amountToSwitchFormatted = hre.ethers.utils.parseUnits(amountToSwitch.toString(), fromTokenData.decimals);
+        const amountToSwitchFormatted = isMaxUintSwitch
+            ? hre.ethers.constants.MaxUint256
+            : hre.ethers.utils.parseUnits(amountToSwitch.toString(), fromTokenData.decimals);
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.collateralSwitch(
             strategyId,

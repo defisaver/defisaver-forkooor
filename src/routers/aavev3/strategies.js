@@ -706,7 +706,11 @@ async (req, res) => {
  *                      amountToSwitch:
  *                          type: number
  *                          example: 1.5
- *                          description: "Amount of collateral to switch"
+ *                          description: "Amount of collateral to switch (ignored if isMaxUintSwitch is true)"
+ *                      isMaxUintSwitch:
+ *                          type: boolean
+ *                          example: false
+ *                          description: "If true, use MaxUint256 instead of amountToSwitch value"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -786,6 +790,7 @@ async (req, res) => {
         subData.fromAssetSymbol,
         subData.toAssetSymbol,
         subData.amountToSwitch,
+        subData.isMaxUintSwitch || false,
         triggerData.price,
         triggerData.ratioState,
         getWalletAddr(req),

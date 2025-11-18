@@ -156,7 +156,7 @@ router.post("/get-position", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"

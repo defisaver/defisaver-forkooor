@@ -78,6 +78,71 @@ router.post("/new-fork", async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /utils/general/new-vnet:
+ *   post:
+ *     summary: Returns forkId of the Tenderly virtual testnet (vnet) created using given parameters
+ *     tags:
+ *      - Utils
+ *     description: Creates a Tenderly virtual testnet in a desired tenderly project, using provided access key, on network matching given chainId and top up bot accounts or regular accounts if provided
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              tenderlyProject:
+ *                type: string
+ *                example: strategies
+ *              tenderlyAccessKey:
+ *                type: string
+ *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
+ *              chainId:
+ *                type: integer
+ *                example: 1
+ *              botAccounts:
+ *                type: array
+ *                items:
+ *                 type: string
+ *                example: ["0x000000000000000000000000000000000000dEaD", "0x1111111111111111111111111111111111111111"]
+ *              accounts:
+ *                type: array
+ *                items:
+ *                 type: string
+ *                example: ["0x2222222222222222222222222222222222222222"]
+ *              startFromBlock:
+ *                type: integer
+ *                example: 18500000
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 forkId:
+ *                   type: string
+ *                   example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
+ *                 newAccount:
+ *                   type: string
+ *                   example: "0x3333333333333333333333333333333333333333"
+ *                 blockNumber:
+ *                   type: integer
+ *                   example: 18500000
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
 router.post("/new-vnet", async (req, res) => {
     let resObj;
 

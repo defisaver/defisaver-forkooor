@@ -168,8 +168,59 @@ async function subMorphoBlueBoostOnPriceBundle(
     return { subId, strategySub };
 }
 
+/**
+ * Subscribes to MorphoBlue Close On Price Bundle
+ * @param {Object} owner wallet owner
+ * @param {number} bundleId MorphoBlue close on price bundle Id
+ * @param {Object} marketParams market params in []
+ * @param {number} stopLossPrice stop loss price
+ * @param {number} stopLossType stop loss type (0 for debt, 1 for collateral)
+ * @param {number} takeProfitPrice take profit price
+ * @param {number} takeProfitType take profit type (0 for debt, 1 for collateral)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @returns {Object} subId and strategySub
+ */
+async function subMorphoBlueCloseOnPriceBundle(
+    owner,
+    bundleId,
+    marketParams,
+    stopLossPrice,
+    stopLossType,
+    takeProfitPrice,
+    takeProfitType,
+    proxyAddr,
+    useSafe = true
+) {
+    try {
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+
+        const strategySub = automationSdk.strategySubService.morphoBlueEncode.closeOnPrice(
+            bundleId,
+            marketParams[0],
+            marketParams[1],
+            marketParams[2],
+            marketParams[3],
+            marketParams[4],
+            proxy.address,
+            stopLossPrice,
+            stopLossType,
+            takeProfitPrice,
+            takeProfitType
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
 module.exports = {
     subMorphoBlueRepayBundle,
     subMorphoBlueBoostBundle,
     subMorphoBlueBoostOnPriceBundle,
+    subMorphoBlueCloseOnPriceBundle
 };

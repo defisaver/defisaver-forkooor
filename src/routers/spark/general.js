@@ -3,7 +3,6 @@ const express = require("express");
 const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { getLoanData } = require("../../helpers/spark/view");
 const { createSparkPosition, sparkSupply, sparkWithdraw, sparkBorrow, sparkPayback } = require("../../helpers/spark/general");
-const { get } = require("express/lib/response");
 
 const router = express.Router();
 
@@ -157,7 +156,7 @@ router.post("/get-position", async (req, res) => {
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -284,7 +283,7 @@ router.post("/create", async (req, res) => {
     try {
         const { forkId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
         const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);

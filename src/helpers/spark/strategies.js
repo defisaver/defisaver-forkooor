@@ -1,5 +1,8 @@
+const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToSparkStrategy } = require("../../utils");
+const { getSender, subToSparkStrategy, subToStrategy } = require("../../utils");
+const { getAssetInfo } = require("@defisaver/tokens");
+const { getFullTokensInfo } = require("./view");
 
 /**
  * Subscribes to DfsAutomation strategy
@@ -29,6 +32,70 @@ async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRe
     }
 }
 
+/**
+ * Subscribes to Spark Close On Price Generic strategy
+ * @param {string} owner proxy owner
+ * @param {uint} bundleId bundle ID
+ * @param {string} market address of the market
+ * @param {string} collAssetSymbol collateral asset symbol
+ * @param {string} debtAssetSymbol debt asset symbol
+ * @param {number} stopLossPrice stop loss price (0 if not used)
+ * @param {number} stopLossType stop loss type (0 for collateral, 1 for debt)
+ * @param {number} takeProfitPrice take profit price (0 if not used)
+ * @param {number} takeProfitType take profit type (0 for collateral, 1 for debt)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
+ */
+async function subSparkCloseOnPriceGeneric(
+    owner,
+    bundleId,
+    market,
+    collAssetSymbol,
+    debtAssetSymbol,
+    stopLossPrice,
+    stopLossType,
+    takeProfitPrice,
+    takeProfitType,
+    proxyAddr,
+    useSafe = true
+) {
+    try {
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const user = proxy.address;
+
+        const collAssetData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
+        const debtAssetData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+
+        const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
+        const collAssetInfo = infos[0];
+        const debtAssetInfo = infos[1];
+
+        const strategySub = automationSdk.strategySubService.sparkEncode.closeOnPriceGeneric(
+            bundleId,
+            collAssetData.address,
+            collAssetInfo.assetId,
+            debtAssetData.address,
+            debtAssetInfo.assetId,
+            market,
+            user,
+            stopLossPrice,
+            stopLossType,
+            takeProfitPrice,
+            takeProfitType
+        );
+
+        const subId = await subToStrategy(proxy, strategySub);
+
+        return { subId, strategySub };
+    } catch (err) {
+        console.log(err);
+        throw err;
+    }
+}
+
 module.exports = {
-    subSparkDfsAutomationStrategy
+    subSparkDfsAutomationStrategy,
+    subSparkCloseOnPriceGeneric
 };

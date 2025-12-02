@@ -46,7 +46,8 @@ const addresses = {
         DAI_ADDR: "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1",
         AAVE_V3_SUB_PROXY: "0xa950a534a6AB01D1FF5C6C82E5E7F515c19500e9",
         AAVE_V3_VIEW: "0xf56A2A8fA68D2E608ED7060BE55e96E008dCc3ca",
-        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb"
+        AAVE_V3_MARKET: "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+        COMP_V3_VIEW: "0x2c88d93Ec06F404C67CD3d2df29084FAfe2C8605"
     },
     42161: {
         REGISTRY_ADDR: "0xBF1CaC12DB60819Bfa71A328282ecbc1D40443aA",
@@ -77,6 +78,18 @@ const addresses = {
         FLUID_VAULT_RESOLVER: "0x79B3102173EB84E6BCa182C7440AfCa5A41aBcF8",
         FLUID_VIEW: "0x5835CaDbA8843CD6d6d55782908351E9c74221aD",
         MORPHO_BLUE_VIEW: "0x53c0E962bd0AC53928ca04703238b2ec2894195B"
+    },
+    59144: {
+        REGISTRY_ADDR: "0x09fBeC68D216667C3262211D2E5609578951dCE0",
+        OWNER_ACC: "0x7a7f071B6Fb232181a5f951EccB4D1843Dc9085F",
+        DAI_ADDR: "0x4AF15ec2A0BD43Db75dd04E62FAA3B8EF36b00d5",
+        AAVE_V3_VIEW: "0x1420f4977E7B71AFddccBFc6F6e1505CefdF99F0"
+    },
+    9745: {
+        REGISTRY_ADDR: "0x44e98bB58d725F2eF93a195F518b335dCB784c78",
+        OWNER_ACC: "0x13fa3D42C09E5E15153F08bb90A79A3Bd63E289D",
+        DAI_ADDRESS: "", // No deployment on Plasma
+        AAVE_V3_VIEW: "0x5B0B7E38C2a8e46CfAe13c360BC5927570BeEe94",
     }
 };
 
@@ -426,7 +439,7 @@ function getRpc(forkId, isVnet = false) {
  * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function setupFork(forkId, accounts = [], isVnet = false) {
+async function setupFork(forkId, accounts = [], isVnet = true) {
     hre.ethers.provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);

@@ -2,7 +2,7 @@
 const express = require("express");
 const { createMcdVault, openEmptyMcdVault, mcdSupply, mcdWithdraw, mcdBorrow, mcdPayback, mcdDsrWithdraw, mcdDsrDeposit } = require("../../helpers/maker/general");
 const { getVaultInfo } = require("../../helpers/maker/view");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const router = express.Router();
  * @swagger
  * /maker/general/get-vault:
  *   post:
- *     summary: Fetch info about MCD vault on a fork
+ *     summary: Fetch info about MCD vault on a vnet
  *     tags:
  *      - Maker
  *     description:
@@ -66,7 +66,7 @@ router.post("/get-vault", async (req, res) => {
     try {
         const { vnetId, vaultId } = req.body;
 
-        await setupFork(vnetId);
+        await setupVnet(vnetId);
         const vaultInfo = await getVaultInfo(vaultId);
 
         res.status(200).send(vaultInfo);
@@ -153,7 +153,7 @@ router.post("/create-vault", async (req, res) => {
     try {
         const { vnetId, owner, collType, collAmount, debtAmount } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const vaultInfo = await createMcdVault(collType, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -234,7 +234,7 @@ router.post("/open-empty-vault", async (req, res) => {
     try {
         const { vnetId, owner, collType } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const vaultInfo = await openEmptyMcdVault(collType, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -318,7 +318,7 @@ router.post("/supply", async (req, res) => {
     try {
         const { vnetId, owner, vaultId, supplyAmount } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const vaultInfo = await mcdSupply(owner, vaultId, supplyAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -402,7 +402,7 @@ router.post("/withdraw", async (req, res) => {
     try {
         const { vnetId, owner, vaultId, withdrawAmount } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const vaultInfo = await mcdWithdraw(owner, vaultId, withdrawAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -486,7 +486,7 @@ router.post("/borrow", async (req, res) => {
     try {
         const { vnetId, owner, vaultId, borrowAmount } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const vaultInfo = await mcdBorrow(owner, vaultId, borrowAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -570,7 +570,7 @@ router.post("/payback", async (req, res) => {
     try {
         const { vnetId, owner, vaultId, paybackAmount } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const vaultInfo = await mcdPayback(owner, vaultId, paybackAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -638,7 +638,7 @@ router.post("/dsr-deposit", async (req, res) => {
     try {
         const { vnetId, sender, amount } = req.body;
 
-        await setupFork(vnetId, [sender]);
+        await setupVnet(vnetId, [sender]);
         const vaultInfo = await mcdDsrDeposit(sender, amount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -706,7 +706,7 @@ router.post("/dsr-withdraw", async (req, res) => {
     try {
         const { vnetId, sender, amount } = req.body;
 
-        await setupFork(vnetId, [sender]);
+        await setupVnet(vnetId, [sender]);
         const vaultInfo = await mcdDsrWithdraw(sender, amount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);

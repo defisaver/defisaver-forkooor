@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const {
     subLiquityDebtInFrontRepayStrategy,
     subLiquityLeverageManagementStrategies,
@@ -76,7 +76,7 @@ router.post("/dsr-payback", async (req, res) => {
     try {
         const { vnetId, sender, triggerRatio, targetRatio } = req.body;
 
-        await setupFork(vnetId, [sender]);
+        await setupVnet(vnetId, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
@@ -156,7 +156,7 @@ router.post("/dsr-supply", async (req, res) => {
     try {
         const { vnetId, sender, triggerRatio, targetRatio } = req.body;
 
-        await setupFork(vnetId, [sender]);
+        await setupVnet(vnetId, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
@@ -236,7 +236,7 @@ router.post("/debt-in-front-repay", async (req, res) => {
     try {
         const { vnetId, sender, debtInFront, targetRatioIncrease } = req.body;
 
-        await setupFork(vnetId, [sender]);
+        await setupVnet(vnetId, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
@@ -333,7 +333,7 @@ router.post("/leverage-management", async (req, res) => {
             boostEnabled
         } = req.body;
 
-        await setupFork(vnetId, [sender]);
+        await setupVnet(vnetId, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);

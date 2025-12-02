@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { getLoanData, getSafetyRatio } = require("../../helpers/aavev3/view");
 const {
     aaveV3Supply,
@@ -18,7 +18,7 @@ const router = express.Router();
  * @swagger
  * /aave/v3/general/get-position:
  *   post:
- *     summary: Fetch info about AaveV3 position on a fork
+ *     summary: Fetch info about AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -141,7 +141,7 @@ router.post("/get-position",
 
         const { vnetId, market, owner } = req.body;
 
-        setupFork(vnetId, [owner]);
+        setupVnet(vnetId, [owner]);
 
         getLoanData(market, owner)
             .then(pos => {
@@ -155,7 +155,7 @@ router.post("/get-position",
  * @swagger
  * /aave/v3/general/get-safety-ratio:
  *   post:
- *     summary: Fetch safety ratio for user's AaveV3 position on a fork
+ *     summary: Fetch safety ratio for user's AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -210,7 +210,7 @@ router.post("/get-safety-ratio",
 
         const { vnetId, market, owner } = req.body;
 
-        setupFork(vnetId, [owner]);
+        setupVnet(vnetId, [owner]);
 
         getSafetyRatio(market, owner)
             .then(pos => {
@@ -225,7 +225,7 @@ router.post("/get-safety-ratio",
  * @swagger
  * /aave/v3/general/create:
  *   post:
- *     summary: Create AaveV3 position on a fork
+ *     summary: Create AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -380,7 +380,7 @@ router.post("/create",
 
         const { vnetId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount = 0, owner, isEOA } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         createAaveV3Position(
             useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), isEOA, defaultsToSafe(req)
@@ -398,7 +398,7 @@ router.post("/create",
  * @swagger
  * /aave/v3/general/supply:
  *   post:
- *     summary: Supply collateral to AaveV3 position on a fork
+ *     summary: Supply collateral to AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -534,7 +534,7 @@ router.post("/supply",
 
         const { vnetId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         aaveV3Supply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -550,7 +550,7 @@ router.post("/supply",
  * @swagger
  * /aave/v3/general/withdraw:
  *   post:
- *     summary: Withdraw collateral from AaveV3 position on a fork
+ *     summary: Withdraw collateral from AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -685,7 +685,7 @@ router.post("/withdraw",
         }
         const { vnetId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         aaveV3Withdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -700,7 +700,7 @@ router.post("/withdraw",
  * @swagger
  * /aave/v3/general/borrow:
  *   post:
- *     summary: Borrow debt from AaveV3 position on a fork
+ *     summary: Borrow debt from AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -838,7 +838,7 @@ router.post("/borrow",
         }
         const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         aaveV3Borrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -852,7 +852,7 @@ router.post("/borrow",
  * @swagger
  * /aave/v3/general/payback:
  *   post:
- *     summary: Borrow debt from AaveV3 position on a fork
+ *     summary: Borrow debt from AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -991,7 +991,7 @@ router.post("/payback",
 
         const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         aaveV3Payback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);

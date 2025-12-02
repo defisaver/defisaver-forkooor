@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupVnet } = require("../../utils");
 const { getTroveInfo } = require("../../helpers/liquityV2/view");
 const { openTroveV2 } = require("../../helpers/liquityV2/general");
 const { body } = require("express-validator");
@@ -11,7 +11,7 @@ const router = express.Router();
  * @swagger
  * /liquity/v2/general/get-trove:
  *   post:
- *     summary: Fetch info about liquityV2 trove on a fork
+ *     summary: Fetch info about liquityV2 trove on a vnet
  *     tags:
  *      - LiquityV2
  *     description: Fetch info about liquityV2 trove
@@ -92,7 +92,7 @@ router.post("/get-trove",
         try {
             const { vnetId, market, troveId } = req.body;
 
-            await setupFork(vnetId, []);
+            await setupVnet(vnetId, []);
             const troveInfo = await getTroveInfo(market, troveId);
 
             res.status(200).send(troveInfo);
@@ -106,7 +106,7 @@ router.post("/get-trove",
  * @swagger
  * /liquity/v2/general/open-trove:
  *   post:
- *     summary: Open a liquityV2 trove on a fork
+ *     summary: Open a liquityV2 trove on a vnet
  *     tags:
  *       - LiquityV2
  *     description: Open a new trove for Liquity V2
@@ -224,7 +224,7 @@ router.post("/open-trove",
                 interestBatchManager
             } = req.body;
 
-            await setupFork(vnetId, []);
+            await setupVnet(vnetId, []);
 
             const troveInfo = await openTroveV2(
                 sender,

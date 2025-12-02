@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { createCurveUsdPosition } = require("../../helpers/curveusd/general");
 const { getUserData } = require("../../helpers/curveusd/view");
@@ -12,7 +12,7 @@ const router = express.Router();
  * @swagger
  * /curveusd/general/create:
  *   post:
- *     summary: Create CurveUsd position on a fork
+ *     summary: Create CurveUsd position on a vnet
  *     tags:
  *      - CurveUsd
  *     description:
@@ -128,7 +128,7 @@ router.post("/create",
         }
         const { vnetId, controller, owner, coll, debt, numberOfBands } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         createCurveUsdPosition(controller, coll, debt, owner, numberOfBands, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -143,7 +143,7 @@ router.post("/create",
  * @swagger
  * /curveusd/general/get-position:
  *   post:
- *     summary: Fetch info about CurveUsd position on a fork
+ *     summary: Fetch info about CurveUsd position on a vnet
  *     tags:
  *      - CurveUsd
  *     description:
@@ -242,7 +242,7 @@ router.post("/get-position",
         }
         const { vnetId, controller, owner } = req.body;
 
-        setupFork(vnetId);
+        setupVnet(vnetId);
 
         getUserData(controller, owner)
             .then(pos => {

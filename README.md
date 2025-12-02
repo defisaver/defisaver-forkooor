@@ -35,7 +35,7 @@ Adding Liquity to Forkooor.js
     try {
         const { vnetId, ...params } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         await executeEndpointAction()
 
         res.status(200).send();

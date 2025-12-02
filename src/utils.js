@@ -400,7 +400,7 @@ function toBytes32(bn) {
 }
 
 /**
- * Sets ETH balance of a given address to desired amount on a tenderly fork
+ * Sets ETH balance of a given address to desired amount on a tenderly vnet
  * @param {string} address address whose balance we want to top up
  * @param {number} amount amount of ETH to top up the address with (whole number)
  * @returns {void}
@@ -429,7 +429,7 @@ async function topUpAccount(address, amount = 100) {
  * @param {Array<string>} accounts all the accounts that will be sending transactions
  * @returns {void}
  */
-async function setupFork(vnetId, accounts = []) {
+async function setupVnet(vnetId, accounts = []) {
     hre.ethers.provider = await hre.ethers.getDefaultProvider(vnetId);
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
@@ -915,7 +915,7 @@ module.exports = {
     approve,
     executeAction,
     topUpAccount,
-    setupFork,
+    setupVnet,
     setBalance,
     subToStrategy,
     getLatestSubId,

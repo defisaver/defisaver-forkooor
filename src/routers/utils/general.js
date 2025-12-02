@@ -2,81 +2,10 @@
 // Router for forkooor utils
 
 const express = require("express");
-const { createNewFork, topUpOwner, setUpBotAccounts, cloneFork, topUpAccount, timeTravel, newAddress, createNewVnet, setTime } = require("../../helpers/utils/general");
-const { setBalance, setupFork, lowerSafesThreshold, approve, createSafe } = require("../../utils");
+const { topUpOwner, setUpBotAccounts, topUpAccount, timeTravel, newAddress, createNewVnet, setTime } = require("../../helpers/utils/general");
+const { setBalance, setupVnet, lowerSafesThreshold, approve, createSafe } = require("../../utils");
 
 const router = express.Router();
-
-/**
- * @swagger
- * /utils/general/new-fork:
- *   post:
- *     summary: Returns vnetId of the Tenderly fork created using given parameters
- *     tags:
- *      - Utils
- *     description: Creates a Tenderly fork in a desired tenderly project, using provided access key, on network matching given chainId and sets up bot accounts if given
- *     requestBody:
- *       description: Request body for the API endpoint
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
- *              chainId:
- *                type: integer
- *                example: 1
- *              botAccounts:
- *                type: array
- *                items:
- *                 type: string
- *                 example: "0x000000000000000000000000000000000000dEaD"
- *     responses:
- *       '200':
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 vnetId:
- *                   type: string
- *                   example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *       '500':
- *         description: Internal Server Error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.post("/new-fork", async (req, res) => {
-    let resObj;
-
-    try {
-        const { tenderlyProject, tenderlyAccessKey, chainId, botAccounts } = req.body;
-
-        const { vnetId, newAccount, blockNumber } = await createNewFork(tenderlyProject, tenderlyAccessKey, chainId);
-
-        await setupFork(vnetId);
-        await topUpOwner();
-        await setUpBotAccounts(vnetId, botAccounts);
-
-        resObj = { vnetId, newAccount, blockNumber };
-        res.status(200).send(resObj);
-    } catch (err) {
-        resObj = { error: `Failed to create a new fork with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
 
 /**
  * @swagger
@@ -159,89 +88,18 @@ router.post("/new-vnet", async (req, res) => {
         const { vnetId, newAccount, blockNumber } = await createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock);
 
         if (botAccounts.length > 0) {
-            await setupFork(vnetId, []);
+            await setupVnet(vnetId, []);
             await topUpOwner();
             await setUpBotAccounts(vnetId, botAccounts);
         } else if (accounts.length > 0) {
-            await setupFork(vnetId, []);
+            await setupVnet(vnetId, []);
             await topUpAccount(accounts[0]);
         }
 
         resObj = { vnetId, newAccount, blockNumber };
         res.status(200).send(resObj);
     } catch (err) {
-        resObj = { error: `Failed to create a new fork with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
-
-/**
- * @swagger
- * /utils/general/clone-fork:
- *   post:
- *     summary: Returns vnetId of the Tenderly fork cloned from an existing fork
- *     tags:
- *      - Utils
- *     description: Creates a Tenderly fork by cloning an already existing fork in the same project as provided, using the same access key and sets up bot accounts if given
- *     requestBody:
- *       description: Request body for the API endpoint
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *              tenderlyProject:
- *                type: string
- *                example: strategies
- *              tenderlyAccessKey:
- *                type: string
- *                example: lkPK1hfSngkKFDumvCvbkK6XVF5tmKey
- *              cloningVnetId:
- *                type: string
- *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *              botAccounts:
- *                type: array
- *                items:
- *                 type: string
- *                 example: "0x000000000000000000000000000000000000dEaD"
- *     responses:
- *       '200':
- *         description: OK
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 vnetId:
- *                   type: string
- *                   example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
- *       '500':
- *         description: Internal Server Error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
- */
-router.post("/clone-fork", async (req, res) => {
-    let resObj;
-
-    try {
-        const { cloningVnetId, tenderlyProject, tenderlyAccessKey, botAccounts } = req.body;
-
-        const vnetId = await cloneFork(cloningVnetId, tenderlyProject, tenderlyAccessKey);
-
-        await setupFork(vnetId);
-        await topUpOwner();
-        await setUpBotAccounts(vnetId, botAccounts);
-
-        resObj = { vnetId };
-        res.status(200).send(resObj);
-    } catch (err) {
-        resObj = { error: `Failed to clone a fork with error : ${err.toString()}` };
+        resObj = { error: `Failed to create a new vnet with error : ${err.toString()}` };
         res.status(500).send(resObj);
     }
 });
@@ -299,7 +157,7 @@ router.post("/set-bot-auth", async (req, res) => {
     try {
         const { vnetId, botAccounts } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
         await topUpOwner();
         await setUpBotAccounts(vnetId, botAccounts);
 
@@ -438,7 +296,7 @@ router.post("/set-eth-balance", async (req, res) => {
     try {
         const { vnetId, account, amount } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
         await topUpAccount(account, amount);
         resObj = {
             account,
@@ -512,7 +370,7 @@ router.post("/set-token-balance", async (req, res) => {
     try {
         const { vnetId, token, account, amount } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
         await setBalance(token, account, amount);
         resObj = {
             token,
@@ -621,10 +479,10 @@ router.post("/give-approval", async (req, res) => {
  * @swagger
  * /utils/general/time-travel:
  *   post:
- *     summary: Increases the timestamp on a fork by a given amount
+ *     summary: Increases the timestamp on a vnet by a given amount
  *     tags:
  *      - Utils
- *     description: Increases the timestamp on a fork by a given amount
+ *     description: Increases the timestamp on a vnet by a given amount
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -669,7 +527,7 @@ router.post("/time-travel", async (req, res) => {
     try {
         const { vnetId, amount } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
         resObj = await timeTravel(vnetId, amount);
         res.status(200).send(resObj);
     } catch (err) {
@@ -762,7 +620,7 @@ router.post("/create-safe", async (req, res) => {
     try {
         const { vnetId, owner } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
 
         resObj = await createSafe(owner);
         res.status(200).send(resObj);
@@ -776,10 +634,10 @@ router.post("/create-safe", async (req, res) => {
  * @swagger
  * /utils/general/set-time:
  *   post:
- *     summary: Sets the timestamp on a fork to a specific value
+ *     summary: Sets the timestamp on a vnet to a specific value
  *     tags:
  *      - Utils
- *     description: Sets the timestamp on a fork to a specific value, allowing movement forward or backward in time
+ *     description: Sets the timestamp on a vnet to a specific value, allowing movement forward or backward in time
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -825,7 +683,7 @@ router.post("/set-time", async (req, res) => {
     try {
         const { vnetId, timestamp } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
         resObj = await setTime(vnetId, timestamp);
 
         res.status(200).send(resObj);

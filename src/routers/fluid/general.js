@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { getPositionByNftId } = require("../../helpers/fluid/view");
 const { fluidT1Open } = require("../../helpers/fluid/general");
@@ -285,7 +285,7 @@ router.post("/get-position-by-nft",
 
         const { vnetId, nftId } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
 
         getPositionByNftId(nftId)
             .then(pos => {
@@ -300,7 +300,7 @@ router.post("/get-position-by-nft",
  * @swagger
  * /fluid/general/create-t1:
  *   post:
- *     summary: Create Fluid Vault T1 position on a fork. Regular position with 1 coll and 1 debt token.
+ *     summary: Create Fluid Vault T1 position on a vnet. Regular position with 1 coll and 1 debt token.
  *     tags:
  *      - Fluid
  *     description:
@@ -597,7 +597,7 @@ router.post("/create-t1",
 
         const { vnetId, vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         fluidT1Open(
             vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)

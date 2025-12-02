@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { subSparkDfsAutomationStrategy, subSparkCloseOnPriceGeneric } = require("../../helpers/spark/strategies");
 const { body, validationResult } = require("express-validator");
 
@@ -85,7 +85,7 @@ router.post("/dfs-automation", async (req, res) => {
     try {
         const { vnetId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subSparkDfsAutomationStrategy(
             owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)
@@ -128,7 +128,7 @@ router.post("/dfs-automation", async (req, res) => {
  *               vnetId:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *                 description: "Unique identifier for the fork"
+ *                 description: "Unique identifier for the vnet"
  *               owner:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -237,7 +237,7 @@ router.post("/close-on-price-generic",
             takeProfitType
         } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         subSparkCloseOnPriceGeneric(
             owner,

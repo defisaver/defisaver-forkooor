@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { subMorphoBlueRepayBundle, subMorphoBlueBoostBundle, subMorphoBlueBoostOnPriceBundle, subMorphoBlueCloseOnPriceBundle } = require("../../helpers/morpho-blue/strategies");
 const { getMarketId } = require("../../helpers/morpho-blue/view");
@@ -113,7 +113,7 @@ async (req, res) => {
     }
     const { vnetId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, minRatio, targetRatio, user } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueRepayBundle(
@@ -229,7 +229,7 @@ async (req, res) => {
     }
     const { vnetId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, maxRatio, targetRatio, user } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueBoostBundle(
@@ -354,7 +354,7 @@ async (req, res) => {
         vnetId, walletOwner, bundleId, loanToken, collateralToken, oracle, irm, lltv, targetRatio, price, priceState, user
     } = req.body;
 
-    await setupFork(vnetId, [walletOwner]);
+    await setupVnet(vnetId, [walletOwner]);
 
     subMorphoBlueBoostOnPriceBundle(
         walletOwner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], targetRatio, user, price, priceState, getWalletAddr(req), defaultsToSafe(req)
@@ -480,7 +480,7 @@ async (req, res) => {
         vnetId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
     } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
 
     subMorphoBlueCloseOnPriceBundle(
         owner,

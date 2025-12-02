@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { subLiquityV2LeverageManagement, subLiquityV2CloseToPrice, subLiquityV2LeverageManagementOnPrice, subLiquityV2Payback, subLiquityV2InterestRateAdjustmentBundle } = require("../../helpers/liquityV2/strategies");
 const { body, validationResult } = require("express-validator");
 
@@ -102,7 +102,7 @@ router.post("/leverage-management", async (req, res) => {
     try {
         const { vnetId, owner, market, troveId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subLiquityV2LeverageManagement(
             owner,
@@ -223,7 +223,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
     try {
         const { vnetId, owner, market, troveId, price, state, targetRatio, isRepayOnPrice, bundleId } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const sub = await subLiquityV2LeverageManagementOnPrice(
             owner,
             market,
@@ -366,7 +366,7 @@ async (req, res) => {
             bundleId
         } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subLiquityV2CloseToPrice(
             owner,
@@ -474,7 +474,7 @@ router.post("/payback", async (req, res) => {
     try {
         const { vnetId, owner, market, troveId, triggerRatio, targetRatio } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subLiquityV2Payback(
             owner,
@@ -586,7 +586,7 @@ router.post("/interest-rate-adjustment", async (req, res) => {
     try {
         const { vnetId, owner, market, troveId, criticalDebtInFrontLimit, nonCriticalDebtInFrontLimit, interestRateChange } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subLiquityV2InterestRateAdjustmentBundle(
             owner,

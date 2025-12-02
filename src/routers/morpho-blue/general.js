@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { getUserData } = require("../../helpers/morpho-blue/view");
 const { createMorphoBluePosition } = require("../../helpers/morpho-blue/general");
@@ -13,7 +13,7 @@ const router = express.Router();
  * @swagger
  * /morpho-blue/general/create:
  *   post:
- *     summary: Create MorphoBlue position on a fork
+ *     summary: Create MorphoBlue position on a vnet
  *     tags:
  *      - MorphoBlue
  *     description:
@@ -112,7 +112,7 @@ router.post("/create",
         }
         const { vnetId, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         createMorphoBluePosition({ loanToken, collateralToken, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -127,7 +127,7 @@ router.post("/create",
  * @swagger
  * /morpho-blue/general/get-position:
  *   post:
- *     summary: Fetch info about MorphoBlue position on a fork
+ *     summary: Fetch info about MorphoBlue position on a vnet
  *     tags:
  *      - MorphoBlue
  *     description:
@@ -209,7 +209,7 @@ router.post("/get-position",
         }
         const { vnetId, loanToken, collateralToken, oracle, irm, lltv, owner } = req.body;
 
-        setupFork(vnetId);
+        setupVnet(vnetId);
 
         getUserData({ loanToken, collateralToken, oracle, irm, lltv }, owner)
             .then(pos => {

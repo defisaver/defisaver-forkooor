@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupVnet } = require("../../utils");
 const { subFluidT1LeverageManagement } = require("../../helpers/fluid/strategies");
 
 const router = express.Router();
@@ -86,7 +86,7 @@ router.post("/leverage-management-t1", async (req, res) => {
     try {
         const { vnetId, nftId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
 
         const sub = await subFluidT1LeverageManagement(
             nftId,

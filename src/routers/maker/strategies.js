@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { subMcdCloseToDaiStrategy, subMcdCloseToCollStrategy, subMCDSmartSavingsRepayStrategy, subMcdAutomationStrategy } = require("../../helpers/maker/strategies");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body } = require("express-validator");
 
 const router = express.Router();
@@ -75,7 +75,7 @@ router.post("/close-to-dai", async (req, res) => {
     try {
         const { vnetId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const sub = await subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(sub);
@@ -154,7 +154,7 @@ router.post("/close-to-coll", async (req, res) => {
     try {
         const { vnetId, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
 
@@ -237,7 +237,7 @@ router.post("/smart-savings-repay", async (req, res) => {
     try {
         const { vnetId, vaultId, protocol, minRatio, targetRatio, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, owner, getWalletAddr(req), defaultsToSafe(req));
 
@@ -346,7 +346,7 @@ async (req, res) => {
     try {
         const { vnetId, vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subMcdAutomationStrategy(
             vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)

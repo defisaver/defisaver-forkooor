@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const {
     subAaveV3CloseWithMaximumGasPriceStrategy,
     subAaveAutomationStrategy,
@@ -131,7 +131,7 @@ async (req, res) => {
     }
     const { vnetId, strategyOrBundleId, owner, triggerData, subData } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
         owner,
         strategyOrBundleId,
@@ -253,7 +253,7 @@ async (req, res) => {
     }
     const { vnetId, useDefaultMarket, market, owner, triggerData, subData } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
 
     subAaveCloseToCollStrategy(
         useDefaultMarket,
@@ -357,7 +357,7 @@ router.post("/dfs-automation", async (req, res) => {
     try {
         const { vnetId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subAaveAutomationStrategy(
             owner,
@@ -495,7 +495,7 @@ async (req, res) => {
     }
     const { vnetId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
 
     subAaveV3OpenOrderFromCollateral(
         useDefaultMarket,
@@ -639,7 +639,7 @@ async (req, res) => {
     }
     const { vnetId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
 
     subAaveV3RepayOnPrice(
         useDefaultMarket,
@@ -689,7 +689,7 @@ async (req, res) => {
  *               vnetId:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *                 description: "Unique identifier for the fork"
+ *                 description: "Unique identifier for the vnet"
  *               owner:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -784,7 +784,7 @@ router.post("/leverage-management-generic",
 
         const { vnetId, owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         subAaveV3GenericAutomationStrategy(
             owner,
@@ -836,7 +836,7 @@ router.post("/leverage-management-generic",
  *               vnetId:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *                 description: "Unique identifier for the fork"
+ *                 description: "Unique identifier for the vnet"
  *               owner:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -945,7 +945,7 @@ router.post("/leverage-management-on-price-generic",
             targetRatio
         } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         subAaveV3LeverageManagementOnPriceGeneric(
             owner,
@@ -999,7 +999,7 @@ router.post("/leverage-management-on-price-generic",
  *               vnetId:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *                 description: "Unique identifier for the fork"
+ *                 description: "Unique identifier for the vnet"
  *               owner:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -1114,7 +1114,7 @@ router.post("/close-on-price-generic",
             takeProfitType
         } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         subAaveV3CloseOnPriceGeneric(
             owner,
@@ -1269,7 +1269,7 @@ async (req, res) => {
     }
     const { vnetId, useDefaultMarket, market, owner, strategyId, triggerData, subData } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
 
     subAaveV3CollateralSwitch(
         owner,

@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 /* eslint-disable consistent-return */
 const express = require("express");
-const { setupFork, getProxy, isContract, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getProxy, isContract, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { getLoanData, COMP_V3_MARKETS } = require("../../helpers/compoundV3/view");
 const {
     createCompoundV3Position,
@@ -18,7 +18,7 @@ const router = express.Router();
  * @swagger
  * /compound/v3/general/get-position:
  *   post:
- *     summary: Fetch info about CompoundV3 position on a fork
+ *     summary: Fetch info about CompoundV3 position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -109,7 +109,7 @@ router.post("/get-position",
         const { vnetId, marketSymbol, owner, isEOA } = req.body;
         let proxy = owner;
 
-        await setupFork(vnetId, []);
+        await setupVnet(vnetId, []);
 
         if (isEOA === false) {
             const isContractPromise = isContract(owner);
@@ -137,7 +137,7 @@ router.post("/get-position",
  * @swagger
  * /compound/v3/general/create:
  *   post:
- *     summary: Create CompoundV3 position on a fork
+ *     summary: Create CompoundV3 position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -248,7 +248,7 @@ router.post("/create",
 
         const { vnetId, market, collToken, collAmount, borrowToken, borrowAmount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -264,7 +264,7 @@ router.post("/create",
  * @swagger
  * /compound/v3/general/create-proxy-position:
  *   post:
- *     summary: Create CompoundV3 proxy position on a fork
+ *     summary: Create CompoundV3 proxy position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -376,7 +376,7 @@ router.post("/create-proxy-position",
 
         const { vnetId, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
 
-        await setupFork(vnetId, [eoa]);
+        await setupVnet(vnetId, [eoa]);
 
         createCompoundV3ProxyPosition(
             collTokenSymbol,
@@ -399,7 +399,7 @@ router.post("/create-proxy-position",
  * @swagger
  * /compound/v3/general/create-eoa-position:
  *   post:
- *     summary: Create CompoundV3 EOA position on a fork
+ *     summary: Create CompoundV3 EOA position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -503,7 +503,7 @@ router.post("/create-eoa-position",
 
         const { vnetId, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
 
-        await setupFork(vnetId, [eoa]);
+        await setupVnet(vnetId, [eoa]);
 
         createCompoundV3EOAPosition(
             collTokenSymbol,
@@ -588,7 +588,7 @@ router.post("/add-manager",
 
         const { vnetId, marketSymbol, eoa, manager } = req.body;
 
-        await setupFork(vnetId, [eoa]);
+        await setupVnet(vnetId, [eoa]);
 
         addManager(marketSymbol, eoa, manager)
             .then(pos => {

@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { getTroveInfo } = require("../../helpers/liquity/view");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { openTrove, adjustTrove } = require("../../helpers/liquity/general");
 
 const router = express.Router();
@@ -10,7 +10,7 @@ const router = express.Router();
  * @swagger
  * /liquity/general/get-trove:
  *   post:
- *     summary: Fetch info about liquity trove on a fork
+ *     summary: Fetch info about liquity trove on a vnet
  *     tags:
  *      - Liquity
  *     description:
@@ -74,7 +74,7 @@ router.post("/get-trove", async (req, res) => {
     try {
         const { vnetId, owner } = req.body;
 
-        await setupFork(vnetId);
+        await setupVnet(vnetId);
         const troveInfo = await getTroveInfo(owner);
 
         res.status(200).send(troveInfo);
@@ -88,7 +88,7 @@ router.post("/get-trove", async (req, res) => {
  * @swagger
  * /liquity/general/open-trove:
  *   post:
- *     summary: Open a liquity trove on a fork
+ *     summary: Open a liquity trove on a vnet
  *     tags:
  *      - Liquity
  *     description:
@@ -168,7 +168,7 @@ router.post("/open-trove", async (req, res) => {
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
 
-        await setupFork(vnetId);
+        await setupVnet(vnetId);
         const troveInfo = await openTrove({ sender, collAmount, debtAmount, proxyAddr, useSafe });
 
         res.status(200).send(troveInfo);
@@ -182,7 +182,7 @@ router.post("/open-trove", async (req, res) => {
  * @swagger
  * /liquity/general/adjust-trove:
  *   post:
- *     summary: Adjust a liquity trove on a fork
+ *     summary: Adjust a liquity trove on a vnet
  *     tags:
  *      - Liquity
  *     description:
@@ -268,7 +268,7 @@ router.post("/adjust-trove", async (req, res) => {
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
 
-        await setupFork(vnetId);
+        await setupVnet(vnetId);
         const troveInfo = await adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount, proxyAddr, useSafe });
 
         res.status(200).send(troveInfo);

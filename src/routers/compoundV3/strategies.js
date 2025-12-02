@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagementOnPrice, subCompoundV3CloseOnPrice, subCompoundV3LeverageManagement } = require("../../helpers/compoundV3/strategies");
 
 const router = express.Router();
@@ -107,7 +107,7 @@ router.post("/dfs-automation", async (req, res) => {
             isEOA
         } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
 
         const sub = await subCompoundV3AutomationStrategy(
             owner,
@@ -240,7 +240,7 @@ router.post("/leverage-management", async (req, res) => {
             isEOA
         } = req.body;
 
-        await setupFork(vnetId, [eoa]);
+        await setupVnet(vnetId, [eoa]);
 
         const sub = await subCompoundV3LeverageManagement(
             bundleId,
@@ -372,7 +372,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
             proxyAddr
         } = req.body;
 
-        await setupFork(vnetId, [eoa]);
+        await setupVnet(vnetId, [eoa]);
 
         const sub = await subCompoundV3LeverageManagementOnPrice(
             bundleId,
@@ -502,7 +502,7 @@ router.post("/close-on-price", async (req, res) => {
             proxyAddr
         } = req.body;
 
-        await setupFork(vnetId, [eoa]);
+        await setupVnet(vnetId, [eoa]);
 
         const sub = await subCompoundV3CloseOnPrice(
             bundleId,

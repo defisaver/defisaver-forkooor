@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { getLoanData } = require("../../helpers/spark/view");
 const { createSparkPosition, sparkSupply, sparkWithdraw, sparkBorrow, sparkPayback } = require("../../helpers/spark/general");
 
@@ -10,7 +10,7 @@ const router = express.Router();
  * @swagger
  * /spark/general/get-position:
  *   post:
- *     summary: Fetch info about Spark position on a fork
+ *     summary: Fetch info about Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -127,7 +127,7 @@ router.post("/get-position", async (req, res) => {
     try {
         const { vnetId, market, owner } = req.body;
 
-        await setupFork(vnetId);
+        await setupVnet(vnetId);
 
         const pos = await getLoanData(market, owner);
 
@@ -142,7 +142,7 @@ router.post("/get-position", async (req, res) => {
  * @swagger
  * /spark/general/create:
  *   post:
- *     summary: Create Spark position on a fork
+ *     summary: Create Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -283,7 +283,7 @@ router.post("/create", async (req, res) => {
     try {
         const { vnetId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -297,7 +297,7 @@ router.post("/create", async (req, res) => {
  * @swagger
  * /spark/general/supply:
  *   post:
- *     summary: Supply collateral to Spark position on a fork
+ *     summary: Supply collateral to Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -428,7 +428,7 @@ router.post("/supply", async (req, res) => {
     try {
         const { vnetId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const pos = await sparkSupply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -442,7 +442,7 @@ router.post("/supply", async (req, res) => {
  * @swagger
  * /spark/general/withdraw:
  *   post:
- *     summary: Withdraw collateral from Spark position on a fork
+ *     summary: Withdraw collateral from Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -573,7 +573,7 @@ router.post("/withdraw", async (req, res) => {
     try {
         const { vnetId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const pos = await sparkWithdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -587,7 +587,7 @@ router.post("/withdraw", async (req, res) => {
  * @swagger
  * /spark/general/borrow:
  *   post:
- *     summary: Borrow debt from Spark position on a fork
+ *     summary: Borrow debt from Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -721,7 +721,7 @@ router.post("/borrow", async (req, res) => {
     try {
         const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const pos = await sparkBorrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -735,7 +735,7 @@ router.post("/borrow", async (req, res) => {
  * @swagger
  * /spark/general/payback:
  *   post:
- *     summary: Borrow debt from Spark position on a fork
+ *     summary: Borrow debt from Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -869,7 +869,7 @@ router.post("/payback", async (req, res) => {
     try {
         const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(vnetId, [owner]);
+        await setupVnet(vnetId, [owner]);
         const pos = await sparkPayback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);

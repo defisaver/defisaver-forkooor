@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { subCurveUsdRepayBundle, subCurveUsdBoostBundle, subCurveUsdPaybackStrategy } = require("../../helpers/curveusd/strategies");
 
@@ -88,7 +88,7 @@ async (req, res) => {
     }
     const { vnetId, owner, controller, minRatio, targetRatio } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
     subCurveUsdRepayBundle(
         owner, controller, minRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
@@ -179,7 +179,7 @@ async (req, res) => {
     }
     const { vnetId, owner, controller, maxRatio, targetRatio } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
     subCurveUsdBoostBundle(
         owner, controller, maxRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
@@ -278,7 +278,7 @@ async (req, res) => {
     }
     const { vnetId, owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback } = req.body;
 
-    await setupFork(vnetId, [owner]);
+    await setupVnet(vnetId, [owner]);
     subCurveUsdPaybackStrategy(
         owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {

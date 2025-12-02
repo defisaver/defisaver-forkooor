@@ -1,6 +1,5 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
-const hre = require("hardhat");
 const express = require("express");
 const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { getLoanData, getSafetyRatio } = require("../../helpers/aavev3/view");

@@ -4,7 +4,7 @@ const axios = require("axios");
 const uuid = require("uuid").v4;
 
 const { botAuthAbi } = require("../../abi/general");
-const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork, getRpc} = require("../../utils");
+const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork, getRpc } = require("../../utils");
 
 /**
  * Tops up DFS Owner account on a given Tenderly fork
@@ -87,7 +87,7 @@ async function setTime(forkId, timestamp, isVnet = true) {
     return { oldTimestamp, newTimestamp };
 }
 
-/**
+/** Creates a new Tenderly fork. Deprecated, use createNewVnet instead.
  * @deprecated
  * Creates a new Tenderly fork in defisaver-v2 organisation using provided input
  * @param {string} tenderlyProject name of the Tenderly project
@@ -104,7 +104,7 @@ async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
     return {
         forkId: forkRes.data.simulation_fork.id,
         blockNumber: forkRes.data.simulation_fork.block_number,
-        newAccount: Object.keys(forkRes.data.simulation_fork.accounts)[0],
+        newAccount: Object.keys(forkRes.data.simulation_fork.accounts)[0]
     };
 }
 
@@ -122,11 +122,11 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startF
         display_name: "DeFi Saver Simulation",
         fork_config: {
             network_id: +chainId,
-            block_number: startFromBlock || "latest",
+            block_number: startFromBlock || "latest"
         },
         virtual_network_config: {
             chain_config: {
-                chain_id: +chainId,
+                chain_id: +chainId
             }
         },
         sync_state_config: {
@@ -143,28 +143,30 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startF
     const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/vnets`, body, { headers });
 
     const {
-        id: rootForkId,
         rpcs,
         virtual_network_config: {
             accounts: [
-                { address: newAccount },
-            ],
+                { address: newAccount }
+            ]
         },
         fork_config: {
-            block_number: blockNumberHex,
-        },
+            block_number: blockNumberHex
+        }
     } = forkRes.data;
+
     // DEV endpoints returns 4 RPCs (2 HTTP, 2 WS), 3rd one is public, 1st one is admin (redirects to public)
-    const adminEndpoint = rpcs.find(e => e.name === 'Admin RPC');
-    const publicEndpoint = rpcs.find(e => e.name === 'Public RPC');
-    if (!adminEndpoint) throw new Error('Error returning fork HTTP endpoint');
+    const adminEndpoint = rpcs.find(e => e.name === "Admin RPC");
+
+    if (!adminEndpoint) {
+        throw new Error("Error returning fork HTTP endpoint");
+    }
     const forkId = adminEndpoint.url; // Using RPC URL as forkId
     const blockNumber = parseInt(blockNumberHex, 16);
 
     return { forkId, blockNumber, newAccount };
 }
 
-/**
+/** Clones an existing Tenderly fork. Deprecated, use cloneVnet instead.
  * @deprecated
  * Forks an existing Tenderly fork in defisaver-v2 organisation using provided input
  * @param {string} cloningForkId fork ID of an existing fork
@@ -201,8 +203,8 @@ async function cloneVnet(cloningForkId, tenderlyProject, tenderlyAccessKey) {
     const headers = getHeaders(tenderlyAccessKey);
     const forkRes = await axios.post(url, body, { headers });
 
-    const forkId = forkRes.data.container.connectivityConfig.endpoints[0].id
-    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${forkId}`
+    const forkId = forkRes.data.container.connectivityConfig.endpoints[0].id;
+    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${forkId}`;
 
     return rpc;
 }

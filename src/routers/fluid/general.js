@@ -24,12 +24,9 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *              isVnet:
- *                type: boolean
- *                example: true
  *              nftId:
  *                type: string
  *                example: "10"
@@ -278,7 +275,7 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-position-by-nft",
-    body(["forkId", "nftId", "isVnet"]).notEmpty(),
+    body(["vnetId", "nftId"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -286,9 +283,9 @@ router.post("/get-position-by-nft",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, nftId, isVnet } = req.body;
+        const { vnetId, nftId } = req.body;
 
-        await setupFork(forkId, [], isVnet);
+        await setupFork(vnetId, []);
 
         getPositionByNftId(nftId)
             .then(pos => {
@@ -315,12 +312,9 @@ router.post("/get-position-by-nft",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                 type: string
  *                 example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *              isVnet:
- *                 type: boolean
- *                 example: true
  *              vaultId:
  *                type: number
  *                example: 4
@@ -593,7 +587,7 @@ router.post("/get-position-by-nft",
  *                   type: string
  */
 router.post("/create-t1",
-    body(["forkId", "vaultId", "collTokenSymbol", "collAmount", "debtTokenSymbol", "debtAmount", "owner", "isVnet"]).notEmpty(),
+    body(["vnetId", "vaultId", "collTokenSymbol", "collAmount", "debtTokenSymbol", "debtAmount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -601,9 +595,9 @@ router.post("/create-t1",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner, isVnet } = req.body;
+        const { vnetId, vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner } = req.body;
 
-        await setupFork(forkId, [owner], isVnet);
+        await setupFork(vnetId, [owner]);
 
         fluidT1Open(
             vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)

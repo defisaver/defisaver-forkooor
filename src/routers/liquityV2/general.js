@@ -23,12 +23,9 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *              isVnet:
- *                type: boolean
- *                example: true
  *              market:
  *                type: string
  *                example: "WETH"
@@ -88,14 +85,14 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-trove",
-    body(["forkId", "market", "troveId", "isVnet"]).notEmpty(),
+    body(["vnetId", "market", "troveId"]).notEmpty(),
     async (req, res) => {
         let resObj;
 
         try {
-            const { forkId, market, troveId, isVnet } = req.body;
+            const { vnetId, market, troveId } = req.body;
 
-            await setupFork(forkId, [], isVnet);
+            await setupFork(vnetId, []);
             const troveInfo = await getTroveInfo(market, troveId);
 
             res.status(200).send(troveInfo);
@@ -121,12 +118,9 @@ router.post("/get-trove",
  *           schema:
  *             type: object
  *             properties:
- *               forkId:
+ *               vnetId:
  *                 type: string
  *                 example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *               isVnet:
- *                 type: boolean
- *                 example: true
  *               sender:
  *                 type: string
  *                 example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
@@ -212,14 +206,14 @@ router.post("/get-trove",
  */
 router.post("/open-trove",
     body([
-        "forkId", "sender", "troveOwner", "troveOwnerIndex", "market", "collAmount", "debtAmount", "interestRate", "interestBatchManager", "isVnet"
+        "vnetId", "sender", "troveOwner", "troveOwnerIndex", "market", "collAmount", "debtAmount", "interestRate", "interestBatchManager"
     ]).notEmpty(),
     async (req, res) => {
         let resObj;
 
         try {
             const {
-                forkId,
+                vnetId,
                 sender,
                 troveOwner,
                 troveOwnerIndex,
@@ -227,11 +221,10 @@ router.post("/open-trove",
                 collAmount,
                 debtAmount,
                 interestRate,
-                interestBatchManager,
-                isVnet
+                interestBatchManager
             } = req.body;
 
-            await setupFork(forkId, [], isVnet);
+            await setupFork(vnetId, []);
 
             const troveInfo = await openTroveV2(
                 sender,

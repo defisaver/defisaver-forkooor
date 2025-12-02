@@ -24,7 +24,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -73,7 +73,7 @@ const router = express.Router();
  */
 router.post("/repay", body(
     [
-        "forkId",
+        "vnetId",
         "owner",
         "controller",
         "minRatio",
@@ -86,9 +86,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, controller, minRatio, targetRatio } = req.body;
+    const { vnetId, owner, controller, minRatio, targetRatio } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(vnetId, [owner]);
     subCurveUsdRepayBundle(
         owner, controller, minRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
@@ -115,7 +115,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -164,7 +164,7 @@ async (req, res) => {
  */
 router.post("/boost", body(
     [
-        "forkId",
+        "vnetId",
         "owner",
         "controller",
         "maxRatio",
@@ -177,9 +177,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, controller, maxRatio, targetRatio } = req.body;
+    const { vnetId, owner, controller, maxRatio, targetRatio } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(vnetId, [owner]);
     subCurveUsdBoostBundle(
         owner, controller, maxRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
@@ -205,7 +205,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -261,7 +261,7 @@ async (req, res) => {
  */
 router.post("/payback", body(
     [
-        "forkId",
+        "vnetId",
         "owner",
         "addressToPullTokensFrom",
         "positionOwner",
@@ -276,9 +276,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback } = req.body;
+    const { vnetId, owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(vnetId, [owner]);
     subCurveUsdPaybackStrategy(
         owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {

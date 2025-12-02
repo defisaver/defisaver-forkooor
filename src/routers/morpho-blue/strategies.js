@@ -25,7 +25,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -92,7 +92,7 @@ const router = express.Router();
  */
 router.post("/repay", body(
     [
-        "forkId",
+        "vnetId",
         "owner",
         "bundleId",
         "loanToken",
@@ -111,9 +111,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, minRatio, targetRatio, user } = req.body;
+    const { vnetId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, minRatio, targetRatio, user } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(vnetId, [owner]);
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueRepayBundle(
@@ -141,7 +141,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -208,7 +208,7 @@ async (req, res) => {
  */
 router.post("/boost", body(
     [
-        "forkId",
+        "vnetId",
         "owner",
         "bundleId",
         "loanToken",
@@ -227,9 +227,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, maxRatio, targetRatio, user } = req.body;
+    const { vnetId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, maxRatio, targetRatio, user } = req.body;
 
-    await setupFork(forkId, [owner]);
+    await setupFork(vnetId, [owner]);
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueBoostBundle(
@@ -257,7 +257,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              walletOwner:
@@ -330,7 +330,7 @@ async (req, res) => {
  */
 router.post("/boostOnPrice", body(
     [
-        "forkId",
+        "vnetId",
         "walletOwner",
         "bundleId",
         "loanToken",
@@ -351,10 +351,10 @@ async (req, res) => {
         return res.status(400).send({ error: validationErrors.array() });
     }
     const {
-        forkId, walletOwner, bundleId, loanToken, collateralToken, oracle, irm, lltv, targetRatio, price, priceState, user
+        vnetId, walletOwner, bundleId, loanToken, collateralToken, oracle, irm, lltv, targetRatio, price, priceState, user
     } = req.body;
 
-    await setupFork(forkId, [walletOwner]);
+    await setupFork(vnetId, [walletOwner]);
 
     subMorphoBlueBoostOnPriceBundle(
         walletOwner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], targetRatio, user, price, priceState, getWalletAddr(req), defaultsToSafe(req)
@@ -382,9 +382,9 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{vnetId}"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -456,7 +456,7 @@ async (req, res) => {
  */
 router.post("/close-on-price", body(
     [
-        "forkId",
+        "vnetId",
         "owner",
         "bundleId",
         "loanToken",
@@ -477,10 +477,10 @@ async (req, res) => {
         return res.status(400).send({ error: validationErrors.array() });
     }
     const {
-        forkId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
+        vnetId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
     } = req.body;
 
-    await setupFork(forkId, [owner], true);
+    await setupFork(vnetId, [owner]);
 
     subMorphoBlueCloseOnPriceBundle(
         owner,

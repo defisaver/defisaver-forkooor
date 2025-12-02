@@ -31,7 +31,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -132,7 +132,7 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-position",
-    body(["forkId", "market", "owner"]).notEmpty(),
+    body(["vnetId", "market", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -140,9 +140,9 @@ router.post("/get-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, owner } = req.body;
+        const { vnetId, market, owner } = req.body;
 
-        setupFork(forkId, [owner], true);
+        setupFork(vnetId, [owner]);
 
         getLoanData(market, owner)
             .then(pos => {
@@ -168,7 +168,7 @@ router.post("/get-position",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -201,7 +201,7 @@ router.post("/get-position",
  *                   type: string
  */
 router.post("/get-safety-ratio",
-    body(["forkId", "market", "owner"]).notEmpty(),
+    body(["vnetId", "market", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -209,9 +209,9 @@ router.post("/get-safety-ratio",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, owner } = req.body;
+        const { vnetId, market, owner } = req.body;
 
-        setupFork(forkId, [owner], true);
+        setupFork(vnetId, [owner]);
 
         getSafetyRatio(market, owner)
             .then(pos => {
@@ -238,7 +238,7 @@ router.post("/get-safety-ratio",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              useDefaultMarket:
@@ -371,7 +371,7 @@ router.post("/get-safety-ratio",
  *                   type: string
  */
 router.post("/create",
-    body(["forkId", "useDefaultMarket", "market", "collToken", "debtToken", "rateMode", "collAmount", "debtAmount", "owner", "isEOA"]).notEmpty(),
+    body(["vnetId", "useDefaultMarket", "market", "collToken", "debtToken", "rateMode", "collAmount", "debtAmount", "owner", "isEOA"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -379,9 +379,9 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount = 0, owner, isEOA } = req.body;
+        const { vnetId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount = 0, owner, isEOA } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
 
         createAaveV3Position(
             useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), isEOA, defaultsToSafe(req)
@@ -411,7 +411,7 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -525,7 +525,7 @@ router.post("/create",
  *                   type: string
  */
 router.post("/supply",
-    body(["forkId", "market", "collToken", "amount", "owner"]).notEmpty(),
+    body(["vnetId", "market", "collToken", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -533,9 +533,9 @@ router.post("/supply",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, collToken, amount, owner } = req.body;
+        const { vnetId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
 
         aaveV3Supply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -563,7 +563,7 @@ router.post("/supply",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -677,16 +677,16 @@ router.post("/supply",
  *                   type: string
  */
 router.post("/withdraw",
-    body(["forkId", "market", "collToken", "amount", "owner"]).notEmpty(),
+    body(["vnetId", "market", "collToken", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, market, collToken, amount, owner } = req.body;
+        const { vnetId, market, collToken, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
 
         aaveV3Withdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -713,7 +713,7 @@ router.post("/withdraw",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -830,16 +830,16 @@ router.post("/withdraw",
  *                   type: string
  */
 router.post("/borrow",
-    body(["forkId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
+    body(["vnetId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
         aaveV3Borrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -865,7 +865,7 @@ router.post("/borrow",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -982,7 +982,7 @@ router.post("/borrow",
  *                   type: string
  */
 router.post("/payback",
-    body(["forkId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
+    body(["vnetId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -990,9 +990,9 @@ router.post("/payback",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
         aaveV3Payback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);

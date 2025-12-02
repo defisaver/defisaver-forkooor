@@ -89,7 +89,7 @@ const addresses = {
         REGISTRY_ADDR: "0x44e98bB58d725F2eF93a195F518b335dCB784c78",
         OWNER_ACC: "0x13fa3D42C09E5E15153F08bb90A79A3Bd63E289D",
         DAI_ADDRESS: "", // No deployment on Plasma
-        AAVE_V3_VIEW: "0x5B0B7E38C2a8e46CfAe13c360BC5927570BeEe94",
+        AAVE_V3_VIEW: "0x5B0B7E38C2a8e46CfAe13c360BC5927570BeEe94"
     }
 };
 
@@ -423,24 +423,14 @@ async function topUpAccount(address, amount = 100) {
     }
 }
 
-/** Get the RPC URL for a Tenderly fork or vnet
- * @param {string} forkId ID of the Tenderly fork
- * @param {boolean} isVnet Whether fork is legacy or vnet
- * @returns {string} RPC URL
- */
-function getRpc(forkId, isVnet = false) {
-    return isVnet ? forkId : `https://rpc.tenderly.co/fork/${forkId}`;
-}
-
 /**
  * Sets up hre.ethers.providers object and gives 100 eth to each account
- * @param {string} forkId ID of the Tenderly fork
+ * @param {string} vnetId RPC URL of the Tenderly vnet
  * @param {Array<string>} accounts all the accounts that will be sending transactions
- * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function setupFork(forkId, accounts = [], isVnet = true) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
+async function setupFork(vnetId, accounts = []) {
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(vnetId);
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
     }));
@@ -448,14 +438,13 @@ async function setupFork(forkId, accounts = [], isVnet = true) {
 
 /**
  * Lowers safe threshold to 1
- * @param {string} forkId ID of the Tenderly fork
+ * @param {string} vnetId RPC URL of the Tenderly vnet
  * @param {Array<string>} safes  all the accounts that will be sending transactions}
  * @param {Array<number>} thresholds new threshold value that will be set for matching safe
- * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function lowerSafesThreshold(forkId, safes, thresholds, isVnet = false) {
-    const provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
+async function lowerSafesThreshold(vnetId, safes, thresholds) {
+    const provider = await hre.ethers.getDefaultProvider(vnetId);
     const thresholdSlot = toBytes32(hre.ethers.utils.parseUnits("4", 0)).toString();
 
     for (let i = 0; i < safes.length; i++) {
@@ -942,7 +931,6 @@ module.exports = {
     getWalletAddr,
     createSafe,
     validateTriggerPricesForCloseStrategyType,
-    getRpc,
     sendEth,
     isWalletSafe,
     getWalletOwner,

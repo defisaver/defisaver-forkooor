@@ -22,7 +22,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              vaultId:
@@ -64,9 +64,9 @@ router.post("/get-vault", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, vaultId } = req.body;
+        const { vnetId, vaultId } = req.body;
 
-        await setupFork(forkId);
+        await setupFork(vnetId);
         const vaultInfo = await getVaultInfo(vaultId);
 
         res.status(200).send(vaultInfo);
@@ -92,7 +92,7 @@ router.post("/get-vault", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
@@ -151,9 +151,9 @@ router.post("/create-vault", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, collType, collAmount, debtAmount } = req.body;
+        const { vnetId, owner, collType, collAmount, debtAmount } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(vnetId, [owner]);
         const vaultInfo = await createMcdVault(collType, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -179,7 +179,7 @@ router.post("/create-vault", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
@@ -232,9 +232,9 @@ router.post("/open-empty-vault", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, collType } = req.body;
+        const { vnetId, owner, collType } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(vnetId, [owner]);
         const vaultInfo = await openEmptyMcdVault(collType, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -260,7 +260,7 @@ router.post("/open-empty-vault", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
@@ -316,9 +316,9 @@ router.post("/supply", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, vaultId, supplyAmount } = req.body;
+        const { vnetId, owner, vaultId, supplyAmount } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(vnetId, [owner]);
         const vaultInfo = await mcdSupply(owner, vaultId, supplyAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -344,7 +344,7 @@ router.post("/supply", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
@@ -400,9 +400,9 @@ router.post("/withdraw", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, vaultId, withdrawAmount } = req.body;
+        const { vnetId, owner, vaultId, withdrawAmount } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(vnetId, [owner]);
         const vaultInfo = await mcdWithdraw(owner, vaultId, withdrawAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -428,7 +428,7 @@ router.post("/withdraw", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
@@ -484,9 +484,9 @@ router.post("/borrow", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, vaultId, borrowAmount } = req.body;
+        const { vnetId, owner, vaultId, borrowAmount } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(vnetId, [owner]);
         const vaultInfo = await mcdBorrow(owner, vaultId, borrowAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -512,7 +512,7 @@ router.post("/borrow", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
@@ -568,9 +568,9 @@ router.post("/payback", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, vaultId, paybackAmount } = req.body;
+        const { vnetId, owner, vaultId, paybackAmount } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(vnetId, [owner]);
         const vaultInfo = await mcdPayback(owner, vaultId, paybackAmount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -596,7 +596,7 @@ router.post("/payback", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -636,9 +636,9 @@ router.post("/dsr-deposit", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, sender, amount } = req.body;
+        const { vnetId, sender, amount } = req.body;
 
-        await setupFork(forkId, [sender]);
+        await setupFork(vnetId, [sender]);
         const vaultInfo = await mcdDsrDeposit(sender, amount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);
@@ -664,7 +664,7 @@ router.post("/dsr-deposit", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -704,9 +704,9 @@ router.post("/dsr-withdraw", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, sender, amount } = req.body;
+        const { vnetId, sender, amount } = req.body;
 
-        await setupFork(forkId, [sender]);
+        await setupFork(vnetId, [sender]);
         const vaultInfo = await mcdDsrWithdraw(sender, amount, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(vaultInfo);

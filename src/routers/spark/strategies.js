@@ -23,7 +23,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -83,9 +83,9 @@ router.post("/dfs-automation", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        const { vnetId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(vnetId, [owner]);
 
         const sub = await subSparkDfsAutomationStrategy(
             owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)
@@ -114,7 +114,7 @@ router.post("/dfs-automation", async (req, res) => {
  *           schema:
  *             type: object
  *             required:
- *               - forkId
+ *               - vnetId
  *               - owner
  *               - bundleId
  *               - market
@@ -125,9 +125,9 @@ router.post("/dfs-automation", async (req, res) => {
  *               - takeProfitPrice
  *               - takeProfitType
  *             properties:
- *               forkId:
+ *               vnetId:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/{vnetId}"
  *                 description: "Unique identifier for the fork"
  *               owner:
  *                 type: string
@@ -211,7 +211,7 @@ router.post("/dfs-automation", async (req, res) => {
  *                   example: "Failed to subscribe to Spark Close On Price strategy with error: ..."
  */
 router.post("/close-on-price-generic",
-    body(["forkId", "owner", "bundleId", "market", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body(["vnetId", "owner", "bundleId", "market", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
     body("stopLossType").isFloat(),
@@ -225,7 +225,7 @@ router.post("/close-on-price-generic",
         }
 
         const {
-            forkId,
+            vnetId,
             owner,
             bundleId,
             market,
@@ -237,7 +237,7 @@ router.post("/close-on-price-generic",
             takeProfitType
         } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
 
         subSparkCloseOnPriceGeneric(
             owner,

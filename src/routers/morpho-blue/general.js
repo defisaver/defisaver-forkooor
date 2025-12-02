@@ -25,9 +25,9 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{vnetId}"
  *              loanToken:
  *                type: string
  *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
@@ -103,16 +103,16 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/create",
-    body(["forkId", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner", "coll", "debt"]).notEmpty(),
+    body(["vnetId", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner", "coll", "debt"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
+        const { vnetId, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
         createMorphoBluePosition({ loanToken, collateralToken, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -139,7 +139,7 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              loanToken:
@@ -200,16 +200,16 @@ router.post("/create",
  *                   type: string
  */
 router.post("/get-position",
-    body(["forkId", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner"]).notEmpty(),
+    body(["vnetId", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, loanToken, collateralToken, oracle, irm, lltv, owner } = req.body;
+        const { vnetId, loanToken, collateralToken, oracle, irm, lltv, owner } = req.body;
 
-        setupFork(forkId);
+        setupFork(vnetId);
 
         getUserData({ loanToken, collateralToken, oracle, irm, lltv }, owner)
             .then(pos => {

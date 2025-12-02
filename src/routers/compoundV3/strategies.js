@@ -21,7 +21,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.rpc.tenderly.co/{}"
  *              owner:
@@ -95,7 +95,7 @@ const router = express.Router();
 router.post("/dfs-automation", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetId,
             owner,
             market,
             baseToken,
@@ -107,7 +107,7 @@ router.post("/dfs-automation", async (req, res) => {
             isEOA
         } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupFork(vnetId, [owner]);
 
         const sub = await subCompoundV3AutomationStrategy(
             owner,
@@ -160,7 +160,7 @@ router.post("/dfs-automation", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
  *              bundleId:
@@ -229,7 +229,7 @@ router.post("/dfs-automation", async (req, res) => {
 router.post("/leverage-management", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetId,
             bundleId,
             marketSymbol,
             triggerRatio,
@@ -240,7 +240,7 @@ router.post("/leverage-management", async (req, res) => {
             isEOA
         } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupFork(vnetId, [eoa]);
 
         const sub = await subCompoundV3LeverageManagement(
             bundleId,
@@ -279,7 +279,7 @@ router.post("/leverage-management", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
  *              bundleId:
@@ -359,7 +359,7 @@ router.post("/leverage-management", async (req, res) => {
 router.post("/leverage-management-on-price", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetId,
             bundleId,
             isEOA,
             debtTokenSymbol,
@@ -372,7 +372,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
             proxyAddr
         } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupFork(vnetId, [eoa]);
 
         const sub = await subCompoundV3LeverageManagementOnPrice(
             bundleId,
@@ -413,7 +413,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetId:
  *                type: string
  *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
  *              bundleId:
@@ -490,7 +490,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
 router.post("/close-on-price", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetId,
             bundleId,
             isEOA,
             debtTokenSymbol,
@@ -502,7 +502,7 @@ router.post("/close-on-price", async (req, res) => {
             proxyAddr
         } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupFork(vnetId, [eoa]);
 
         const sub = await subCompoundV3CloseOnPrice(
             bundleId,

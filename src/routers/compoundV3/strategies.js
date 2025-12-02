@@ -23,7 +23,7 @@ const router = express.Router();
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/{}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -162,7 +162,7 @@ router.post("/dfs-automation", async (req, res) => {
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              bundleId:
  *                type: string
  *                example: "28"
@@ -281,7 +281,7 @@ router.post("/leverage-management", async (req, res) => {
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              bundleId:
  *                type: string
  *                example: "for mainnet 46 = repayOnPrice; 47 = boostOnPrice; 49 = eoa repayOnPrice; 50 = eoa boostOnPrice"
@@ -415,7 +415,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              bundleId:
  *                type: string
  *                example: "for mainnet 48 = closeOnPrice; 51 = eoa closeOnPrice"

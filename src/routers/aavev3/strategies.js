@@ -35,7 +35,7 @@ const router = express.Router();
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -164,7 +164,7 @@ async (req, res) => {
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -292,7 +292,7 @@ async (req, res) => {
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -390,7 +390,7 @@ router.post("/dfs-automation", async (req, res) => {
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -534,7 +534,7 @@ async (req, res) => {
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -688,7 +688,7 @@ async (req, res) => {
  *             properties:
  *               vnetId:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the fork"
  *               owner:
  *                 type: string
@@ -835,7 +835,7 @@ router.post("/leverage-management-generic",
  *             properties:
  *               vnetId:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the fork"
  *               owner:
  *                 type: string
@@ -998,7 +998,7 @@ router.post("/leverage-management-on-price-generic",
  *             properties:
  *               vnetId:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the fork"
  *               owner:
  *                 type: string
@@ -1157,7 +1157,7 @@ router.post("/close-on-price-generic",
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{id}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
  *                type: boolean
  *                example: true
@@ -1292,4 +1292,3 @@ async (req, res) => {
 });
 
 module.exports = router;
-

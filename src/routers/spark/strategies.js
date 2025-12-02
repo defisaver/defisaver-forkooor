@@ -127,7 +127,7 @@ router.post("/dfs-automation", async (req, res) => {
  *             properties:
  *               vnetId:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/{vnetId}"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the fork"
  *               owner:
  *                 type: string

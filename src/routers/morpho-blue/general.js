@@ -27,7 +27,7 @@ const router = express.Router();
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{vnetId}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              loanToken:
  *                type: string
  *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"

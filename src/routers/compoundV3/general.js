@@ -278,7 +278,7 @@ router.post("/create",
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              collTokenSymbol:
  *                type: string
  *                example: "WETH"
@@ -413,7 +413,7 @@ router.post("/create-proxy-position",
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              collTokenSymbol:
  *                type: string
  *                example: "WETH"
@@ -538,7 +538,7 @@ router.post("/create-eoa-position",
  *             properties:
  *              vnetId:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              marketSymbol:
  *                type: string
  *                example: "USDC"

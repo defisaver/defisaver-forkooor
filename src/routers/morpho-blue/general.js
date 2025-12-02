@@ -13,7 +13,7 @@ const router = express.Router();
  * @swagger
  * /morpho-blue/general/create:
  *   post:
- *     summary: Create CurveUsd position on a fork
+ *     summary: Create MorphoBlue position on a fork
  *     tags:
  *      - MorphoBlue
  *     description:
@@ -27,7 +27,7 @@ const router = express.Router();
  *             properties:
  *              forkId:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
  *              loanToken:
  *                type: string
  *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
@@ -112,7 +112,7 @@ router.post("/create",
         }
         const { forkId, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupFork(forkId, [owner], true);
         createMorphoBluePosition({ loanToken, collateralToken, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);

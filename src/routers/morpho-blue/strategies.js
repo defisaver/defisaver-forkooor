@@ -3,7 +3,7 @@
 const express = require("express");
 const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
-const { subMorphoBlueRepayBundle, subMorphoBlueBoostBundle, subMorphoBlueBoostOnPriceBundle } = require("../../helpers/morpho-blue/strategies");
+const { subMorphoBlueRepayBundle, subMorphoBlueBoostBundle, subMorphoBlueBoostOnPriceBundle, subMorphoBlueCloseOnPriceBundle } = require("../../helpers/morpho-blue/strategies");
 const { getMarketId } = require("../../helpers/morpho-blue/view");
 
 const router = express.Router();
@@ -362,6 +362,140 @@ async (req, res) => {
         res.status(200).send(sub);
     }).catch(err => {
         res.status(500).send({ error: `Failed to subscribe to MorphoBlue Boost on Price strategy with error : ${err.toString()}` });
+    });
+});
+
+
+/**
+ * @swagger
+ * /morpho-blue/strategies/close-on-price:
+ *   post:
+ *     summary: Subscribe to MorphoBlue Close On Price strategy
+ *     tags:
+ *      - MorphoBlue
+ *     description: Subscribes to MorphoBlue Close On Price strategy with stop loss and take profit functionality.
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *              forkId:
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
+ *              owner:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *              bundleId:
+ *                  type: integer
+ *                  example: 57
+ *              loanToken:
+ *                type: string
+ *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+ *              collateralToken:
+ *                type: string
+ *                example: "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+ *              oracle:
+ *                type: string
+ *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
+ *              irm:
+ *                type: string
+ *                example: "0x870ac11d48b15db9a138cf899d20f13f79ba00bc"
+ *              lltv:
+ *                type: string
+ *                example: "860000000000000000"
+ *              stopLossPrice:
+ *                type: integer
+ *                example: 3000
+ *                description: "Stop loss price (0 if not used)"
+ *              stopLossType:
+ *                type: integer
+ *                example: 0
+ *                description: "Stop loss type (0 for debt, 1 for collateral)"
+ *              takeProfitPrice:
+ *                type: integer
+ *                example: 5000
+ *                description: "Take profit price (0 if not used)"
+ *              takeProfitType:
+ *                type: integer
+ *                example: 1
+ *                description: "Take profit type (0 for debt, 1 for collateral)"
+ *              walletAddr:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 strategySub:
+ *                  type: Array
+ *                  example: [    56,    true,    [      "0x..."    ],    [      "0x..."    ]  ]
+ *                 subId:
+ *                  type: string
+ *                  example: "427"
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/close-on-price", body(
+    [
+        "forkId",
+        "owner",
+        "bundleId",
+        "loanToken",
+        "collateralToken",
+        "oracle",
+        "irm",
+        "lltv",
+        "stopLossPrice",
+        "stopLossType",
+        "takeProfitPrice",
+        "takeProfitType"
+    ]
+).notEmpty(),
+async (req, res) => {
+    const validationErrors = validationResult(req);
+
+    if (!validationErrors.isEmpty()) {
+        return res.status(400).send({ error: validationErrors.array() });
+    }
+    const {
+        forkId, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
+    } = req.body;
+
+    await setupFork(forkId, [owner], true);
+
+    subMorphoBlueCloseOnPriceBundle(
+        owner,
+        bundleId,
+        [loanToken, collateralToken, oracle, irm, lltv],
+        stopLossPrice,
+        stopLossType,
+        takeProfitPrice,
+        takeProfitType,
+        getWalletAddr(req),
+        defaultsToSafe(req)
+    ).then(sub => {
+        res.status(200).send(sub);
+    }).catch(err => {
+        res.status(500).send({ error: `Failed to subscribe to MorphoBlue Close On Price strategy with error : ${err.toString()}` });
     });
 });
 

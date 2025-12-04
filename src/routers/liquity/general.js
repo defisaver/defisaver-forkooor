@@ -22,7 +22,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              owner:
@@ -72,9 +72,9 @@ router.post("/get-trove", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, owner } = req.body;
+        const { vnetUrl, owner } = req.body;
 
-        await setupVnet(vnetId);
+        await setupVnet(vnetUrl);
         const troveInfo = await getTroveInfo(owner);
 
         res.status(200).send(troveInfo);
@@ -100,7 +100,7 @@ router.post("/get-trove", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -163,12 +163,12 @@ router.post("/open-trove", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, sender, collAmount, debtAmount } = req.body;
+        const { vnetUrl, sender, collAmount, debtAmount } = req.body;
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
 
-        await setupVnet(vnetId);
+        await setupVnet(vnetUrl);
         const troveInfo = await openTrove({ sender, collAmount, debtAmount, proxyAddr, useSafe });
 
         res.status(200).send(troveInfo);
@@ -194,7 +194,7 @@ router.post("/open-trove", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -263,12 +263,12 @@ router.post("/adjust-trove", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, sender, collAction, collAmount, debtAction, debtAmount } = req.body;
+        const { vnetUrl, sender, collAction, collAmount, debtAction, debtAmount } = req.body;
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
 
-        await setupVnet(vnetId);
+        await setupVnet(vnetUrl);
         const troveInfo = await adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount, proxyAddr, useSafe });
 
         res.status(200).send(troveInfo);

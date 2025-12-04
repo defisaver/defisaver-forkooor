@@ -22,7 +22,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              vaultId:
@@ -73,9 +73,9 @@ router.post("/close-to-dai", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, vaultId, triggerPrice, triggerState, owner } = req.body;
+        const { vnetUrl, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         const sub = await subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(sub);
@@ -101,7 +101,7 @@ router.post("/close-to-dai", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              vaultId:
@@ -152,9 +152,9 @@ router.post("/close-to-coll", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, vaultId, triggerPrice, triggerState, owner } = req.body;
+        const { vnetUrl, vaultId, triggerPrice, triggerState, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
 
@@ -181,7 +181,7 @@ router.post("/close-to-coll", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              vaultId:
@@ -235,9 +235,9 @@ router.post("/smart-savings-repay", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, vaultId, protocol, minRatio, targetRatio, owner } = req.body;
+        const { vnetUrl, vaultId, protocol, minRatio, targetRatio, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, owner, getWalletAddr(req), defaultsToSafe(req));
 
@@ -264,7 +264,7 @@ router.post("/smart-savings-repay", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              vaultId:
@@ -330,7 +330,7 @@ router.post("/smart-savings-repay", async (req, res) => {
  */
 router.post("/dfs-automation", body(
     [
-        "vnetId",
+        "vnetUrl",
         "vaultId",
         "owner",
         "minRatio",
@@ -344,9 +344,9 @@ async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        const { vnetUrl, vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subMcdAutomationStrategy(
             vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)

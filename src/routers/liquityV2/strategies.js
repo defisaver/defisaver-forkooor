@@ -23,7 +23,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -100,9 +100,9 @@ router.post("/leverage-management", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, owner, market, troveId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
+        const { vnetUrl, owner, market, troveId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subLiquityV2LeverageManagement(
             owner,
@@ -139,7 +139,7 @@ router.post("/leverage-management", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -221,9 +221,9 @@ router.post("/leverage-management-on-price", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, owner, market, troveId, price, state, targetRatio, isRepayOnPrice, bundleId } = req.body;
+        const { vnetUrl, owner, market, troveId, price, state, targetRatio, isRepayOnPrice, bundleId } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         const sub = await subLiquityV2LeverageManagementOnPrice(
             owner,
             market,
@@ -260,7 +260,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -337,7 +337,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
  */
 router.post("/close-on-price", body(
     [
-        "vnetId",
+        "vnetUrl",
         "owner",
         "market",
         "troveId",
@@ -356,7 +356,7 @@ async (req, res) => {
 
     try {
         const {
-            vnetId,
+            vnetUrl,
             owner,
             market,
             troveId,
@@ -366,7 +366,7 @@ async (req, res) => {
             bundleId
         } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subLiquityV2CloseToPrice(
             owner,
@@ -403,7 +403,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -472,9 +472,9 @@ router.post("/payback", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, owner, market, troveId, triggerRatio, targetRatio } = req.body;
+        const { vnetUrl, owner, market, troveId, triggerRatio, targetRatio } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subLiquityV2Payback(
             owner,
@@ -509,7 +509,7 @@ router.post("/payback", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -584,9 +584,9 @@ router.post("/interest-rate-adjustment", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, owner, market, troveId, criticalDebtInFrontLimit, nonCriticalDebtInFrontLimit, interestRateChange } = req.body;
+        const { vnetUrl, owner, market, troveId, criticalDebtInFrontLimit, nonCriticalDebtInFrontLimit, interestRateChange } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subLiquityV2InterestRateAdjustmentBundle(
             owner,

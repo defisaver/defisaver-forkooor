@@ -33,7 +33,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -109,7 +109,7 @@ const router = express.Router();
  */
 router.post("/close-with-maximum-gasprice", body(
     [
-        "vnetId",
+        "vnetUrl",
         "owner",
         "strategyOrBundleId",
         "triggerData.baseTokenAddress",
@@ -129,9 +129,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, strategyOrBundleId, owner, triggerData, subData } = req.body;
+    const { vnetUrl, strategyOrBundleId, owner, triggerData, subData } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
         owner,
         strategyOrBundleId,
@@ -162,7 +162,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
@@ -233,7 +233,7 @@ async (req, res) => {
  */
 router.post("/close-with-coll", body(
     [
-        "vnetId",
+        "vnetUrl",
         "useDefaultMarket",
         "market",
         "owner",
@@ -251,9 +251,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, useDefaultMarket, market, owner, triggerData, subData } = req.body;
+    const { vnetUrl, useDefaultMarket, market, owner, triggerData, subData } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
 
     subAaveCloseToCollStrategy(
         useDefaultMarket,
@@ -290,7 +290,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -355,9 +355,9 @@ router.post("/dfs-automation", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        const { vnetUrl, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subAaveAutomationStrategy(
             owner,
@@ -388,7 +388,7 @@ router.post("/dfs-automation", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
@@ -475,7 +475,7 @@ router.post("/dfs-automation", async (req, res) => {
  */
 router.post("/open-order-from-collateral", body(
     [
-        "vnetId",
+        "vnetUrl",
         "useDefaultMarket",
         "market",
         "owner",
@@ -493,9 +493,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
+    const { vnetUrl, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
 
     subAaveV3OpenOrderFromCollateral(
         useDefaultMarket,
@@ -532,7 +532,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
@@ -619,7 +619,7 @@ async (req, res) => {
  */
 router.post("/repay-on-price", body(
     [
-        "vnetId",
+        "vnetUrl",
         "useDefaultMarket",
         "market",
         "owner",
@@ -637,9 +637,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
+    const { vnetUrl, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
 
     subAaveV3RepayOnPrice(
         useDefaultMarket,
@@ -676,7 +676,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             required:
- *               - vnetId
+ *               - vnetUrl
  *               - owner
  *               - bundleId
  *               - market
@@ -686,7 +686,7 @@ async (req, res) => {
  *               - triggerRatio
  *               - isGeneric
  *             properties:
- *               vnetId:
+ *               vnetUrl:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
@@ -768,7 +768,7 @@ async (req, res) => {
  *                   example: "Failed to subscribe to Aave V3 Leverage Management Generic strategy with error: ..."
  */
 router.post("/leverage-management-generic",
-    body(["vnetId", "owner", "bundleId", "market", "isEOA", "ratioState", "targetRatio", "triggerRatio", "isGeneric"]).notEmpty(),
+    body(["vnetUrl", "owner", "bundleId", "market", "isEOA", "ratioState", "targetRatio", "triggerRatio", "isGeneric"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("isGeneric").isBoolean(),
     body("bundleId").isInt(),
@@ -782,9 +782,9 @@ router.post("/leverage-management-generic",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric } = req.body;
+        const { vnetUrl, owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         subAaveV3GenericAutomationStrategy(
             owner,
@@ -822,7 +822,7 @@ router.post("/leverage-management-generic",
  *           schema:
  *             type: object
  *             required:
- *               - vnetId
+ *               - vnetUrl
  *               - owner
  *               - bundleId
  *               - market
@@ -833,7 +833,7 @@ router.post("/leverage-management-generic",
  *               - priceState
  *               - targetRatio
  *             properties:
- *               vnetId:
+ *               vnetUrl:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
@@ -919,7 +919,7 @@ router.post("/leverage-management-generic",
  *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ..."
  */
 router.post("/leverage-management-on-price-generic",
-    body(["vnetId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
+    body(["vnetUrl", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
     body("priceState").isInt(),
@@ -933,7 +933,7 @@ router.post("/leverage-management-on-price-generic",
         }
 
         const {
-            vnetId,
+            vnetUrl,
             owner,
             bundleId,
             market,
@@ -945,7 +945,7 @@ router.post("/leverage-management-on-price-generic",
             targetRatio
         } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         subAaveV3LeverageManagementOnPriceGeneric(
             owner,
@@ -984,7 +984,7 @@ router.post("/leverage-management-on-price-generic",
  *           schema:
  *             type: object
  *             required:
- *               - vnetId
+ *               - vnetUrl
  *               - owner
  *               - bundleId
  *               - market
@@ -996,7 +996,7 @@ router.post("/leverage-management-on-price-generic",
  *               - takeProfitPrice
  *               - takeProfitType
  *             properties:
- *               vnetId:
+ *               vnetUrl:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
@@ -1086,7 +1086,7 @@ router.post("/leverage-management-on-price-generic",
  *                   example: "Failed to subscribe to Aave V3 Close On Price strategy with error: ..."
  */
 router.post("/close-on-price-generic",
-    body(["vnetId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body(["vnetUrl", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
@@ -1101,7 +1101,7 @@ router.post("/close-on-price-generic",
         }
 
         const {
-            vnetId,
+            vnetUrl,
             owner,
             bundleId,
             market,
@@ -1114,7 +1114,7 @@ router.post("/close-on-price-generic",
             takeProfitType
         } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         subAaveV3CloseOnPriceGeneric(
             owner,
@@ -1155,7 +1155,7 @@ router.post("/close-on-price-generic",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              useDefaultMarket:
@@ -1249,7 +1249,7 @@ router.post("/close-on-price-generic",
  */
 router.post("/collateral-switch", body(
     [
-        "vnetId",
+        "vnetUrl",
         "useDefaultMarket",
         "market",
         "owner",
@@ -1267,9 +1267,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, useDefaultMarket, market, owner, strategyId, triggerData, subData } = req.body;
+    const { vnetUrl, useDefaultMarket, market, owner, strategyId, triggerData, subData } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
 
     subAaveV3CollateralSwitch(
         owner,

@@ -22,7 +22,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              nftId:
@@ -84,9 +84,9 @@ router.post("/leverage-management-t1", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, nftId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
+        const { vnetUrl, nftId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
 
-        await setupVnet(vnetId, []);
+        await setupVnet(vnetUrl, []);
 
         const sub = await subFluidT1LeverageManagement(
             nftId,

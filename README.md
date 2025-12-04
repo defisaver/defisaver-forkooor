@@ -33,9 +33,9 @@ Adding Liquity to Forkooor.js
     let resObj;
 
     try {
-        const { vnetId, ...params } = req.body;
+        const { vnetUrl, ...params } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         await executeEndpointAction()
 
         res.status(200).send();

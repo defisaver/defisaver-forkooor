@@ -24,7 +24,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -73,7 +73,7 @@ const router = express.Router();
  */
 router.post("/repay", body(
     [
-        "vnetId",
+        "vnetUrl",
         "owner",
         "controller",
         "minRatio",
@@ -86,9 +86,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, owner, controller, minRatio, targetRatio } = req.body;
+    const { vnetUrl, owner, controller, minRatio, targetRatio } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
     subCurveUsdRepayBundle(
         owner, controller, minRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
@@ -115,7 +115,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -164,7 +164,7 @@ async (req, res) => {
  */
 router.post("/boost", body(
     [
-        "vnetId",
+        "vnetUrl",
         "owner",
         "controller",
         "maxRatio",
@@ -177,9 +177,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, owner, controller, maxRatio, targetRatio } = req.body;
+    const { vnetUrl, owner, controller, maxRatio, targetRatio } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
     subCurveUsdBoostBundle(
         owner, controller, maxRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {
@@ -205,7 +205,7 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
  *              owner:
@@ -261,7 +261,7 @@ async (req, res) => {
  */
 router.post("/payback", body(
     [
-        "vnetId",
+        "vnetUrl",
         "owner",
         "addressToPullTokensFrom",
         "positionOwner",
@@ -276,9 +276,9 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetId, owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback } = req.body;
+    const { vnetUrl, owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback } = req.body;
 
-    await setupVnet(vnetId, [owner]);
+    await setupVnet(vnetUrl, [owner]);
     subCurveUsdPaybackStrategy(
         owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback, getWalletAddr(req), defaultsToSafe(req)
     ).then(sub => {

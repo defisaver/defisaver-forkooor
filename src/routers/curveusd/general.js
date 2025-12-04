@@ -24,7 +24,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              controller:
@@ -119,16 +119,16 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/create",
-    body(["vnetId", "controller", "coll", "debt", "owner", "numberOfBands"]).notEmpty(),
+    body(["vnetUrl", "controller", "coll", "debt", "owner", "numberOfBands"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetId, controller, owner, coll, debt, numberOfBands } = req.body;
+        const { vnetUrl, controller, owner, coll, debt, numberOfBands } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         createCurveUsdPosition(controller, coll, debt, owner, numberOfBands, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -155,7 +155,7 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              controller:
@@ -233,16 +233,16 @@ router.post("/create",
  *                   type: string
  */
 router.post("/get-position",
-    body(["vnetId", "controller", "owner"]).notEmpty(),
+    body(["vnetUrl", "controller", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetId, controller, owner } = req.body;
+        const { vnetUrl, controller, owner } = req.body;
 
-        setupVnet(vnetId);
+        setupVnet(vnetUrl);
 
         getUserData(controller, owner)
             .then(pos => {

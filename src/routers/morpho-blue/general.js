@@ -25,7 +25,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              loanToken:
@@ -103,16 +103,16 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/create",
-    body(["vnetId", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner", "coll", "debt"]).notEmpty(),
+    body(["vnetUrl", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner", "coll", "debt"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetId, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
+        const { vnetUrl, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         createMorphoBluePosition({ loanToken, collateralToken, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -139,7 +139,7 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              loanToken:
@@ -200,16 +200,16 @@ router.post("/create",
  *                   type: string
  */
 router.post("/get-position",
-    body(["vnetId", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner"]).notEmpty(),
+    body(["vnetUrl", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetId, loanToken, collateralToken, oracle, irm, lltv, owner } = req.body;
+        const { vnetUrl, loanToken, collateralToken, oracle, irm, lltv, owner } = req.body;
 
-        setupVnet(vnetId);
+        setupVnet(vnetUrl);
 
         getUserData({ loanToken, collateralToken, oracle, irm, lltv }, owner)
             .then(pos => {

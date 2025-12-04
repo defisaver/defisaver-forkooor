@@ -30,7 +30,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -98,7 +98,7 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-position",
-    body(["vnetId", "marketSymbol", "owner", "isEOA"]).notEmpty(),
+    body(["vnetUrl", "marketSymbol", "owner", "isEOA"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -106,10 +106,10 @@ router.post("/get-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, marketSymbol, owner, isEOA } = req.body;
+        const { vnetUrl, marketSymbol, owner, isEOA } = req.body;
         let proxy = owner;
 
-        await setupVnet(vnetId, []);
+        await setupVnet(vnetUrl, []);
 
         if (isEOA === false) {
             const isContractPromise = isContract(owner);
@@ -149,7 +149,7 @@ router.post("/get-position",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -238,7 +238,7 @@ router.post("/get-position",
  *                   type: string
  */
 router.post("/create",
-    body(["vnetId", "market", "collToken", "collAmount", "borrowToken", "borrowAmount", "owner"]).notEmpty(),
+    body(["vnetUrl", "market", "collToken", "collAmount", "borrowToken", "borrowAmount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -246,9 +246,9 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, market, collToken, collAmount, borrowToken, borrowAmount, owner } = req.body;
+        const { vnetUrl, market, collToken, collAmount, borrowToken, borrowAmount, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
@@ -276,7 +276,7 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              collTokenSymbol:
@@ -366,7 +366,7 @@ router.post("/create",
  *                   type: string
  */
 router.post("/create-proxy-position",
-    body(["vnetId", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
+    body(["vnetUrl", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -374,9 +374,9 @@ router.post("/create-proxy-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
+        const { vnetUrl, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
 
-        await setupVnet(vnetId, [eoa]);
+        await setupVnet(vnetUrl, [eoa]);
 
         createCompoundV3ProxyPosition(
             collTokenSymbol,
@@ -411,7 +411,7 @@ router.post("/create-proxy-position",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              collTokenSymbol:
@@ -493,7 +493,7 @@ router.post("/create-proxy-position",
  *                   type: string
  */
 router.post("/create-eoa-position",
-    body(["vnetId", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
+    body(["vnetUrl", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -501,9 +501,9 @@ router.post("/create-eoa-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
+        const { vnetUrl, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
 
-        await setupVnet(vnetId, [eoa]);
+        await setupVnet(vnetUrl, [eoa]);
 
         createCompoundV3EOAPosition(
             collTokenSymbol,
@@ -536,7 +536,7 @@ router.post("/create-eoa-position",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              marketSymbol:
@@ -578,7 +578,7 @@ router.post("/create-eoa-position",
  *                   type: string
  */
 router.post("/add-manager",
-    body(["vnetId", "marketSymbol", "eoa", "manager"]).notEmpty(),
+    body(["vnetUrl", "marketSymbol", "eoa", "manager"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -586,9 +586,9 @@ router.post("/add-manager",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, marketSymbol, eoa, manager } = req.body;
+        const { vnetUrl, marketSymbol, eoa, manager } = req.body;
 
-        await setupVnet(vnetId, [eoa]);
+        await setupVnet(vnetUrl, [eoa]);
 
         addManager(marketSymbol, eoa, manager)
             .then(pos => {

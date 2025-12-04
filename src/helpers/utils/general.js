@@ -35,12 +35,12 @@ async function addBotCaller(botAddr) {
 
 /**
  * Sets multiple bot callers so they can execute some DFS related functions
- * @param {string} vnetId RPC URL of the Tenderly vnet
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {Array<string>} botAccounts array of addresses that we are giving bot auth to
  * @returns {void}
  */
-async function setUpBotAccounts(vnetId, botAccounts = []) {
-    await setupVnet(vnetId, botAccounts);
+async function setUpBotAccounts(vnetUrl, botAccounts = []) {
+    await setupVnet(vnetUrl, botAccounts);
 
     for (let i = 0; i < botAccounts.length; i++) {
         // eslint-disable-next-line no-await-in-loop
@@ -50,12 +50,12 @@ async function setUpBotAccounts(vnetId, botAccounts = []) {
 
 /**
  * Increases timestamp on a given vnet
- * @param {string} vnetId RPC URL of the Tenderly vnet
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {number} timeIncrease how much to increase the current timestamp in seconds
  * @returns {Object} returns timestamp before the change and updated timestamp
  */
-async function timeTravel(vnetId, timeIncrease) {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(vnetId);
+async function timeTravel(vnetUrl, timeIncrease) {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(vnetUrl);
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
@@ -67,12 +67,12 @@ async function timeTravel(vnetId, timeIncrease) {
 
 /**
  * Sets timestamp on a given vnet to a specific value
- * @param {string} vnetId RPC URL of the Tenderly vnet
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {number} timestamp Unix timestamp to set the blockchain time to
  * @returns {Object} returns timestamp before the change and updated timestamp
  */
-async function setTime(vnetId, timestamp) {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(vnetId);
+async function setTime(vnetUrl, timestamp) {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(vnetUrl);
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
@@ -90,7 +90,7 @@ async function setTime(vnetId, timestamp) {
  * @param {string} tenderlyAccessKey access key for Tenderly project
  * @param {number} chainId ID that represents which chain we want to use
  * @param {number} [startFromBlock] block number to start the vnet from
- * @returns {Promise<{vnetId: *, blockNumber: *, newAccount: *}>} RPC URL used as vnet id
+ * @returns {Promise<{vnetUrl: *, blockNumber: *, newAccount: *}>} RPC URL used as vnet id
  */
 async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock) {
     const body = {
@@ -136,32 +136,32 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startF
     if (!adminEndpoint) {
         throw new Error("Error returning vnet HTTP endpoint");
     }
-    const vnetId = adminEndpoint.url; // Using RPC URL as vnetId
+    const vnetUrl = adminEndpoint.url; // Using RPC URL as vnetUrl
     const blockNumber = parseInt(blockNumberHex, 16);
 
-    return { vnetId, blockNumber, newAccount };
+    return { vnetUrl, blockNumber, newAccount };
 }
 
 /**
  * Clones an existing Tenderly vnet in defisaver-v2 organisation using provided input
- * @param {string} cloningVnetId vnet ID of an existing vnet
+ * @param {string} cloningvnetUrl vnet ID of an existing vnet
  * @param {string} tenderlyProject name of the Tenderly project
  * @param {string} tenderlyAccessKey access key for Tenderly project
  * @returns {Promise<string>} RPC URL used as vnet id
  */
-async function cloneVnet(cloningVnetId, tenderlyProject, tenderlyAccessKey) {
+async function cloneVnet(cloningvnetUrl, tenderlyProject, tenderlyAccessKey) {
     const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/testnet/clone`;
 
     // eslint-disable-next-line camelcase
     const body = {
-        srcContainerId: cloningVnetId,
+        srcContainerId: cloningvnetUrl,
         dstContainerDisplayName: ""
     };
     const headers = getHeaders(tenderlyAccessKey);
     const forkRes = await axios.post(url, body, { headers });
 
-    const vnetId = forkRes.data.container.connectivityConfig.endpoints[0].id;
-    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${vnetId}`;
+    const vnetUrl = forkRes.data.container.connectivityConfig.endpoints[0].id;
+    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${vnetUrl}`;
 
     return rpc;
 }

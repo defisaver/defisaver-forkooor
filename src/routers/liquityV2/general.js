@@ -23,7 +23,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
@@ -85,14 +85,14 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-trove",
-    body(["vnetId", "market", "troveId"]).notEmpty(),
+    body(["vnetUrl", "market", "troveId"]).notEmpty(),
     async (req, res) => {
         let resObj;
 
         try {
-            const { vnetId, market, troveId } = req.body;
+            const { vnetUrl, market, troveId } = req.body;
 
-            await setupVnet(vnetId, []);
+            await setupVnet(vnetUrl, []);
             const troveInfo = await getTroveInfo(market, troveId);
 
             res.status(200).send(troveInfo);
@@ -118,7 +118,7 @@ router.post("/get-trove",
  *           schema:
  *             type: object
  *             properties:
- *               vnetId:
+ *               vnetUrl:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *               sender:
@@ -206,14 +206,14 @@ router.post("/get-trove",
  */
 router.post("/open-trove",
     body([
-        "vnetId", "sender", "troveOwner", "troveOwnerIndex", "market", "collAmount", "debtAmount", "interestRate", "interestBatchManager"
+        "vnetUrl", "sender", "troveOwner", "troveOwnerIndex", "market", "collAmount", "debtAmount", "interestRate", "interestBatchManager"
     ]).notEmpty(),
     async (req, res) => {
         let resObj;
 
         try {
             const {
-                vnetId,
+                vnetUrl,
                 sender,
                 troveOwner,
                 troveOwnerIndex,
@@ -224,7 +224,7 @@ router.post("/open-trove",
                 interestBatchManager
             } = req.body;
 
-            await setupVnet(vnetId, []);
+            await setupVnet(vnetUrl, []);
 
             const troveInfo = await openTroveV2(
                 sender,

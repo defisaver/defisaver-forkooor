@@ -11,7 +11,7 @@ const router = express.Router();
  * @swagger
  * /utils/general/new-vnet:
  *   post:
- *     summary: Returns vnetId of the Tenderly virtual testnet (vnet) created using given parameters
+ *     summary: Returns vnetUrl of the Tenderly virtual testnet (vnet) created using given parameters
  *     tags:
  *      - Utils
  *     description: Creates a Tenderly virtual testnet in a desired tenderly project, using provided access key, on network matching given chainId and top up bot accounts or regular accounts if provided
@@ -53,7 +53,7 @@ const router = express.Router();
  *             schema:
  *               type: object
  *               properties:
- *                 vnetId:
+ *                 vnetUrl:
  *                   type: string
  *                   example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
  *                 newAccount:
@@ -85,18 +85,18 @@ router.post("/new-vnet", async (req, res) => {
             startFromBlock
         } = req.body;
 
-        const { vnetId, newAccount, blockNumber } = await createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock);
+        const { vnetUrl, newAccount, blockNumber } = await createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock);
 
         if (botAccounts.length > 0) {
-            await setupVnet(vnetId, []);
+            await setupVnet(vnetUrl, []);
             await topUpOwner();
-            await setUpBotAccounts(vnetId, botAccounts);
+            await setUpBotAccounts(vnetUrl, botAccounts);
         } else if (accounts.length > 0) {
-            await setupVnet(vnetId, []);
+            await setupVnet(vnetUrl, []);
             await topUpAccount(accounts[0]);
         }
 
-        resObj = { vnetId, newAccount, blockNumber };
+        resObj = { vnetUrl, newAccount, blockNumber };
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to create a new vnet with error : ${err.toString()}` };
@@ -120,7 +120,7 @@ router.post("/new-vnet", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              botAccounts:
@@ -155,11 +155,11 @@ router.post("/set-bot-auth", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, botAccounts } = req.body;
+        const { vnetUrl, botAccounts } = req.body;
 
-        await setupVnet(vnetId, []);
+        await setupVnet(vnetUrl, []);
         await topUpOwner();
-        await setUpBotAccounts(vnetId, botAccounts);
+        await setUpBotAccounts(vnetUrl, botAccounts);
 
         resObj = { botAccounts };
         res.status(200).send(resObj);
@@ -185,7 +185,7 @@ router.post("/set-bot-auth", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              safes:
@@ -225,13 +225,13 @@ router.post("/set-safe-thresholds", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, safes, thresholds } = req.body;
+        const { vnetUrl, safes, thresholds } = req.body;
 
         if (safes.length !== thresholds.length) {
             throw new Error("Arrays not the same size");
         }
 
-        await lowerSafesThreshold(vnetId, safes, thresholds);
+        await lowerSafesThreshold(vnetUrl, safes, thresholds);
 
         resObj = { safes };
         res.status(200).send(resObj);
@@ -257,7 +257,7 @@ router.post("/set-safe-thresholds", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              account:
@@ -294,9 +294,9 @@ router.post("/set-eth-balance", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, account, amount } = req.body;
+        const { vnetUrl, account, amount } = req.body;
 
-        await setupVnet(vnetId, []);
+        await setupVnet(vnetUrl, []);
         await topUpAccount(account, amount);
         resObj = {
             account,
@@ -325,7 +325,7 @@ router.post("/set-eth-balance", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              token:
@@ -368,9 +368,9 @@ router.post("/set-token-balance", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, token, account, amount } = req.body;
+        const { vnetUrl, token, account, amount } = req.body;
 
-        await setupVnet(vnetId, []);
+        await setupVnet(vnetUrl, []);
         await setBalance(token, account, amount);
         resObj = {
             token,
@@ -399,7 +399,7 @@ router.post("/set-token-balance", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: 1efe2071-7c28-4853-8b93-7c7959bb3bbd
  *              token:
@@ -491,7 +491,7 @@ router.post("/give-approval", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              amount:
@@ -525,10 +525,10 @@ router.post("/time-travel", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, amount } = req.body;
+        const { vnetUrl, amount } = req.body;
 
-        await setupVnet(vnetId, []);
-        resObj = await timeTravel(vnetId, amount);
+        await setupVnet(vnetUrl, []);
+        resObj = await timeTravel(vnetUrl, amount);
         res.status(200).send(resObj);
     } catch (err) {
         resObj = { error: `Failed to time travel with error : ${err.toString()}` };
@@ -590,7 +590,7 @@ router.get("/new-address", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
@@ -618,9 +618,9 @@ router.post("/create-safe", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, owner } = req.body;
+        const { vnetUrl, owner } = req.body;
 
-        await setupVnet(vnetId, []);
+        await setupVnet(vnetUrl, []);
 
         resObj = await createSafe(owner);
         res.status(200).send(resObj);
@@ -646,7 +646,7 @@ router.post("/create-safe", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              timestamp:
@@ -681,10 +681,10 @@ router.post("/set-time", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, timestamp } = req.body;
+        const { vnetUrl, timestamp } = req.body;
 
-        await setupVnet(vnetId, []);
-        resObj = await setTime(vnetId, timestamp);
+        await setupVnet(vnetUrl, []);
+        resObj = await setTime(vnetUrl, timestamp);
 
         res.status(200).send(resObj);
     } catch (err) {

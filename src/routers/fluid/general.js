@@ -24,7 +24,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              nftId:
@@ -275,7 +275,7 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-position-by-nft",
-    body(["vnetId", "nftId"]).notEmpty(),
+    body(["vnetUrl", "nftId"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -283,9 +283,9 @@ router.post("/get-position-by-nft",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, nftId } = req.body;
+        const { vnetUrl, nftId } = req.body;
 
-        await setupVnet(vnetId, []);
+        await setupVnet(vnetUrl, []);
 
         getPositionByNftId(nftId)
             .then(pos => {
@@ -312,7 +312,7 @@ router.post("/get-position-by-nft",
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              vaultId:
@@ -587,7 +587,7 @@ router.post("/get-position-by-nft",
  *                   type: string
  */
 router.post("/create-t1",
-    body(["vnetId", "vaultId", "collTokenSymbol", "collAmount", "debtTokenSymbol", "debtAmount", "owner"]).notEmpty(),
+    body(["vnetUrl", "vaultId", "collTokenSymbol", "collAmount", "debtTokenSymbol", "debtAmount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -595,9 +595,9 @@ router.post("/create-t1",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetId, vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner } = req.body;
+        const { vnetUrl, vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
         fluidT1Open(
             vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)

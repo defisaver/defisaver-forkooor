@@ -22,7 +22,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -125,9 +125,9 @@ router.post("/get-position", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, market, owner } = req.body;
+        const { vnetUrl, market, owner } = req.body;
 
-        await setupVnet(vnetId);
+        await setupVnet(vnetUrl);
 
         const pos = await getLoanData(market, owner);
 
@@ -154,7 +154,7 @@ router.post("/get-position", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
@@ -281,9 +281,9 @@ router.post("/create", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
+        const { vnetUrl, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -309,7 +309,7 @@ router.post("/create", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -426,9 +426,9 @@ router.post("/supply", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, market, collToken, amount, owner } = req.body;
+        const { vnetUrl, market, collToken, amount, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         const pos = await sparkSupply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -454,7 +454,7 @@ router.post("/supply", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -571,9 +571,9 @@ router.post("/withdraw", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, market, collToken, amount, owner } = req.body;
+        const { vnetUrl, market, collToken, amount, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         const pos = await sparkWithdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -599,7 +599,7 @@ router.post("/withdraw", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -719,9 +719,9 @@ router.post("/borrow", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         const pos = await sparkBorrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
@@ -747,7 +747,7 @@ router.post("/borrow", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -867,9 +867,9 @@ router.post("/payback", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtToken, rateMode, amount, owner } = req.body;
 
-        await setupVnet(vnetId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         const pos = await sparkPayback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);

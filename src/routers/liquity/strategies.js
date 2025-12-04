@@ -26,7 +26,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -74,9 +74,9 @@ router.post("/dsr-payback", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, sender, triggerRatio, targetRatio } = req.body;
+        const { vnetUrl, sender, triggerRatio, targetRatio } = req.body;
 
-        await setupVnet(vnetId, [sender]);
+        await setupVnet(vnetUrl, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
@@ -106,7 +106,7 @@ router.post("/dsr-payback", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -154,9 +154,9 @@ router.post("/dsr-supply", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, sender, triggerRatio, targetRatio } = req.body;
+        const { vnetUrl, sender, triggerRatio, targetRatio } = req.body;
 
-        await setupVnet(vnetId, [sender]);
+        await setupVnet(vnetUrl, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
@@ -186,7 +186,7 @@ router.post("/dsr-supply", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -234,9 +234,9 @@ router.post("/debt-in-front-repay", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetId, sender, debtInFront, targetRatioIncrease } = req.body;
+        const { vnetUrl, sender, debtInFront, targetRatioIncrease } = req.body;
 
-        await setupVnet(vnetId, [sender]);
+        await setupVnet(vnetUrl, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);
@@ -266,7 +266,7 @@ router.post("/debt-in-front-repay", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              vnetId:
+ *              vnetUrl:
  *                type: string
  *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
  *              sender:
@@ -324,7 +324,7 @@ router.post("/leverage-management", async (req, res) => {
 
     try {
         const {
-            vnetId,
+            vnetUrl,
             sender,
             minRatio,
             maxRatio,
@@ -333,7 +333,7 @@ router.post("/leverage-management", async (req, res) => {
             boostEnabled
         } = req.body;
 
-        await setupVnet(vnetId, [sender]);
+        await setupVnet(vnetUrl, [sender]);
 
         const proxyAddr = getWalletAddr(req);
         const useSafe = defaultsToSafe(req);

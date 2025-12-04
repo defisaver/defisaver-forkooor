@@ -425,12 +425,12 @@ async function topUpAccount(address, amount = 100) {
 
 /**
  * Sets up hre.ethers.providers object and gives 100 eth to each account
- * @param {string} vnetId RPC URL of the Tenderly vnet
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {Array<string>} accounts all the accounts that will be sending transactions
  * @returns {void}
  */
-async function setupVnet(vnetId, accounts = []) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(vnetId);
+async function setupVnet(vnetUrl, accounts = []) {
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(vnetUrl);
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
     }));
@@ -438,13 +438,13 @@ async function setupVnet(vnetId, accounts = []) {
 
 /**
  * Lowers safe threshold to 1
- * @param {string} vnetId RPC URL of the Tenderly vnet
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {Array<string>} safes  all the accounts that will be sending transactions}
  * @param {Array<number>} thresholds new threshold value that will be set for matching safe
  * @returns {void}
  */
-async function lowerSafesThreshold(vnetId, safes, thresholds) {
-    const provider = await hre.ethers.getDefaultProvider(vnetId);
+async function lowerSafesThreshold(vnetUrl, safes, thresholds) {
+    const provider = await hre.ethers.getDefaultProvider(vnetUrl);
     const thresholdSlot = toBytes32(hre.ethers.utils.parseUnits("4", 0)).toString();
 
     for (let i = 0; i < safes.length; i++) {

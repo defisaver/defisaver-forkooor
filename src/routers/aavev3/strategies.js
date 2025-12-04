@@ -63,15 +63,17 @@ const router = express.Router();
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAsset:
+ *                      collSymbol:
  *                          type: string
- *                          example: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+ *                          example: "ETH"
+ *                          description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *                      collAssetId:
  *                          type: integer
  *                          example: 0
- *                      debtAsset:
+ *                      debtSymbol:
  *                          type: string
- *                          example: "0x6b175474e89094c44da98b954eedeac495271d0f"
+ *                          example: "DAI"
+ *                          description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *                      debtAssetId:
  *                          type: integer
  *                          example: 4
@@ -117,9 +119,9 @@ router.post("/v1/close-with-maximum-gasprice", body(
         "triggerData.price",
         "triggerData.maximumGasPrice",
         "triggerData.ratioState",
-        "subData.collAsset",
+        "subData.collSymbol",
         "subData.collAssetId",
-        "subData.debtAsset",
+        "subData.debtSymbol",
         "subData.debtAssetId"
     ]
 ).notEmpty(),
@@ -136,7 +138,7 @@ async (req, res) => {
         positionOwner,
         strategyOrBundleId,
         triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
-        subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId,
+        subData.collSymbol, subData.collAssetId, subData.debtSymbol, subData.debtAssetId,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -194,12 +196,14 @@ async (req, res) => {
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAssetSymbol:
+ *                      collSymbol:
  *                          type: string
  *                          example: "ETH"
- *                      debtAssetSymbol:
+ *                          description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *                      debtSymbol:
  *                          type: string
  *                          example: "DAI"
+ *                          description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -241,8 +245,8 @@ router.post("/v1/close-with-coll", body(
         "triggerData.triggerQuoteAssetSymbol",
         "triggerData.price",
         "triggerData.ratioState",
-        "subData.collAssetSymbol",
-        "subData.debtAssetSymbol"
+        "subData.collSymbol",
+        "subData.debtSymbol"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -263,8 +267,8 @@ async (req, res) => {
         triggerData.triggerQuoteAssetSymbol,
         triggerData.price,
         triggerData.ratioState,
-        subData.collAssetSymbol,
-        subData.debtAssetSymbol,
+        subData.collSymbol,
+        subData.debtSymbol,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -417,10 +421,10 @@ router.post("/v1/dfs-automation", async (req, res) => {
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAssetSymbol:
+ *                      collSymbol:
  *                          type: string
  *                          example: "ETH"
- *                      debtAssetSymbol:
+ *                      debtSymbol:
  *                          type: string
  *                          example: "DAI"
  *                      targetRatio:
@@ -482,8 +486,8 @@ router.post("/v1/open-order-from-collateral", body(
         "bundleId",
         "triggerData.price",
         "triggerData.ratioState",
-        "subData.collAssetSymbol",
-        "subData.debtAssetSymbol",
+        "subData.collSymbol",
+        "subData.debtSymbol",
         "subData.targetRatio"
     ]
 ).notEmpty(),
@@ -504,8 +508,8 @@ async (req, res) => {
         bundleId,
         triggerData.price,
         triggerData.ratioState,
-        subData.collAssetSymbol,
-        subData.debtAssetSymbol,
+        subData.collSymbol,
+        subData.debtSymbol,
         subData.targetRatio,
         getWalletAddr(req),
         defaultsToSafe(req)
@@ -561,10 +565,10 @@ async (req, res) => {
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAssetSymbol:
+ *                      collSymbol:
  *                          type: string
  *                          example: "ETH"
- *                      debtAssetSymbol:
+ *                      debtSymbol:
  *                          type: string
  *                          example: "DAI"
  *                      targetRatio:
@@ -626,8 +630,8 @@ router.post("/v1/repay-on-price", body(
         "bundleId",
         "triggerData.price",
         "triggerData.ratioState",
-        "subData.collAssetSymbol",
-        "subData.debtAssetSymbol",
+        "subData.collSymbol",
+        "subData.debtSymbol",
         "subData.targetRatio"
     ]
 ).notEmpty(),
@@ -648,8 +652,8 @@ async (req, res) => {
         bundleId,
         triggerData.price,
         triggerData.ratioState,
-        subData.collAssetSymbol,
-        subData.debtAssetSymbol,
+        subData.collSymbol,
+        subData.debtSymbol,
         subData.targetRatio,
         getWalletAddr(req),
         defaultsToSafe(req)
@@ -827,8 +831,8 @@ router.post("/v1/leverage-management-generic",
  *               - bundleId
  *               - market
  *               - isEOA
- *               - collAssetSymbol
- *               - debtAssetSymbol
+ *               - collSymbol
+ *               - debtSymbol
  *               - triggerPrice
  *               - priceState
  *               - targetRatio
@@ -853,11 +857,11 @@ router.post("/v1/leverage-management-generic",
  *                 type: boolean
  *                 example: true
  *                 description: "If true, creates EOA strategy. If false, creates Smart Wallet strategy"
- *               collAssetSymbol:
+ *               collSymbol:
  *                 type: string
  *                 example: "WETH"
  *                 description: "Collateral asset symbol"
- *               debtAssetSymbol:
+ *               debtSymbol:
  *                 type: string
  *                 example: "USDC"
  *                 description: "Debt asset symbol"
@@ -919,7 +923,7 @@ router.post("/v1/leverage-management-generic",
  *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ..."
  */
 router.post("/v1/leverage-management-on-price-generic",
-    body(["vnetUrl", "positionOwner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
+    body(["vnetUrl", "positionOwner", "bundleId", "market", "isEOA", "collSymbol", "debtSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
     body("priceState").isInt(),
@@ -938,8 +942,8 @@ router.post("/v1/leverage-management-on-price-generic",
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             triggerPrice,
             priceState,
             targetRatio
@@ -952,8 +956,8 @@ router.post("/v1/leverage-management-on-price-generic",
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             triggerPrice,
             priceState,
             targetRatio,
@@ -989,8 +993,8 @@ router.post("/v1/leverage-management-on-price-generic",
  *               - bundleId
  *               - market
  *               - isEOA
- *               - collAssetSymbol
- *               - debtAssetSymbol
+ *               - collSymbol
+ *               - debtSymbol
  *               - stopLossPrice
  *               - stopLossType
  *               - takeProfitPrice
@@ -1016,11 +1020,11 @@ router.post("/v1/leverage-management-on-price-generic",
  *                 type: boolean
  *                 example: true
  *                 description: "If true, creates EOA strategy. If false, creates Smart Wallet strategy"
- *               collAssetSymbol:
+ *               collSymbol:
  *                 type: string
  *                 example: "WETH"
  *                 description: "Collateral asset symbol"
- *               debtAssetSymbol:
+ *               debtSymbol:
  *                 type: string
  *                 example: "USDC"
  *                 description: "Debt asset symbol"
@@ -1086,7 +1090,7 @@ router.post("/v1/leverage-management-on-price-generic",
  *                   example: "Failed to subscribe to Aave V3 Close On Price strategy with error: ..."
  */
 router.post("/v1/close-on-price-generic",
-    body(["vnetUrl", "positionOwner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body(["vnetUrl", "positionOwner", "bundleId", "market", "isEOA", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
@@ -1106,8 +1110,8 @@ router.post("/v1/close-on-price-generic",
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             stopLossPrice,
             stopLossType,
             takeProfitPrice,
@@ -1121,8 +1125,8 @@ router.post("/v1/close-on-price-generic",
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             stopLossPrice,
             stopLossType,
             takeProfitPrice,

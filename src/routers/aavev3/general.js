@@ -251,12 +251,14 @@ router.post("/v1/get-safety-ratio",
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
- *              debtToken:
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                description: "2 For variable rate and 1 for stable rate"
@@ -370,7 +372,7 @@ router.post("/v1/get-safety-ratio",
  *                   type: string
  */
 router.post("/v1/create",
-    body(["vnetUrl", "useDefaultMarket", "market", "collToken", "debtToken", "rateMode", "collAmount", "debtAmount", "positionOwner", "isEOA"]).notEmpty(),
+    body(["vnetUrl", "useDefaultMarket", "market", "collSymbol", "debtSymbol", "rateMode", "collAmount", "debtAmount", "positionOwner", "isEOA"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -378,12 +380,12 @@ router.post("/v1/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount = 0, positionOwner, isEOA } = req.body;
+        const { vnetUrl, useDefaultMarket, market, collSymbol, debtSymbol, rateMode, collAmount, debtAmount = 0, positionOwner, isEOA } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
 
         createAaveV3Position(
-            useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, positionOwner, getWalletAddr(req), isEOA, defaultsToSafe(req)
+            useDefaultMarket, market, collSymbol, debtSymbol, rateMode, collAmount, debtAmount, positionOwner, getWalletAddr(req), isEOA, defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);
@@ -419,9 +421,10 @@ router.post("/v1/create",
  *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              amount:
  *                type: number
  *                example: 2
@@ -524,7 +527,7 @@ router.post("/v1/create",
  *                   type: string
  */
 router.post("/v1/supply",
-    body(["vnetUrl", "market", "collToken", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "market", "collSymbol", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -532,11 +535,11 @@ router.post("/v1/supply",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, collToken, amount, positionOwner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
 
-        aaveV3Supply(market, collToken, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Supply(market, collSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -571,9 +574,10 @@ router.post("/v1/supply",
  *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              amount:
  *                type: number
  *                example: 2
@@ -676,18 +680,18 @@ router.post("/v1/supply",
  *                   type: string
  */
 router.post("/v1/withdraw",
-    body(["vnetUrl", "market", "collToken", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "market", "collSymbol", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, market, collToken, amount, positionOwner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
 
-        aaveV3Withdraw(market, collToken, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Withdraw(market, collSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -721,9 +725,10 @@ router.post("/v1/withdraw",
  *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              debtToken:
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                example: 2
@@ -829,17 +834,17 @@ router.post("/v1/withdraw",
  *                   type: string
  */
 router.post("/v1/borrow",
-    body(["vnetUrl", "market", "debtToken", "rateMode", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "market", "debtSymbol", "rateMode", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, market, debtToken, rateMode, amount, positionOwner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
-        aaveV3Borrow(market, debtToken, rateMode, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Borrow(market, debtSymbol, rateMode, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -873,9 +878,10 @@ router.post("/v1/borrow",
  *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              debtToken:
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                example: 2
@@ -981,7 +987,7 @@ router.post("/v1/borrow",
  *                   type: string
  */
 router.post("/v1/payback",
-    body(["vnetUrl", "market", "debtToken", "rateMode", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "market", "debtSymbol", "rateMode", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -989,10 +995,10 @@ router.post("/v1/payback",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, debtToken, rateMode, amount, positionOwner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
-        aaveV3Payback(market, debtToken, rateMode, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Payback(market, debtSymbol, rateMode, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

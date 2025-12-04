@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
+const { getAssetInfo } = require("@defisaver/tokens");
 
 const {
     dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi, safeProxyFactoryAbi,
@@ -905,6 +906,18 @@ async function sendEth(from, to, amount) {
     });
 }
 
+/**
+ * Get asset info from tokens package, handling ETH → WETH conversion
+ * @param {string} symbol Token symbol (e.g., "ETH", "WETH", "DAI")
+ * @param {number} chainId Chain ID
+ * @returns {Object} Asset info object with address, symbol, and other properties
+ */
+function getTokenInfo(symbol, chainId) {
+    const normalizedSymbol = symbol === "ETH" ? "WETH" : symbol;
+
+    return getAssetInfo(normalizedSymbol, chainId);
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -934,5 +947,6 @@ module.exports = {
     sendEth,
     isWalletSafe,
     getWalletOwner,
-    ETH_ADDRESS
+    ETH_ADDRESS,
+    getTokenInfo
 };

@@ -909,13 +909,22 @@ async function sendEth(from, to, amount) {
 /**
  * Get asset info from tokens package, handling ETH → WETH conversion
  * @param {string} symbol Token symbol (e.g., "ETH", "WETH", "DAI")
- * @param {number} chainId Chain ID
  * @returns {Object} Asset info object with address, symbol, and other properties
  */
-function getTokenInfo(symbol, chainId) {
+async function getTokenInfo(symbol) {
+    const { chainId } = await hre.ethers.provider.getNetwork();
     const normalizedSymbol = symbol === "ETH" ? "WETH" : symbol;
 
     return getAssetInfo(normalizedSymbol, chainId);
+}
+
+/**
+ * Get Aave V3 market address, returning default market if not provided
+ * @param {string} market Optional market address
+ * @returns {string} Market address (provided or default for current chain)
+ */
+async function getAaveV3MarketAddress(market) {
+    return market || addresses[(await hre.ethers.provider.getNetwork()).chainId].AAVE_V3_MARKET;
 }
 
 module.exports = {
@@ -927,6 +936,7 @@ module.exports = {
     getProxy,
     approve,
     executeAction,
+    getAaveV3MarketAddress,
     topUpAccount,
     setupVnet,
     setBalance,

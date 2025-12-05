@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToStrategy, subToAaveV3Automation, addresses, approve, getTokenInfo } = require("../../utils");
+const { getSender, subToStrategy, subToAaveV3Automation, approve, getTokenInfo, getAaveV3MarketAddress } = require("../../utils");
 const { getFullTokensInfo, getLoanData } = require("./view");
 const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = require("../../abi/aaveV3/abis");
 
@@ -13,8 +13,7 @@ const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = r
  * @returns {void}
  */
 async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, senderAcc) {
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+    const marketAddress = await getAaveV3MarketAddress(market);
 
     // Get user position data to identify all tokens in position
     const userLoanData = await getLoanData(marketAddress, user);
@@ -85,10 +84,9 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
     useSafe = true
 ) {
     const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const collAssetData = getTokenInfo(subCollSymbol, chainId);
-    const debtAssetData = getTokenInfo(subDebtSymbol, chainId);
+    const collAssetData = await getTokenInfo(subCollSymbol);
+    const debtAssetData = await getTokenInfo(subDebtSymbol);
 
     const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAssetWithMaximumGasPrice(
         strategyOrBundleId,
@@ -159,8 +157,7 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
 async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric, proxyAddr, useSafe = true) {
 
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+        const marketAddress = await getAaveV3MarketAddress(market);
         const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
@@ -212,16 +209,15 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+        const marketAddress = await getAaveV3MarketAddress(market);
         const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
         const user = isEOA ? owner : proxy.address;
 
         // Get asset info
-        const collAssetData = getTokenInfo(collSymbol, chainId);
-        const debtAssetData = getTokenInfo(debtSymbol, chainId);
+        const collAssetData = await getTokenInfo(collSymbol);
+        const debtAssetData = await getTokenInfo(debtSymbol);
 
         // Get full tokens info for asset IDs
         const infos = await getFullTokensInfo(marketAddress, [collAssetData.address, debtAssetData.address]);
@@ -285,16 +281,15 @@ async function subAaveV3CloseOnPriceGeneric(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+        const marketAddress = await getAaveV3MarketAddress(market);
         const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
         const user = isEOA ? owner : proxy.address;
 
         // Get asset info
-        const collAssetData = getTokenInfo(collSymbol, chainId);
-        const debtAssetData = getTokenInfo(debtSymbol, chainId);
+        const collAssetData = await getTokenInfo(collSymbol);
+        const debtAssetData = await getTokenInfo(debtSymbol);
 
         // Get full tokens info for asset IDs
         const infos = await getFullTokensInfo(marketAddress, [collAssetData.address, debtAssetData.address]);
@@ -355,14 +350,13 @@ async function subAaveCloseToCollStrategy(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+        const marketAddress = await getAaveV3MarketAddress(market);
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
-        const collTokenData = getTokenInfo(collSymbol, chainId);
-        const debtTokenData = getTokenInfo(debtSymbol, chainId);
-        const triggerBaseAssetData = getTokenInfo(triggerBaseAssetSymbol, chainId);
-        const triggerQuoteAssetData = getTokenInfo(triggerQuoteAssetSymbol, chainId);
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
+        const triggerBaseAssetData = await getTokenInfo(triggerBaseAssetSymbol);
+        const triggerQuoteAssetData = await getTokenInfo(triggerQuoteAssetSymbol);
 
         const triggerData = {
             baseTokenAddress: triggerBaseAssetData.address,
@@ -382,6 +376,7 @@ async function subAaveCloseToCollStrategy(
             debtAssetId: aaveDebtInfo.assetId
         };
 
+        const { chainId } = await hre.ethers.provider.getNetwork();
         let bundleId = automationSdk.enums.Bundles.MainnetIds.AAVE_V3_CLOSE_TO_COLLATERAL;
 
         if (chainId === 42161) {
@@ -433,11 +428,10 @@ async function subAaveV3OpenOrderFromCollateral(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+        const marketAddress = await getAaveV3MarketAddress(market);
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-        const collTokenData = getTokenInfo(collSymbol, chainId);
-        const debtTokenData = getTokenInfo(debtSymbol, chainId);
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
 
         const infos = await getFullTokensInfo(marketAddress, [collTokenData.address, debtTokenData.address]);
         const aaveCollInfo = infos[0];
@@ -499,11 +493,10 @@ async function subAaveV3RepayOnPrice(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+        const marketAddress = await getAaveV3MarketAddress(market);
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-        const collTokenData = getTokenInfo(collSymbol, chainId);
-        const debtTokenData = getTokenInfo(debtSymbol, chainId);
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
 
         const infos = await getFullTokensInfo(marketAddress, [collTokenData.address, debtTokenData.address]);
         const aaveCollInfo = infos[0];
@@ -568,11 +561,10 @@ async function subAaveV3CollateralSwitch(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+        const marketAddress = await getAaveV3MarketAddress(market);
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-        const fromTokenData = getTokenInfo(fromAssetSymbol, chainId);
-        const toTokenData = getTokenInfo(toAssetSymbol, chainId);
+        const fromTokenData = await getTokenInfo(fromAssetSymbol);
+        const toTokenData = await getTokenInfo(toAssetSymbol);
         const fromAddr = fromTokenData.address;
         const toAddr = toTokenData.address;
 

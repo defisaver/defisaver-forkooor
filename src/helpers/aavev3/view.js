@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 const { aaveV3ViewAbi } = require("../../abi/aaveV3/abis");
-const { addresses } = require("../../utils");
+const { addresses, getAaveV3MarketAddress } = require("../../utils");
 
 /**
  * returns market data for a list of tokens
@@ -26,7 +26,7 @@ async function getFullTokensInfo(market, assets) {
 async function getLoanData(market, user) {
     const [signer] = await hre.ethers.getSigners();
     const { chainId } = await hre.ethers.provider.getNetwork();
-    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+    const marketAddress = await getAaveV3MarketAddress(market);
     const viewAddress = addresses[chainId].AAVE_V3_VIEW;
     const viewContract = new hre.ethers.Contract(viewAddress, aaveV3ViewAbi, signer);
 
@@ -60,7 +60,7 @@ async function getLoanData(market, user) {
 async function getSafetyRatio(market, user) {
     const [signer] = await hre.ethers.getSigners();
     const { chainId } = await hre.ethers.provider.getNetwork();
-    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+    const marketAddress = await getAaveV3MarketAddress(market);
     const viewAddress = addresses[chainId].AAVE_V3_VIEW;
     const viewContract = new hre.ethers.Contract(viewAddress, aaveV3ViewAbi, signer);
 

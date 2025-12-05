@@ -1,8 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
-const hre = require("hardhat");
 const express = require("express");
-const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { getLoanData, getSafetyRatio } = require("../../helpers/aavev3/view");
 const {
     aaveV3Supply,
@@ -17,9 +16,9 @@ const router = express.Router();
 
 /**
  * @swagger
- * /aave/v3/general/get-position:
+ * /aave/v3/general/v1/get-position:
  *   post:
- *     summary: Fetch info about AaveV3 position on a fork
+ *     summary: Fetch info about AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -31,13 +30,14 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                description: "User owning the position. Specify either eoa, if eoa position, or wallet address if position is owned by a wallet"
@@ -131,8 +131,8 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/get-position",
-    body(["forkId", "market", "owner"]).notEmpty(),
+router.post("/v1/get-position",
+    body(["vnetUrl", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -140,11 +140,11 @@ router.post("/get-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, owner } = req.body;
+        const { vnetUrl, market, positionOwner } = req.body;
 
-        setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
-        getLoanData(market, owner)
+        getLoanData(market, positionOwner)
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {
@@ -154,9 +154,9 @@ router.post("/get-position",
 
 /**
  * @swagger
- * /aave/v3/general/get-safety-ratio:
+ * /aave/v3/general/v1/get-safety-ratio:
  *   post:
- *     summary: Fetch safety ratio for user's AaveV3 position on a fork
+ *     summary: Fetch safety ratio for user's AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -168,13 +168,14 @@ router.post("/get-position",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                description: "User owning the position. Specify either eoa, if eoa position, or wallet address if position is owned by a wallet"
@@ -200,8 +201,8 @@ router.post("/get-position",
  *                 error:
  *                   type: string
  */
-router.post("/get-safety-ratio",
-    body(["forkId", "market", "owner"]).notEmpty(),
+router.post("/v1/get-safety-ratio",
+    body(["vnetUrl", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -209,11 +210,11 @@ router.post("/get-safety-ratio",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, owner } = req.body;
+        const { vnetUrl, market, positionOwner } = req.body;
 
-        setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
-        getSafetyRatio(market, owner)
+        getSafetyRatio(market, positionOwner)
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {
@@ -224,9 +225,9 @@ router.post("/get-safety-ratio",
 
 /**
  * @swagger
- * /aave/v3/general/create:
+ * /aave/v3/general/v1/create:
  *   post:
- *     summary: Create AaveV3 position on a fork
+ *     summary: Create AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -238,26 +239,25 @@ router.post("/get-safety-ratio",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *              useDefaultMarket:
- *                type: boolean
- *                example: true
- *                description: "If true, the default market will be used, ignoring the value of market parameter"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
- *              debtToken:
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                description: "2 For variable rate and 1 for stable rate"
@@ -370,8 +370,8 @@ router.post("/get-safety-ratio",
  *                 error:
  *                   type: string
  */
-router.post("/create",
-    body(["forkId", "useDefaultMarket", "market", "collToken", "debtToken", "rateMode", "collAmount", "debtAmount", "owner", "isEOA"]).notEmpty(),
+router.post("/v1/create",
+    body(["vnetUrl", "collSymbol", "debtSymbol", "rateMode", "collAmount", "debtAmount", "positionOwner", "isEOA"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -379,12 +379,12 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount = 0, owner, isEOA } = req.body;
+        const { vnetUrl, market, collSymbol, debtSymbol, rateMode, collAmount, debtAmount = 0, positionOwner, isEOA } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
         createAaveV3Position(
-            useDefaultMarket, market, collToken, debtToken, rateMode, collAmount, debtAmount, owner, getWalletAddr(req), isEOA, defaultsToSafe(req)
+            market, collSymbol, debtSymbol, rateMode, collAmount, debtAmount, positionOwner, getWalletAddr(req), isEOA, defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);
@@ -397,9 +397,9 @@ router.post("/create",
 
 /**
  * @swagger
- * /aave/v3/general/supply:
+ * /aave/v3/general/v1/supply:
  *   post:
- *     summary: Supply collateral to AaveV3 position on a fork
+ *     summary: Supply collateral to AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -411,18 +411,20 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              amount:
  *                type: number
  *                example: 2
@@ -524,8 +526,8 @@ router.post("/create",
  *                 error:
  *                   type: string
  */
-router.post("/supply",
-    body(["forkId", "market", "collToken", "amount", "owner"]).notEmpty(),
+router.post("/v1/supply",
+    body(["vnetUrl", "collSymbol", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -533,11 +535,11 @@ router.post("/supply",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, collToken, amount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, positionOwner } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
-        aaveV3Supply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Supply(market, collSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -549,9 +551,9 @@ router.post("/supply",
 
 /**
  * @swagger
- * /aave/v3/general/withdraw:
+ * /aave/v3/general/v1/withdraw:
  *   post:
- *     summary: Withdraw collateral from AaveV3 position on a fork
+ *     summary: Withdraw collateral from AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -563,18 +565,20 @@ router.post("/supply",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              amount:
  *                type: number
  *                example: 2
@@ -676,19 +680,19 @@ router.post("/supply",
  *                 error:
  *                   type: string
  */
-router.post("/withdraw",
-    body(["forkId", "market", "collToken", "amount", "owner"]).notEmpty(),
+router.post("/v1/withdraw",
+    body(["vnetUrl", "collSymbol", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, market, collToken, amount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, positionOwner } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
-        aaveV3Withdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Withdraw(market, collSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -699,9 +703,9 @@ router.post("/withdraw",
 
 /**
  * @swagger
- * /aave/v3/general/borrow:
+ * /aave/v3/general/v1/borrow:
  *   post:
- *     summary: Borrow debt from AaveV3 position on a fork
+ *     summary: Borrow debt from AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -713,18 +717,20 @@ router.post("/withdraw",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              debtToken:
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                example: 2
@@ -829,18 +835,18 @@ router.post("/withdraw",
  *                 error:
  *                   type: string
  */
-router.post("/borrow",
-    body(["forkId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
+router.post("/v1/borrow",
+    body(["vnetUrl", "debtSymbol", "rateMode", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, positionOwner } = req.body;
 
-        await setupFork(forkId, [owner], true);
-        aaveV3Borrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
+        await setupVnet(vnetUrl, [positionOwner]);
+        aaveV3Borrow(market, debtSymbol, rateMode, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -851,9 +857,9 @@ router.post("/borrow",
 
 /**
  * @swagger
- * /aave/v3/general/payback:
+ * /aave/v3/general/v1/payback:
  *   post:
- *     summary: Borrow debt from AaveV3 position on a fork
+ *     summary: Borrow debt from AaveV3 position on a vnet
  *     tags:
  *      - AaveV3
  *     description:
@@ -865,18 +871,20 @@ router.post("/borrow",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              debtToken:
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                example: 2
@@ -981,8 +989,8 @@ router.post("/borrow",
  *                 error:
  *                   type: string
  */
-router.post("/payback",
-    body(["forkId", "market", "debtToken", "rateMode", "amount", "owner"]).notEmpty(),
+router.post("/v1/payback",
+    body(["vnetUrl", "debtSymbol", "rateMode", "amount", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -990,10 +998,10 @@ router.post("/payback",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, positionOwner } = req.body;
 
-        await setupFork(forkId, [owner], true);
-        aaveV3Payback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req))
+        await setupVnet(vnetUrl, [positionOwner]);
+        aaveV3Payback(market, debtSymbol, rateMode, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

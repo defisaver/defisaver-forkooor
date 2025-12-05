@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { getLoanData } = require("../../helpers/spark/view");
 const { createSparkPosition, sparkSupply, sparkWithdraw, sparkBorrow, sparkPayback } = require("../../helpers/spark/general");
 
@@ -10,7 +10,7 @@ const router = express.Router();
  * @swagger
  * /spark/general/get-position:
  *   post:
- *     summary: Fetch info about Spark position on a fork
+ *     summary: Fetch info about Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -22,7 +22,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -125,9 +125,9 @@ router.post("/get-position", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, market, owner } = req.body;
+        const { vnetUrl, market, owner } = req.body;
 
-        await setupFork(forkId);
+        await setupVnet(vnetUrl);
 
         const pos = await getLoanData(market, owner);
 
@@ -142,7 +142,7 @@ router.post("/get-position", async (req, res) => {
  * @swagger
  * /spark/general/create:
  *   post:
- *     summary: Create Spark position on a fork
+ *     summary: Create Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -154,9 +154,9 @@ router.post("/get-position", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{forkId}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -164,12 +164,14 @@ router.post("/get-position", async (req, res) => {
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
- *              debtToken:
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                example: 2
@@ -281,10 +283,10 @@ router.post("/create", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, market, collToken, debtToken, rateMode, coll, debt, owner } = req.body;
+        const { vnetUrl, market, collSymbol, debtSymbol, rateMode, coll, debt, owner } = req.body;
 
-        await setupFork(forkId, [owner], true);
-        const pos = await createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [owner]);
+        const pos = await createSparkPosition(market, collSymbol, debtSymbol, rateMode, coll, debt, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -297,7 +299,7 @@ router.post("/create", async (req, res) => {
  * @swagger
  * /spark/general/supply:
  *   post:
- *     summary: Supply collateral to Spark position on a fork
+ *     summary: Supply collateral to Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -309,7 +311,7 @@ router.post("/create", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -318,9 +320,10 @@ router.post("/create", async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              amount:
  *                type: number
  *                example: 2
@@ -426,10 +429,10 @@ router.post("/supply", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, market, collToken, amount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
-        const pos = await sparkSupply(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [owner]);
+        const pos = await sparkSupply(market, collSymbol, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -442,7 +445,7 @@ router.post("/supply", async (req, res) => {
  * @swagger
  * /spark/general/withdraw:
  *   post:
- *     summary: Withdraw collateral from Spark position on a fork
+ *     summary: Withdraw collateral from Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -454,7 +457,7 @@ router.post("/supply", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -463,9 +466,10 @@ router.post("/supply", async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "ETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              amount:
  *                type: number
  *                example: 2
@@ -571,10 +575,10 @@ router.post("/withdraw", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, market, collToken, amount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
-        const pos = await sparkWithdraw(market, collToken, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [owner]);
+        const pos = await sparkWithdraw(market, collSymbol, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -587,7 +591,7 @@ router.post("/withdraw", async (req, res) => {
  * @swagger
  * /spark/general/borrow:
  *   post:
- *     summary: Borrow debt from Spark position on a fork
+ *     summary: Borrow debt from Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -599,7 +603,7 @@ router.post("/withdraw", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -608,9 +612,10 @@ router.post("/withdraw", async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *              debtToken:
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                example: 2
@@ -719,10 +724,10 @@ router.post("/borrow", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
-        const pos = await sparkBorrow(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [owner]);
+        const pos = await sparkBorrow(market, debtSymbol, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -735,7 +740,7 @@ router.post("/borrow", async (req, res) => {
  * @swagger
  * /spark/general/payback:
  *   post:
- *     summary: Borrow debt from Spark position on a fork
+ *     summary: Borrow debt from Spark position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -747,7 +752,7 @@ router.post("/borrow", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -756,9 +761,10 @@ router.post("/borrow", async (req, res) => {
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *              debtToken:
+ *              debtSymbol:
  *                type: string
  *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              rateMode:
  *                type: number
  *                example: 2
@@ -867,10 +873,10 @@ router.post("/payback", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, market, debtToken, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
-        const pos = await sparkPayback(market, debtToken, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [owner]);
+        const pos = await sparkPayback(market, debtSymbol, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {

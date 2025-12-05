@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const {
     subAaveV3CloseWithMaximumGasPriceStrategy,
     subAaveAutomationStrategy,
@@ -19,7 +19,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /aave/v3/strategies/close-with-maximum-gasprice:
+ * /aave/v3/strategies/v1/close-with-maximum-gasprice:
  *   post:
  *     summary: Subscribe to a Aave V3 Close With Maximum Gas Price strategy
  *     tags:
@@ -33,10 +33,10 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              strategyOrBundleId:
@@ -63,15 +63,17 @@ const router = express.Router();
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAsset:
+ *                      collSymbol:
  *                          type: string
- *                          example: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+ *                          example: "ETH"
+ *                          description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *                      collAssetId:
  *                          type: integer
  *                          example: 0
- *                      debtAsset:
+ *                      debtSymbol:
  *                          type: string
- *                          example: "0x6b175474e89094c44da98b954eedeac495271d0f"
+ *                          example: "DAI"
+ *                          description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *                      debtAssetId:
  *                          type: integer
  *                          example: 4
@@ -107,19 +109,19 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/close-with-maximum-gasprice", body(
+router.post("/v1/close-with-maximum-gasprice", body(
     [
-        "forkId",
-        "owner",
+        "vnetUrl",
+        "positionOwner",
         "strategyOrBundleId",
         "triggerData.baseTokenAddress",
         "triggerData.quoteTokenAddress",
         "triggerData.price",
         "triggerData.maximumGasPrice",
         "triggerData.ratioState",
-        "subData.collAsset",
+        "subData.collSymbol",
         "subData.collAssetId",
-        "subData.debtAsset",
+        "subData.debtSymbol",
         "subData.debtAssetId"
     ]
 ).notEmpty(),
@@ -129,14 +131,14 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, strategyOrBundleId, owner, triggerData, subData } = req.body;
+    const { vnetUrl, strategyOrBundleId, positionOwner, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner], true);
+    await setupVnet(vnetUrl, [positionOwner]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
-        owner,
+        positionOwner,
         strategyOrBundleId,
         triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
-        subData.collAsset, subData.collAssetId, subData.debtAsset, subData.debtAssetId,
+        subData.collSymbol, subData.collAssetId, subData.debtSymbol, subData.debtAssetId,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -148,7 +150,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/close-with-coll:
+ * /aave/v3/strategies/v1/close-with-coll:
  *   post:
  *     summary: Subscribe to a Aave V3 Close With Collateral strategy
  *     tags:
@@ -162,17 +164,14 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *              useDefaultMarket:
- *                type: boolean
- *                example: true
- *                description: "If true, the default market will be used, ignoring the value of market parameter"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              triggerData:
@@ -194,12 +193,14 @@ async (req, res) => {
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAssetSymbol:
+ *                      collSymbol:
  *                          type: string
  *                          example: "ETH"
- *                      debtAssetSymbol:
+ *                          description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *                      debtSymbol:
  *                          type: string
  *                          example: "DAI"
+ *                          description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -231,18 +232,16 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/close-with-coll", body(
+router.post("/v1/close-with-coll", body(
     [
-        "forkId",
-        "useDefaultMarket",
-        "market",
-        "owner",
+        "vnetUrl",
+        "positionOwner",
         "triggerData.triggerBaseAssetSymbol",
         "triggerData.triggerQuoteAssetSymbol",
         "triggerData.price",
         "triggerData.ratioState",
-        "subData.collAssetSymbol",
-        "subData.debtAssetSymbol"
+        "subData.collSymbol",
+        "subData.debtSymbol"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -251,20 +250,19 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, useDefaultMarket, market, owner, triggerData, subData } = req.body;
+    const { vnetUrl, market, positionOwner, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner], true);
+    await setupVnet(vnetUrl, [positionOwner]);
 
     subAaveCloseToCollStrategy(
-        useDefaultMarket,
         market,
-        owner,
+        positionOwner,
         triggerData.triggerBaseAssetSymbol,
         triggerData.triggerQuoteAssetSymbol,
         triggerData.price,
         triggerData.ratioState,
-        subData.collAssetSymbol,
-        subData.debtAssetSymbol,
+        subData.collSymbol,
+        subData.debtSymbol,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -276,7 +274,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/dfs-automation:
+ * /aave/v3/strategies/v1/dfs-automation:
  *   post:
  *     summary: Subscribe to a Aave Automation strategy
  *     tags:
@@ -290,10 +288,10 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              minRatio:
@@ -351,16 +349,16 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/dfs-automation", async (req, res) => {
+router.post("/v1/dfs-automation", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        const { vnetUrl, positionOwner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
         const sub = await subAaveAutomationStrategy(
-            owner,
+            positionOwner,
             minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled,
             getWalletAddr(req), defaultsToSafe(req)
         );
@@ -374,7 +372,7 @@ router.post("/dfs-automation", async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/open-order-from-collateral:
+ * /aave/v3/strategies/v1/open-order-from-collateral:
  *   post:
  *     summary: Subscribe to a Aave V3 Open Order from collateral strategy
  *     tags:
@@ -388,17 +386,14 @@ router.post("/dfs-automation", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *              useDefaultMarket:
- *                type: boolean
- *                example: true
- *                description: "If true, the default market will be used, ignoring the value of market parameter"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              bundleId:
@@ -417,10 +412,10 @@ router.post("/dfs-automation", async (req, res) => {
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAssetSymbol:
+ *                      collSymbol:
  *                          type: string
  *                          example: "ETH"
- *                      debtAssetSymbol:
+ *                      debtSymbol:
  *                          type: string
  *                          example: "DAI"
  *                      targetRatio:
@@ -473,17 +468,15 @@ router.post("/dfs-automation", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/open-order-from-collateral", body(
+router.post("/v1/open-order-from-collateral", body(
     [
-        "forkId",
-        "useDefaultMarket",
-        "market",
-        "owner",
+        "vnetUrl",
+        "positionOwner",
         "bundleId",
         "triggerData.price",
         "triggerData.ratioState",
-        "subData.collAssetSymbol",
-        "subData.debtAssetSymbol",
+        "subData.collSymbol",
+        "subData.debtSymbol",
         "subData.targetRatio"
     ]
 ).notEmpty(),
@@ -493,19 +486,18 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
+    const { vnetUrl, market, positionOwner, bundleId, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner], true);
+    await setupVnet(vnetUrl, [positionOwner]);
 
     subAaveV3OpenOrderFromCollateral(
-        useDefaultMarket,
         market,
-        owner,
+        positionOwner,
         bundleId,
         triggerData.price,
         triggerData.ratioState,
-        subData.collAssetSymbol,
-        subData.debtAssetSymbol,
+        subData.collSymbol,
+        subData.debtSymbol,
         subData.targetRatio,
         getWalletAddr(req),
         defaultsToSafe(req)
@@ -518,7 +510,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/repay-on-price:
+ * /aave/v3/strategies/v1/repay-on-price:
  *   post:
  *     summary: Subscribe to a Aave V3 Repay on price strategy
  *     tags:
@@ -532,17 +524,14 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *              useDefaultMarket:
- *                type: boolean
- *                example: true
- *                description: "If true, the default market will be used, ignoring the value of market parameter"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              bundleId:
@@ -561,10 +550,10 @@ async (req, res) => {
  *              subData:
  *                  type: object
  *                  properties:
- *                      collAssetSymbol:
+ *                      collSymbol:
  *                          type: string
  *                          example: "ETH"
- *                      debtAssetSymbol:
+ *                      debtSymbol:
  *                          type: string
  *                          example: "DAI"
  *                      targetRatio:
@@ -617,17 +606,15 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/repay-on-price", body(
+router.post("/v1/repay-on-price", body(
     [
-        "forkId",
-        "useDefaultMarket",
-        "market",
-        "owner",
+        "vnetUrl",
+        "positionOwner",
         "bundleId",
         "triggerData.price",
         "triggerData.ratioState",
-        "subData.collAssetSymbol",
-        "subData.debtAssetSymbol",
+        "subData.collSymbol",
+        "subData.debtSymbol",
         "subData.targetRatio"
     ]
 ).notEmpty(),
@@ -637,19 +624,18 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { forkId, useDefaultMarket, market, owner, bundleId, triggerData, subData } = req.body;
+    const { vnetUrl, market, positionOwner, bundleId, triggerData, subData } = req.body;
 
-    await setupFork(forkId, [owner], true);
+    await setupVnet(vnetUrl, [positionOwner]);
 
     subAaveV3RepayOnPrice(
-        useDefaultMarket,
         market,
-        owner,
+        positionOwner,
         bundleId,
         triggerData.price,
         triggerData.ratioState,
-        subData.collAssetSymbol,
-        subData.debtAssetSymbol,
+        subData.collSymbol,
+        subData.debtSymbol,
         subData.targetRatio,
         getWalletAddr(req),
         defaultsToSafe(req)
@@ -662,7 +648,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/leverage-management-generic:
+ * /aave/v3/strategies/v1/leverage-management-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Leverage Management Generic strategy (EOA or Smart Wallet)
  *     tags:
@@ -676,8 +662,8 @@ async (req, res) => {
  *           schema:
  *             type: object
  *             required:
- *               - forkId
- *               - owner
+ *               - vnetUrl
+ *               - positionOwner
  *               - bundleId
  *               - market
  *               - isEOA
@@ -686,11 +672,11 @@ async (req, res) => {
  *               - triggerRatio
  *               - isGeneric
  *             properties:
- *               forkId:
+ *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *                 description: "Unique identifier for the fork"
- *               owner:
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                 description: "Unique identifier for the vnet"
+ *               positionOwner:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
@@ -701,7 +687,7 @@ async (req, res) => {
  *               market:
  *                 type: string
  *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *                 description: "Aave V3 market address"
+ *                 description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *               isEOA:
  *                 type: boolean
  *                 example: true
@@ -767,8 +753,8 @@ async (req, res) => {
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Leverage Management Generic strategy with error: ..."
  */
-router.post("/leverage-management-generic",
-    body(["forkId", "owner", "bundleId", "market", "isEOA", "ratioState", "targetRatio", "triggerRatio", "isGeneric"]).notEmpty(),
+router.post("/v1/leverage-management-generic",
+    body(["vnetUrl", "positionOwner", "bundleId", "isEOA", "ratioState", "targetRatio", "triggerRatio", "isGeneric"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("isGeneric").isBoolean(),
     body("bundleId").isInt(),
@@ -782,12 +768,12 @@ router.post("/leverage-management-generic",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric } = req.body;
+        const { vnetUrl, positionOwner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
         subAaveV3GenericAutomationStrategy(
-            owner,
+            positionOwner,
             bundleId,
             market,
             isEOA,
@@ -808,7 +794,7 @@ router.post("/leverage-management-generic",
 
 /**
  * @swagger
- * /aave/v3/strategies/leverage-management-on-price-generic:
+ * /aave/v3/strategies/v1/leverage-management-on-price-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Leverage Management On Price strategy (EOA or Smart Wallet)
  *     tags:
@@ -822,22 +808,22 @@ router.post("/leverage-management-generic",
  *           schema:
  *             type: object
  *             required:
- *               - forkId
- *               - owner
+ *               - vnetUrl
+ *               - positionOwner
  *               - bundleId
  *               - market
  *               - isEOA
- *               - collAssetSymbol
- *               - debtAssetSymbol
+ *               - collSymbol
+ *               - debtSymbol
  *               - triggerPrice
  *               - priceState
  *               - targetRatio
  *             properties:
- *               forkId:
+ *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *                 description: "Unique identifier for the fork"
- *               owner:
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                 description: "Unique identifier for the vnet"
+ *               positionOwner:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
@@ -848,16 +834,16 @@ router.post("/leverage-management-generic",
  *               market:
  *                 type: string
  *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *                 description: "Aave V3 market address"
+ *                 description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *               isEOA:
  *                 type: boolean
  *                 example: true
  *                 description: "If true, creates EOA strategy. If false, creates Smart Wallet strategy"
- *               collAssetSymbol:
+ *               collSymbol:
  *                 type: string
  *                 example: "WETH"
  *                 description: "Collateral asset symbol"
- *               debtAssetSymbol:
+ *               debtSymbol:
  *                 type: string
  *                 example: "USDC"
  *                 description: "Debt asset symbol"
@@ -918,8 +904,8 @@ router.post("/leverage-management-generic",
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ..."
  */
-router.post("/leverage-management-on-price-generic",
-    body(["forkId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
+router.post("/v1/leverage-management-on-price-generic",
+    body(["vnetUrl", "positionOwner", "bundleId", "isEOA", "collSymbol", "debtSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
     body("priceState").isInt(),
@@ -933,27 +919,27 @@ router.post("/leverage-management-on-price-generic",
         }
 
         const {
-            forkId,
-            owner,
+            vnetUrl,
+            positionOwner,
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             triggerPrice,
             priceState,
             targetRatio
         } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
         subAaveV3LeverageManagementOnPriceGeneric(
-            owner,
+            positionOwner,
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             triggerPrice,
             priceState,
             targetRatio,
@@ -970,7 +956,7 @@ router.post("/leverage-management-on-price-generic",
 
 /**
  * @swagger
- * /aave/v3/strategies/close-on-price-generic:
+ * /aave/v3/strategies/v1/close-on-price-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Close On Price strategy (EOA or Smart Wallet)
  *     tags:
@@ -984,23 +970,23 @@ router.post("/leverage-management-on-price-generic",
  *           schema:
  *             type: object
  *             required:
- *               - forkId
- *               - owner
+ *               - vnetUrl
+ *               - positionOwner
  *               - bundleId
  *               - market
  *               - isEOA
- *               - collAssetSymbol
- *               - debtAssetSymbol
+ *               - collSymbol
+ *               - debtSymbol
  *               - stopLossPrice
  *               - stopLossType
  *               - takeProfitPrice
  *               - takeProfitType
  *             properties:
- *               forkId:
+ *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *                 description: "Unique identifier for the fork"
- *               owner:
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                 description: "Unique identifier for the vnet"
+ *               positionOwner:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
@@ -1011,16 +997,16 @@ router.post("/leverage-management-on-price-generic",
  *               market:
  *                 type: string
  *                 example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *                 description: "Aave V3 market address"
+ *                 description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *               isEOA:
  *                 type: boolean
  *                 example: true
  *                 description: "If true, creates EOA strategy. If false, creates Smart Wallet strategy"
- *               collAssetSymbol:
+ *               collSymbol:
  *                 type: string
  *                 example: "WETH"
  *                 description: "Collateral asset symbol"
- *               debtAssetSymbol:
+ *               debtSymbol:
  *                 type: string
  *                 example: "USDC"
  *                 description: "Debt asset symbol"
@@ -1085,8 +1071,8 @@ router.post("/leverage-management-on-price-generic",
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Close On Price strategy with error: ..."
  */
-router.post("/close-on-price-generic",
-    body(["forkId", "owner", "bundleId", "market", "isEOA", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+router.post("/v1/close-on-price-generic",
+    body(["vnetUrl", "positionOwner", "bundleId", "isEOA", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
@@ -1101,28 +1087,28 @@ router.post("/close-on-price-generic",
         }
 
         const {
-            forkId,
-            owner,
+            vnetUrl,
+            positionOwner,
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             stopLossPrice,
             stopLossType,
             takeProfitPrice,
             takeProfitType
         } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [positionOwner]);
 
         subAaveV3CloseOnPriceGeneric(
-            owner,
+            positionOwner,
             bundleId,
             market,
             isEOA,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             stopLossPrice,
             stopLossType,
             takeProfitPrice,
@@ -1141,7 +1127,7 @@ router.post("/close-on-price-generic",
 
 /**
  * @swagger
- * /aave/v3/strategies/collateral-switch:
+ * /aave/v3/strategies/v1/collateral-switch:
  *   post:
  *     summary: Subscribe to a Aave V3 Collateral Switch strategy
  *     tags:
@@ -1155,17 +1141,14 @@ router.post("/close-on-price-generic",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{id}"
- *              useDefaultMarket:
- *                type: boolean
- *                example: true
- *                description: "If true, the default market will be used, ignoring the value of market parameter"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *              owner:
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              positionOwner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              strategyId:
@@ -1247,49 +1230,45 @@ router.post("/close-on-price-generic",
  *                 error:
  *                   type: string
  */
-router.post("/collateral-switch", body(
-        [
-            "forkId",
-            "useDefaultMarket",
-            "market",
-            "owner",
-            "strategyId",
-            "triggerData.price",
-            "triggerData.ratioState",
-            "subData.fromAssetSymbol",
-            "subData.toAssetSymbol",
-            "subData.amountToSwitch"
-        ]
-    ).notEmpty(),
-    async (req, res) => {
-        const validationErrors = validationResult(req);
+router.post("/v1/collateral-switch", body(
+    [
+        "vnetUrl",
+        "positionOwner",
+        "strategyId",
+        "triggerData.price",
+        "triggerData.ratioState",
+        "subData.fromAssetSymbol",
+        "subData.toAssetSymbol",
+        "subData.amountToSwitch"
+    ]
+).notEmpty(),
+async (req, res) => {
+    const validationErrors = validationResult(req);
 
-        if (!validationErrors.isEmpty()) {
-            return res.status(400).send({ error: validationErrors.array() });
-        }
-        const { forkId, useDefaultMarket, market, owner, strategyId, triggerData, subData } = req.body;
+    if (!validationErrors.isEmpty()) {
+        return res.status(400).send({ error: validationErrors.array() });
+    }
+    const { vnetUrl, market, positionOwner, strategyId, triggerData, subData } = req.body;
 
-        await setupFork(forkId, [owner], true);
+    await setupVnet(vnetUrl, [positionOwner]);
 
-        subAaveV3CollateralSwitch(
-            owner,
-            strategyId,
-            useDefaultMarket,
-            market,
-            subData.fromAssetSymbol,
-            subData.toAssetSymbol,
-            subData.amountToSwitch,
-            subData.isMaxUintSwitch || false,
-            triggerData.price,
-            triggerData.ratioState,
-            getWalletAddr(req),
-            defaultsToSafe(req)
-        ).then(sub => {
-            res.status(200).send(sub);
-        }).catch(err => {
-            res.status(500).send({ error: `Failed to subscribe to Aave V3 collateral switch strategy with error: ${err.toString()}` });
-        });
+    subAaveV3CollateralSwitch(
+        positionOwner,
+        strategyId,
+        market,
+        subData.fromAssetSymbol,
+        subData.toAssetSymbol,
+        subData.amountToSwitch,
+        subData.isMaxUintSwitch || false,
+        triggerData.price,
+        triggerData.ratioState,
+        getWalletAddr(req),
+        defaultsToSafe(req)
+    ).then(sub => {
+        res.status(200).send(sub);
+    }).catch(err => {
+        res.status(500).send({ error: `Failed to subscribe to Aave V3 collateral switch strategy with error: ${err.toString()}` });
     });
+});
 
 module.exports = router;
-

@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupVnet } = require("../../utils");
 const { subFluidT1LeverageManagement } = require("../../helpers/fluid/strategies");
 
 const router = express.Router();
@@ -22,12 +22,9 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *              isVnet:
- *                 type: boolean
- *                 example: true
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              nftId:
  *                type: string
  *                example: "1000"
@@ -87,9 +84,9 @@ router.post("/leverage-management-t1", async (req, res) => {
     let resObj;
 
     try {
-        const { forkId, nftId, triggerRatio, targetRatio, ratioState, bundleId, isVnet } = req.body;
+        const { vnetUrl, nftId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
 
-        await setupFork(forkId, [], isVnet);
+        await setupVnet(vnetUrl, []);
 
         const sub = await subFluidT1LeverageManagement(
             nftId,

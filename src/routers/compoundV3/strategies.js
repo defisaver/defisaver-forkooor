@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagementOnPrice, subCompoundV3CloseOnPrice, subCompoundV3LeverageManagement } = require("../../helpers/compoundV3/strategies");
 
 const router = express.Router();
@@ -21,9 +21,9 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/{}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -95,7 +95,7 @@ const router = express.Router();
 router.post("/dfs-automation", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetUrl,
             owner,
             market,
             baseToken,
@@ -107,7 +107,7 @@ router.post("/dfs-automation", async (req, res) => {
             isEOA
         } = req.body;
 
-        await setupFork(forkId, [owner], true);
+        await setupVnet(vnetUrl, [owner]);
 
         const sub = await subCompoundV3AutomationStrategy(
             owner,
@@ -160,9 +160,9 @@ router.post("/dfs-automation", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              bundleId:
  *                type: string
  *                example: "28"
@@ -229,7 +229,7 @@ router.post("/dfs-automation", async (req, res) => {
 router.post("/leverage-management", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetUrl,
             bundleId,
             marketSymbol,
             triggerRatio,
@@ -240,7 +240,7 @@ router.post("/leverage-management", async (req, res) => {
             isEOA
         } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupVnet(vnetUrl, [eoa]);
 
         const sub = await subCompoundV3LeverageManagement(
             bundleId,
@@ -279,9 +279,9 @@ router.post("/leverage-management", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              bundleId:
  *                type: string
  *                example: "for mainnet 46 = repayOnPrice; 47 = boostOnPrice; 49 = eoa repayOnPrice; 50 = eoa boostOnPrice"
@@ -290,14 +290,14 @@ router.post("/leverage-management", async (req, res) => {
  *                type: boolean
  *                example: false
  *                description: "Whether the subscription is for an EOA"
- *              debtTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of the debt token (e.g., USDC, ETH, WETH)"
- *              collTokenSymbol:
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of the collateral token (e.g., WETH, USDC)"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              targetRatio:
  *                type: number
  *                example: 200
@@ -359,11 +359,11 @@ router.post("/leverage-management", async (req, res) => {
 router.post("/leverage-management-on-price", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetUrl,
             bundleId,
             isEOA,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             targetRatio,
             price,
             priceState,
@@ -372,12 +372,12 @@ router.post("/leverage-management-on-price", async (req, res) => {
             proxyAddr
         } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupVnet(vnetUrl, [eoa]);
 
         const sub = await subCompoundV3LeverageManagementOnPrice(
             bundleId,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             targetRatio,
             price,
             priceState,
@@ -413,9 +413,9 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              bundleId:
  *                type: string
  *                example: "for mainnet 48 = closeOnPrice; 51 = eoa closeOnPrice"
@@ -424,14 +424,14 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *                type: boolean
  *                example: false
  *                description: "Whether the subscription is for an EOA"
- *              debtTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of the debt token (e.g., USDC, ETH, WETH)"
- *              collTokenSymbol:
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of the collateral token (e.g., WETH, USDC)"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              stopLossPrice:
  *                type: integer
  *                example: 1500
@@ -490,11 +490,11 @@ router.post("/leverage-management-on-price", async (req, res) => {
 router.post("/close-on-price", async (req, res) => {
     try {
         const {
-            forkId,
+            vnetUrl,
             bundleId,
             isEOA,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             stopLossPrice,
             takeProfitPrice,
             closeStrategyType,
@@ -502,12 +502,12 @@ router.post("/close-on-price", async (req, res) => {
             proxyAddr
         } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupVnet(vnetUrl, [eoa]);
 
         const sub = await subCompoundV3CloseOnPrice(
             bundleId,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             stopLossPrice,
             takeProfitPrice,
             closeStrategyType,

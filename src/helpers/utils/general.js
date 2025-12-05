@@ -4,10 +4,10 @@ const axios = require("axios");
 const uuid = require("uuid").v4;
 
 const { botAuthAbi } = require("../../abi/general");
-const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupFork, getRpc } = require("../../utils");
+const { getHeaders, addresses, getAddrFromRegistry, topUpAccount, setupVnet } = require("../../utils");
 
 /**
- * Tops up DFS Owner account on a given Tenderly fork
+ * Tops up DFS Owner account on a given Tenderly vnet
  * @returns {void}
  */
 async function topUpOwner() {
@@ -35,13 +35,12 @@ async function addBotCaller(botAddr) {
 
 /**
  * Sets multiple bot callers so they can execute some DFS related functions
- * @param {string} forkId ID of the Tenderly fork
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {Array<string>} botAccounts array of addresses that we are giving bot auth to
- * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function setUpBotAccounts(forkId, botAccounts = [], isVnet = false) {
-    await setupFork(forkId, botAccounts, isVnet);
+async function setUpBotAccounts(vnetUrl, botAccounts = []) {
+    await setupVnet(vnetUrl, botAccounts);
 
     for (let i = 0; i < botAccounts.length; i++) {
         // eslint-disable-next-line no-await-in-loop
@@ -50,14 +49,13 @@ async function setUpBotAccounts(forkId, botAccounts = [], isVnet = false) {
 }
 
 /**
- * Increases timestamp on a given fork
- * @param {string} forkId ID of the Tenderly fork
+ * Increases timestamp on a given vnet
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {number} timeIncrease how much to increase the current timestamp in seconds
- * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {Object} returns timestamp before the change and updated timestamp
  */
-async function timeTravel(forkId, timeIncrease, isVnet = true) {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
+async function timeTravel(vnetUrl, timeIncrease) {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(vnetUrl);
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
@@ -68,14 +66,13 @@ async function timeTravel(forkId, timeIncrease, isVnet = true) {
 }
 
 /**
- * Sets timestamp on a given fork to a specific value
- * @param {string} forkId ID of the Tenderly fork
+ * Sets timestamp on a given vnet to a specific value
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {number} timestamp Unix timestamp to set the blockchain time to
- * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {Object} returns timestamp before the change and updated timestamp
  */
-async function setTime(forkId, timestamp, isVnet = true) {
-    hre.ethers.provider = hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
+async function setTime(vnetUrl, timestamp) {
+    hre.ethers.provider = hre.ethers.getDefaultProvider(vnetUrl);
 
     const oldTimestamp = (await hre.ethers.provider.getBlock("latest")).timestamp;
 
@@ -87,34 +84,13 @@ async function setTime(forkId, timestamp, isVnet = true) {
     return { oldTimestamp, newTimestamp };
 }
 
-/** Creates a new Tenderly fork. Deprecated, use createNewVnet instead.
- * @deprecated
- * Creates a new Tenderly fork in defisaver-v2 organisation using provided input
- * @param {string} tenderlyProject name of the Tenderly project
- * @param {string} tenderlyAccessKey access key for Tenderly project
- * @param {number} chainId ID that represents which chain we want to fork
- * @returns {Promise<string>} Tenderly fork id of the newly created fork
- */
-async function createNewFork(tenderlyProject, tenderlyAccessKey, chainId) {
-    // eslint-disable-next-line camelcase
-    const body = { network_id: chainId };
-    const headers = getHeaders(tenderlyAccessKey);
-    const forkRes = await axios.post(`https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/fork`, body, { headers });
-
-    return {
-        forkId: forkRes.data.simulation_fork.id,
-        blockNumber: forkRes.data.simulation_fork.block_number,
-        newAccount: Object.keys(forkRes.data.simulation_fork.accounts)[0]
-    };
-}
-
 /**
- * Creates a new Tenderly fork in defisaver-v2 organisation using provided input
+ * Creates a new Tenderly vnet in defisaver-v2 organisation using provided input
  * @param {string} tenderlyProject name of the Tenderly project
  * @param {string} tenderlyAccessKey access key for Tenderly project
- * @param {number} chainId ID that represents which chain we want to fork
- * @param {number} [startFromBlock] block number to start the fork from
- * @returns {Promise<{forkId: *, blockNumber: *, newAccount: *}>} RPC URL used as fork id
+ * @param {number} chainId ID that represents which chain we want to use
+ * @param {number} [startFromBlock] block number to start the vnet from
+ * @returns {Promise<{vnetUrl: *, blockNumber: *, newAccount: *}>} RPC URL used as vnet id
  */
 async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startFromBlock) {
     const body = {
@@ -158,53 +134,34 @@ async function createNewVnet(tenderlyProject, tenderlyAccessKey, chainId, startF
     const adminEndpoint = rpcs.find(e => e.name === "Admin RPC");
 
     if (!adminEndpoint) {
-        throw new Error("Error returning fork HTTP endpoint");
+        throw new Error("Error returning vnet HTTP endpoint");
     }
-    const forkId = adminEndpoint.url; // Using RPC URL as forkId
+    const vnetUrl = adminEndpoint.url; // Using RPC URL as vnetUrl
     const blockNumber = parseInt(blockNumberHex, 16);
 
-    return { forkId, blockNumber, newAccount };
-}
-
-/** Clones an existing Tenderly fork. Deprecated, use cloneVnet instead.
- * @deprecated
- * Forks an existing Tenderly fork in defisaver-v2 organisation using provided input
- * @param {string} cloningForkId fork ID of an existing fork
- * @param {string} tenderlyProject name of the Tenderly project
- * @param {string} tenderlyAccessKey access key for Tenderly project
- * @returns {Promise<string>} Tenderly fork id of the newly created fork
- */
-async function cloneFork(cloningForkId, tenderlyProject, tenderlyAccessKey) {
-    const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/clone-fork`;
-
-    // eslint-disable-next-line camelcase
-    const body = { fork_id: cloningForkId };
-    const headers = getHeaders(tenderlyAccessKey);
-    const forkRes = await axios.post(url, body, { headers });
-
-    return forkRes.data.simulation_fork.id;
+    return { vnetUrl, blockNumber, newAccount };
 }
 
 /**
- * Forks an existing Tenderly fork in defisaver-v2 organisation using provided input
- * @param {string} cloningForkId fork ID of an existing fork
+ * Clones an existing Tenderly vnet in defisaver-v2 organisation using provided input
+ * @param {string} cloningvnetUrl vnet ID of an existing vnet
  * @param {string} tenderlyProject name of the Tenderly project
  * @param {string} tenderlyAccessKey access key for Tenderly project
- * @returns {Promise<string>} RPC URL used as fork id
+ * @returns {Promise<string>} RPC URL used as vnet id
  */
-async function cloneVnet(cloningForkId, tenderlyProject, tenderlyAccessKey) {
+async function cloneVnet(cloningvnetUrl, tenderlyProject, tenderlyAccessKey) {
     const url = `https://api.tenderly.co/api/v1/account/defisaver-v2/project/${tenderlyProject}/testnet/clone`;
 
     // eslint-disable-next-line camelcase
     const body = {
-        srcContainerId: cloningForkId,
+        srcContainerId: cloningvnetUrl,
         dstContainerDisplayName: ""
     };
     const headers = getHeaders(tenderlyAccessKey);
     const forkRes = await axios.post(url, body, { headers });
 
-    const forkId = forkRes.data.container.connectivityConfig.endpoints[0].id;
-    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${forkId}`;
+    const vnetUrl = forkRes.data.container.connectivityConfig.endpoints[0].id;
+    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${vnetUrl}`;
 
     return rpc;
 }
@@ -218,9 +175,7 @@ async function newAddress() {
 }
 
 module.exports = {
-    createNewFork,
     createNewVnet,
-    cloneFork,
     cloneVnet,
     topUpOwner,
     topUpAccount,

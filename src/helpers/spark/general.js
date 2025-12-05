@@ -1,14 +1,13 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
-const { getAssetInfo } = require("@defisaver/tokens");
-const { getSender, approve, executeAction, setBalance } = require("../../utils");
+const { getSender, approve, executeAction, setBalance, getTokenInfo } = require("../../utils");
 const { getFullTokensInfo, getLoanData } = require("./view");
 
 /**
  * Create a Spark position for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address
- * @param {string} collToken collateral token symbol
- * @param {string} debtToken debt token symbol
+ * @param {string} collSymbol collateral token symbol
+ * @param {string} debtSymbol debt token symbol
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} coll amount of collateral to be supplied (whole number)
  * @param {number} debt amount of debt to be generated (whole number)
@@ -17,11 +16,12 @@ const { getFullTokensInfo, getLoanData } = require("./view");
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function createSparkPosition(market, collToken, debtToken, rateMode, coll, debt, owner, proxyAddr, useSafe = true) {
+async function createSparkPosition(market, collSymbol, debtSymbol, rateMode, coll, debt, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
-    const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
+    const collTokenData = getTokenInfo(collSymbol, chainId);
+    const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
     // set coll balance for the user
     await setBalance(collTokenData.address, owner, coll);
@@ -59,17 +59,18 @@ async function createSparkPosition(market, collToken, debtToken, rateMode, coll,
 /**
  * Supply collateral for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address
- * @param {string} collToken collateral token symbol
+ * @param {string} collSymbol collateral token symbol
  * @param {number} amount amount of collateral to be supplied (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function sparkSupply(market, collToken, amount, owner, proxyAddr, useSafe = true) {
+async function sparkSupply(market, collSymbol, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
+    const collTokenData = getTokenInfo(collSymbol, chainId);
 
     // set coll balance for the user
     await setBalance(collTokenData.address, owner, amount);
@@ -99,17 +100,18 @@ async function sparkSupply(market, collToken, amount, owner, proxyAddr, useSafe 
 /**
  * Withdraw collateral for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address
- * @param {string} collToken collateral token symbol
+ * @param {string} collSymbol collateral token symbol
  * @param {number} amount amount of collateral to be supplied (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function sparkWithdraw(market, collToken, amount, owner, proxyAddr, useSafe = true) {
+async function sparkWithdraw(market, collSymbol, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const collTokenData = getAssetInfo(collToken === "ETH" ? "WETH" : collToken);
+    const collTokenData = getTokenInfo(collSymbol, chainId);
     const amountColl = hre.ethers.utils.parseUnits(amount.toString(), collTokenData.decimals);
 
     const infos = await getFullTokensInfo(market, [collTokenData.address]);
@@ -131,7 +133,7 @@ async function sparkWithdraw(market, collToken, amount, owner, proxyAddr, useSaf
 /**
  * Borrow debt for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address
- * @param {string} debtToken debt token symbol
+ * @param {string} debtSymbol debt token symbol
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
@@ -139,10 +141,11 @@ async function sparkWithdraw(market, collToken, amount, owner, proxyAddr, useSaf
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function sparkBorrow(market, debtToken, rateMode, amount, owner, proxyAddr, useSafe = true) {
+async function sparkBorrow(market, debtSymbol, rateMode, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
+    const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
     const amountDebt = hre.ethers.utils.parseUnits(amount.toString(), debtTokenData.decimals);
 
@@ -166,7 +169,7 @@ async function sparkBorrow(market, debtToken, rateMode, amount, owner, proxyAddr
 /**
  * Payback debt for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address
- * @param {string} debtToken debt token symbol
+ * @param {string} debtSymbol debt token symbol
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
@@ -174,10 +177,11 @@ async function sparkBorrow(market, debtToken, rateMode, amount, owner, proxyAddr
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function sparkPayback(market, debtToken, rateMode, amount, owner, proxyAddr, useSafe = true) {
+async function sparkPayback(market, debtSymbol, rateMode, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const { chainId } = await hre.ethers.provider.getNetwork();
 
-    const debtTokenData = getAssetInfo(debtToken === "ETH" ? "WETH" : debtToken);
+    const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
     const amountDebt = hre.ethers.utils.parseUnits(amount.toString(), debtTokenData.decimals);
 

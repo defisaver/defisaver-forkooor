@@ -4,7 +4,7 @@ const { getSender, addresses, getLatestSubId, executeActionFromProxy, subToStrat
 const { compoundV3SubProxyAbi } = require("../../abi/compoundV3/abis");
 const { compoundV3SubProxyL2Abi } = require("../../abi/compoundV3/abis");
 const { COMP_V3_MARKETS } = require("./view");
-const { getAssetInfo } = require("@defisaver/tokens");
+const { getTokenInfo } = require("../../utils");
 
 /**
  * Helper method for getting compound sub proxy contract
@@ -127,7 +127,7 @@ async function subCompoundV3LeverageManagement(
 
         const market = COMP_V3_MARKETS[chainId][marketSymbol === "ETH" ? "WETH" : marketSymbol];
 
-        const debtTokenData = getAssetInfo(marketSymbol === "ETH" ? "WETH" : marketSymbol, chainId);
+        const debtTokenData = getTokenInfo(marketSymbol, chainId);
 
         // --------------------ENCODE SUB DATA---------------------
         // @dev We don't want to use the automation sdk here to simplify encoding and differentiate between repay and boost
@@ -170,8 +170,8 @@ async function subCompoundV3LeverageManagement(
 /**
  * Subscribes to Compound V3 leverage management on price strategy
  * @param {string} bundleId bundleId
- * @param {string} debtTokenSymbol symbol of the debt token
- * @param {string} collTokenSymbol symbol of the collateral token
+ * @param {string} debtSymbol symbol of the debt token
+ * @param {string} collSymbol symbol of the collateral token
  * @param {number} targetRatio target ratio
  * @param {number} price price
  * @param {string} priceState price state
@@ -183,8 +183,8 @@ async function subCompoundV3LeverageManagement(
  */
 async function subCompoundV3LeverageManagementOnPrice(
     bundleId,
-    debtTokenSymbol,
-    collTokenSymbol,
+    debtSymbol,
+    collSymbol,
     targetRatio,
     price,
     priceState,
@@ -198,10 +198,10 @@ async function subCompoundV3LeverageManagementOnPrice(
 
         const { chainId } = await hre.ethers.provider.getNetwork();
 
-        const market = COMP_V3_MARKETS[chainId][debtTokenSymbol === "ETH" ? "WETH" : debtTokenSymbol];
+        const market = COMP_V3_MARKETS[chainId][debtSymbol === "ETH" ? "WETH" : debtSymbol];
 
-        const collTokenData = getAssetInfo(collTokenSymbol === "ETH" ? "WETH" : collTokenSymbol, chainId);
-        const debtTokenData = getAssetInfo(debtTokenSymbol === "ETH" ? "WETH" : debtTokenSymbol, chainId);
+        const collTokenData = getTokenInfo(collSymbol, chainId);
+        const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
         const strategySub = automationSdk.strategySubService.compoundV3Encode.leverageManagementOnPrice(
             bundleId,
@@ -227,8 +227,8 @@ async function subCompoundV3LeverageManagementOnPrice(
 /**
  * Subscribes to Compound V3 close on price strategy
  * @param {string} bundleId Bundle ID
- * @param {string} debtTokenSymbol symbol of the debt token
- * @param {string} collTokenSymbol symbol of the collateral token
+ * @param {string} debtSymbol symbol of the debt token
+ * @param {string} collSymbol symbol of the collateral token
  * @param {number} stopLossPrice trigger price for stop loss
  * @param {number} takeProfitPrice rigger price for take profit
  * @param {number} closeStrategyType Type of close strategy. See automationSdk.enums.CloseStrategyType
@@ -239,8 +239,8 @@ async function subCompoundV3LeverageManagementOnPrice(
  */
 async function subCompoundV3CloseOnPrice(
     bundleId,
-    debtTokenSymbol,
-    collTokenSymbol,
+    debtSymbol,
+    collSymbol,
     stopLossPrice,
     takeProfitPrice,
     closeStrategyType,
@@ -253,10 +253,10 @@ async function subCompoundV3CloseOnPrice(
 
         const { chainId } = await hre.ethers.provider.getNetwork();
 
-        const market = COMP_V3_MARKETS[chainId][debtTokenSymbol === "ETH" ? "WETH" : debtTokenSymbol];
+        const market = COMP_V3_MARKETS[chainId][debtSymbol === "ETH" ? "WETH" : debtSymbol];
 
-        const collTokenData = getAssetInfo(collTokenSymbol === "ETH" ? "WETH" : collTokenSymbol, chainId);
-        const debtTokenData = getAssetInfo(debtTokenSymbol === "ETH" ? "WETH" : debtTokenSymbol, chainId);
+        const collTokenData = getTokenInfo(collSymbol, chainId);
+        const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
         const {
             stopLossType,

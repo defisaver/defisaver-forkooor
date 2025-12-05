@@ -1,10 +1,11 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe, getTokenInfo } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { subMorphoBlueRepayBundle, subMorphoBlueBoostBundle, subMorphoBlueBoostOnPriceBundle, subMorphoBlueCloseOnPriceBundle } = require("../../helpers/morpho-blue/strategies");
 const { getMarketId } = require("../../helpers/morpho-blue/view");
+const hre = require("hardhat");
 
 const router = express.Router();
 
@@ -34,12 +35,14 @@ const router = express.Router();
  *              bundleId:
  *                  type: integer
  *                  example: 32
- *              loanToken:
+ *              debtSymbol:
  *                type: string
- *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
- *              collateralToken:
+ *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
- *                example: "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+ *                example: "wstETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              oracle:
  *                type: string
  *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
@@ -95,8 +98,8 @@ router.post("/repay", body(
         "vnetUrl",
         "owner",
         "bundleId",
-        "loanToken",
-        "collateralToken",
+        "collSymbol",
+        "debtSymbol",
         "oracle",
         "irm",
         "lltv",
@@ -111,9 +114,12 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, minRatio, targetRatio, user } = req.body;
+    const { vnetUrl, owner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, minRatio, targetRatio, user } = req.body;
 
     await setupVnet(vnetUrl, [owner]);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const loanToken = getTokenInfo(debtSymbol, chainId).address;
+    const collateralToken = getTokenInfo(collSymbol, chainId).address;
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueRepayBundle(
@@ -150,12 +156,14 @@ async (req, res) => {
  *              bundleId:
  *                  type: integer
  *                  example: 33
- *              loanToken:
+ *              debtSymbol:
  *                type: string
- *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
- *              collateralToken:
+ *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
- *                example: "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+ *                example: "wstETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              oracle:
  *                type: string
  *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
@@ -211,8 +219,8 @@ router.post("/boost", body(
         "vnetUrl",
         "owner",
         "bundleId",
-        "loanToken",
-        "collateralToken",
+        "collSymbol",
+        "debtSymbol",
         "oracle",
         "irm",
         "lltv",
@@ -227,9 +235,12 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, maxRatio, targetRatio, user } = req.body;
+    const { vnetUrl, owner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, maxRatio, targetRatio, user } = req.body;
 
     await setupVnet(vnetUrl, [owner]);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const loanToken = getTokenInfo(debtSymbol, chainId).address;
+    const collateralToken = getTokenInfo(collSymbol, chainId).address;
     const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     subMorphoBlueBoostBundle(
@@ -266,12 +277,14 @@ async (req, res) => {
  *              bundleId:
  *                type: integer
  *                example: 37
- *              loanToken:
+ *              debtSymbol:
  *                type: string
- *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
- *              collateralToken:
+ *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
- *                example: "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+ *                example: "wstETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              oracle:
  *                type: string
  *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
@@ -333,8 +346,8 @@ router.post("/boostOnPrice", body(
         "vnetUrl",
         "walletOwner",
         "bundleId",
-        "loanToken",
-        "collateralToken",
+        "collSymbol",
+        "debtSymbol",
         "oracle",
         "irm",
         "lltv",
@@ -351,10 +364,13 @@ async (req, res) => {
         return res.status(400).send({ error: validationErrors.array() });
     }
     const {
-        vnetUrl, walletOwner, bundleId, loanToken, collateralToken, oracle, irm, lltv, targetRatio, price, priceState, user
+        vnetUrl, walletOwner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, targetRatio, price, priceState, user
     } = req.body;
 
     await setupVnet(vnetUrl, [walletOwner]);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const loanToken = getTokenInfo(debtSymbol, chainId).address;
+    const collateralToken = getTokenInfo(collSymbol, chainId).address;
 
     subMorphoBlueBoostOnPriceBundle(
         walletOwner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], targetRatio, user, price, priceState, getWalletAddr(req), defaultsToSafe(req)
@@ -391,12 +407,14 @@ async (req, res) => {
  *              bundleId:
  *                  type: integer
  *                  example: 57
- *              loanToken:
+ *              debtSymbol:
  *                type: string
- *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
- *              collateralToken:
+ *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
- *                example: "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+ *                example: "wstETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              oracle:
  *                type: string
  *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
@@ -459,8 +477,8 @@ router.post("/close-on-price", body(
         "vnetUrl",
         "owner",
         "bundleId",
-        "loanToken",
-        "collateralToken",
+        "collSymbol",
+        "debtSymbol",
         "oracle",
         "irm",
         "lltv",
@@ -477,10 +495,13 @@ async (req, res) => {
         return res.status(400).send({ error: validationErrors.array() });
     }
     const {
-        vnetUrl, owner, bundleId, loanToken, collateralToken, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
+        vnetUrl, owner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
     } = req.body;
 
     await setupVnet(vnetUrl, [owner]);
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const loanToken = getTokenInfo(debtSymbol, chainId).address;
+    const collateralToken = getTokenInfo(collSymbol, chainId).address;
 
     subMorphoBlueCloseOnPriceBundle(
         owner,

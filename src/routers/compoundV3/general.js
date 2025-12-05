@@ -159,15 +159,17 @@ router.post("/get-position",
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 3
- *              borrowToken:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              borrowAmount:
  *                type: number
  *                example: 2000
@@ -238,7 +240,7 @@ router.post("/get-position",
  *                   type: string
  */
 router.post("/create",
-    body(["vnetUrl", "market", "collToken", "collAmount", "borrowToken", "borrowAmount", "owner"]).notEmpty(),
+    body(["vnetUrl", "market", "collSymbol", "collAmount", "debtSymbol", "borrowAmount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -246,11 +248,11 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, collToken, collAmount, borrowToken, borrowAmount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, collAmount, debtSymbol, borrowAmount, owner } = req.body;
 
         await setupVnet(vnetUrl, [owner]);
 
-        createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner, getWalletAddr(req), defaultsToSafe(req))
+        createCompoundV3Position(market, collSymbol, collAmount, debtSymbol, borrowAmount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -279,18 +281,18 @@ router.post("/create",
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              collTokenSymbol:
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of collateral token e.g WETH, USDC, USDT"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 3
  *                description: "Amount of collateral to supply (whole number)"
- *              borrowTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of borrow token e.g USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              borrowAmount:
  *                type: number
  *                example: 2000
@@ -366,7 +368,7 @@ router.post("/create",
  *                   type: string
  */
 router.post("/create-proxy-position",
-    body(["vnetUrl", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "collAmount", "debtSymbol", "borrowAmount", "eoa"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -374,14 +376,14 @@ router.post("/create-proxy-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
+        const { vnetUrl, collSymbol, collAmount, debtSymbol, borrowAmount, eoa } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
 
         createCompoundV3ProxyPosition(
-            collTokenSymbol,
+            collSymbol,
             collAmount,
-            borrowTokenSymbol,
+            debtSymbol,
             borrowAmount,
             eoa,
             getWalletAddr(req),
@@ -414,18 +416,18 @@ router.post("/create-proxy-position",
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              collTokenSymbol:
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of collateral token e.g WETH, USDC, USDT"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 3
  *                description: "Amount of collateral to supply (whole number)"
- *              borrowTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of borrow token e.g USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              borrowAmount:
  *                type: number
  *                example: 2000
@@ -493,7 +495,7 @@ router.post("/create-proxy-position",
  *                   type: string
  */
 router.post("/create-eoa-position",
-    body(["vnetUrl", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "collAmount", "debtSymbol", "borrowAmount", "eoa"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -501,14 +503,14 @@ router.post("/create-eoa-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
+        const { vnetUrl, collSymbol, collAmount, debtSymbol, borrowAmount, eoa } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
 
         createCompoundV3EOAPosition(
-            collTokenSymbol,
+            collSymbol,
             collAmount,
-            borrowTokenSymbol,
+            debtSymbol,
             borrowAmount,
             eoa
         )

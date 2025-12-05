@@ -318,15 +318,17 @@ router.post("/get-position-by-nft",
  *              vaultId:
  *                type: number
  *                example: 4
- *              collTokenSymbol:
+ *              collSymbol:
  *                type: string
  *                example: "wstETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 10
- *              debtTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              debtAmount:
  *                type: number
  *                example: 15000
@@ -587,7 +589,7 @@ router.post("/get-position-by-nft",
  *                   type: string
  */
 router.post("/create-t1",
-    body(["vnetUrl", "vaultId", "collTokenSymbol", "collAmount", "debtTokenSymbol", "debtAmount", "owner"]).notEmpty(),
+    body(["vnetUrl", "vaultId", "collSymbol", "collAmount", "debtSymbol", "debtAmount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -595,12 +597,12 @@ router.post("/create-t1",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner } = req.body;
+        const { vnetUrl, vaultId, collSymbol, collAmount, debtSymbol, debtAmount, owner } = req.body;
 
         await setupVnet(vnetUrl, [owner]);
 
         fluidT1Open(
-            vaultId, collTokenSymbol, collAmount, debtTokenSymbol, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)
+            vaultId, collSymbol, collAmount, debtSymbol, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);

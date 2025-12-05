@@ -1,7 +1,6 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToSparkStrategy, subToStrategy } = require("../../utils");
-const { getAssetInfo } = require("@defisaver/tokens");
+const { getSender, subToSparkStrategy, subToStrategy, getTokenInfo } = require("../../utils");
 const { getFullTokensInfo } = require("./view");
 
 /**
@@ -37,8 +36,8 @@ async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRe
  * @param {string} owner proxy owner
  * @param {uint} bundleId bundle ID
  * @param {string} market address of the market
- * @param {string} collAssetSymbol collateral asset symbol
- * @param {string} debtAssetSymbol debt asset symbol
+ * @param {string} collSymbol collateral asset symbol
+ * @param {string} debtSymbol debt asset symbol
  * @param {number} stopLossPrice stop loss price (0 if not used)
  * @param {number} stopLossType stop loss type (0 for collateral, 1 for debt)
  * @param {number} takeProfitPrice take profit price (0 if not used)
@@ -51,8 +50,8 @@ async function subSparkCloseOnPriceGeneric(
     owner,
     bundleId,
     market,
-    collAssetSymbol,
-    debtAssetSymbol,
+    collSymbol,
+    debtSymbol,
     stopLossPrice,
     stopLossType,
     takeProfitPrice,
@@ -65,8 +64,8 @@ async function subSparkCloseOnPriceGeneric(
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
         const user = proxy.address;
 
-        const collAssetData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
-        const debtAssetData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+        const collAssetData = getTokenInfo(collSymbol, chainId);
+        const debtAssetData = getTokenInfo(debtSymbol, chainId);
 
         const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
         const collAssetInfo = infos[0];

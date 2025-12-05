@@ -118,8 +118,8 @@ router.post("/dfs-automation", async (req, res) => {
  *               - owner
  *               - bundleId
  *               - market
- *               - collAssetSymbol
- *               - debtAssetSymbol
+ *               - collSymbol
+ *               - debtSymbol
  *               - stopLossPrice
  *               - stopLossType
  *               - takeProfitPrice
@@ -141,14 +141,14 @@ router.post("/dfs-automation", async (req, res) => {
  *                 type: string
  *                 example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
  *                 description: "Spark market address"
- *               collAssetSymbol:
+ *               collSymbol:
  *                 type: string
  *                 example: "WETH"
- *                 description: "Collateral asset symbol"
- *               debtAssetSymbol:
+ *                 description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *               debtSymbol:
  *                 type: string
  *                 example: "USDC"
- *                 description: "Debt asset symbol"
+ *                 description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *               stopLossPrice:
  *                 type: integer
  *                 example: 4000
@@ -211,7 +211,7 @@ router.post("/dfs-automation", async (req, res) => {
  *                   example: "Failed to subscribe to Spark Close On Price strategy with error: ..."
  */
 router.post("/close-on-price-generic",
-    body(["vnetUrl", "owner", "bundleId", "market", "collAssetSymbol", "debtAssetSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body(["vnetUrl", "owner", "bundleId", "market", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
     body("stopLossType").isFloat(),
@@ -229,8 +229,8 @@ router.post("/close-on-price-generic",
             owner,
             bundleId,
             market,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             stopLossPrice,
             stopLossType,
             takeProfitPrice,
@@ -243,8 +243,8 @@ router.post("/close-on-price-generic",
             owner,
             bundleId,
             market,
-            collAssetSymbol,
-            debtAssetSymbol,
+            collSymbol,
+            debtSymbol,
             stopLossPrice,
             stopLossType,
             takeProfitPrice,

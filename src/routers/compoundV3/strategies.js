@@ -290,14 +290,14 @@ router.post("/leverage-management", async (req, res) => {
  *                type: boolean
  *                example: false
  *                description: "Whether the subscription is for an EOA"
- *              debtTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of the debt token (e.g., USDC, ETH, WETH)"
- *              collTokenSymbol:
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of the collateral token (e.g., WETH, USDC)"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              targetRatio:
  *                type: number
  *                example: 200
@@ -362,8 +362,8 @@ router.post("/leverage-management-on-price", async (req, res) => {
             vnetUrl,
             bundleId,
             isEOA,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             targetRatio,
             price,
             priceState,
@@ -376,8 +376,8 @@ router.post("/leverage-management-on-price", async (req, res) => {
 
         const sub = await subCompoundV3LeverageManagementOnPrice(
             bundleId,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             targetRatio,
             price,
             priceState,
@@ -424,14 +424,14 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *                type: boolean
  *                example: false
  *                description: "Whether the subscription is for an EOA"
- *              debtTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of the debt token (e.g., USDC, ETH, WETH)"
- *              collTokenSymbol:
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of the collateral token (e.g., WETH, USDC)"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              stopLossPrice:
  *                type: integer
  *                example: 1500
@@ -493,8 +493,8 @@ router.post("/close-on-price", async (req, res) => {
             vnetUrl,
             bundleId,
             isEOA,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             stopLossPrice,
             takeProfitPrice,
             closeStrategyType,
@@ -506,8 +506,8 @@ router.post("/close-on-price", async (req, res) => {
 
         const sub = await subCompoundV3CloseOnPrice(
             bundleId,
-            debtTokenSymbol,
-            collTokenSymbol,
+            debtSymbol,
+            collSymbol,
             stopLossPrice,
             takeProfitPrice,
             closeStrategyType,

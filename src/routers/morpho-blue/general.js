@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe, getTokenInfo } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { getUserData } = require("../../helpers/morpho-blue/view");
 const { createMorphoBluePosition } = require("../../helpers/morpho-blue/general");
@@ -28,12 +28,14 @@ const router = express.Router();
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              loanToken:
+ *              debtSymbol:
  *                type: string
- *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
- *              collateralToken:
+ *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
- *                example: "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+ *                example: "wstETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              oracle:
  *                type: string
  *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
@@ -103,17 +105,17 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/create",
-    body(["vnetUrl", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner", "coll", "debt"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "debtSymbol", "oracle", "irm", "lltv", "owner", "coll", "debt"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, loanToken, collateralToken, oracle, irm, lltv, owner, coll, debt } = req.body;
+        const { vnetUrl, collSymbol, debtSymbol, oracle, irm, lltv, owner, coll, debt } = req.body;
 
         await setupVnet(vnetUrl, [owner]);
-        createMorphoBluePosition({ loanToken, collateralToken, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
+        createMorphoBluePosition({ collSymbol, debtSymbol, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -142,12 +144,14 @@ router.post("/create",
  *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
- *              loanToken:
+ *              debtSymbol:
  *                type: string
- *                example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
- *              collateralToken:
+ *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              collSymbol:
  *                type: string
- *                example: "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+ *                example: "wstETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              oracle:
  *                type: string
  *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
@@ -200,16 +204,21 @@ router.post("/create",
  *                   type: string
  */
 router.post("/get-position",
-    body(["vnetUrl", "loanToken", "collateralToken", "oracle", "irm", "lltv", "owner"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "debtSymbol", "oracle", "irm", "lltv", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, loanToken, collateralToken, oracle, irm, lltv, owner } = req.body;
+        const { vnetUrl, collSymbol, debtSymbol, oracle, irm, lltv, owner } = req.body;
 
         setupVnet(vnetUrl);
+
+        const hre = require("hardhat");
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const loanToken = getTokenInfo(debtSymbol, chainId).address;
+        const collateralToken = getTokenInfo(collSymbol, chainId).address;
 
         getUserData({ loanToken, collateralToken, oracle, irm, lltv }, owner)
             .then(pos => {

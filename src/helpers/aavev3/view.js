@@ -26,10 +26,11 @@ async function getFullTokensInfo(market, assets) {
 async function getLoanData(market, user) {
     const [signer] = await hre.ethers.getSigners();
     const { chainId } = await hre.ethers.provider.getNetwork();
+    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
     const viewAddress = addresses[chainId].AAVE_V3_VIEW;
     const viewContract = new hre.ethers.Contract(viewAddress, aaveV3ViewAbi, signer);
 
-    const loanData = await viewContract.getLoanData(market, user);
+    const loanData = await viewContract.getLoanData(marketAddress, user);
 
     return {
         user: loanData.user,
@@ -59,10 +60,11 @@ async function getLoanData(market, user) {
 async function getSafetyRatio(market, user) {
     const [signer] = await hre.ethers.getSigners();
     const { chainId } = await hre.ethers.provider.getNetwork();
+    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
     const viewAddress = addresses[chainId].AAVE_V3_VIEW;
     const viewContract = new hre.ethers.Contract(viewAddress, aaveV3ViewAbi, signer);
 
-    const safetyRatio = await viewContract.getSafetyRatio(market, user);
+    const safetyRatio = await viewContract.getSafetyRatio(marketAddress, user);
 
     return {
         ratio: safetyRatio.toString()

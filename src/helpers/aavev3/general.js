@@ -6,8 +6,7 @@ const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = r
 
 /**
  * Create a Aave position for sender on his proxy (created if he doesn't have one)
- * @param {boolean} useDefaultMarket whether to use the default market or not
- * @param {string} market market address
+ * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} collSymbol collateral token symbol
  * @param {string} debtSymbol debt token symbol
  * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
@@ -19,14 +18,10 @@ const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = r
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function createAaveV3Position(useDefaultMarket, market, collSymbol, debtSymbol, rateMode, collAmount, debtAmount, owner, proxyAddr, isEOA, useSafe = true) {
+async function createAaveV3Position(market, collSymbol, debtSymbol, rateMode, collAmount, debtAmount, owner, proxyAddr, isEOA, useSafe = true) {
     const { chainId } = await hre.ethers.provider.getNetwork();
 
-    let marketAddress = market;
-
-    if (useDefaultMarket) {
-        marketAddress = addresses[chainId].AAVE_V3_MARKET;
-    }
+    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
 
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
 
@@ -139,6 +134,7 @@ async function aaveV3Supply(market, collSymbol, amount, owner, proxyAddr = hre.e
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
+    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
     const collTokenData = getTokenInfo(collSymbol, chainId);
 
     // set coll balance for the user
@@ -149,16 +145,16 @@ async function aaveV3Supply(market, collSymbol, amount, owner, proxyAddr = hre.e
 
     const amountColl = hre.ethers.utils.parseUnits(amount.toString(), collTokenData.decimals);
 
-    const infos = await getFullTokensInfo(market, [collTokenData.address]);
+    const infos = await getFullTokensInfo(marketAddress, [collTokenData.address]);
     const aaveCollInfo = infos[0];
 
     const nullAddr = "0x0000000000000000000000000000000000000000";
     // eslint-disable-next-line max-len
-    const action = new dfs.actions.aaveV3.AaveV3SupplyAction(false, market, amountColl.toString(), senderAcc._address, collTokenData.address, aaveCollInfo.assetId, true, false, nullAddr);
+    const action = new dfs.actions.aaveV3.AaveV3SupplyAction(false, marketAddress, amountColl.toString(), senderAcc._address, collTokenData.address, aaveCollInfo.assetId, true, false, nullAddr);
 
     await executeAction("AaveV3Supply", action.encodeForDsProxyCall()[1], proxy);
 
-    return await getLoanData(market, proxy.address);
+    return await getLoanData(marketAddress, proxy.address);
 }
 
 /**
@@ -175,18 +171,20 @@ async function aaveV3Withdraw(market, collSymbol, amount, owner, proxyAddr = hre
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
+    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+
     const collTokenData = getTokenInfo(collSymbol, chainId);
     const amountColl = hre.ethers.utils.parseUnits(amount.toString(), collTokenData.decimals);
 
-    const infos = await getFullTokensInfo(market, [collTokenData.address]);
+    const infos = await getFullTokensInfo(marketAddress, [collTokenData.address]);
     const aaveCollInfo = infos[0];
 
     // eslint-disable-next-line max-len
-    const action = new dfs.actions.aaveV3.AaveV3WithdrawAction(false, market, amountColl.toString(), senderAcc._address, aaveCollInfo.assetId);
+    const action = new dfs.actions.aaveV3.AaveV3WithdrawAction(false, marketAddress, amountColl.toString(), senderAcc._address, aaveCollInfo.assetId);
 
     await executeAction("AaveV3Withdraw", action.encodeForDsProxyCall()[1], proxy);
 
-    return await getLoanData(market, proxy.address);
+    return await getLoanData(marketAddress, proxy.address);
 }
 
 /**
@@ -204,20 +202,22 @@ async function aaveV3Borrow(market, debtSymbol, rateMode, amount, owner, proxyAd
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
+    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+
     const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
     const amountDebt = hre.ethers.utils.parseUnits(amount.toString(), debtTokenData.decimals);
 
-    const infos = await getFullTokensInfo(market, [debtTokenData.address]);
+    const infos = await getFullTokensInfo(marketAddress, [debtTokenData.address]);
     const aaveDebtInfo = infos[0];
 
     const nullAddr = "0x0000000000000000000000000000000000000000";
     // eslint-disable-next-line max-len
-    const action = new dfs.actions.aaveV3.AaveV3BorrowAction(false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr);
+    const action = new dfs.actions.aaveV3.AaveV3BorrowAction(false, marketAddress, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr);
 
     await executeAction("AaveV3Borrow", action.encodeForDsProxyCall()[1], proxy);
 
-    return await getLoanData(market, proxy.address);
+    return await getLoanData(marketAddress, proxy.address);
 }
 
 /**
@@ -235,6 +235,8 @@ async function aaveV3Payback(market, debtSymbol, rateMode, amount, owner, proxyA
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
+    const marketAddress = market || addresses[chainId].AAVE_V3_MARKET;
+
     const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
     const amountDebt = hre.ethers.utils.parseUnits(amount.toString(), debtTokenData.decimals);
@@ -245,16 +247,16 @@ async function aaveV3Payback(market, debtSymbol, rateMode, amount, owner, proxyA
     // approve coll asset for proxy to pull
     await approve(debtTokenData.address, proxy.address, owner);
 
-    const infos = await getFullTokensInfo(market, [debtTokenData.address]);
+    const infos = await getFullTokensInfo(marketAddress, [debtTokenData.address]);
     const aaveDebtInfo = infos[0];
 
     const nullAddr = "0x0000000000000000000000000000000000000000";
     // eslint-disable-next-line max-len
-    const action = new dfs.actions.aaveV3.AaveV3PaybackAction(false, market, amountDebt.toString(), senderAcc._address, rateMode.toString(), debtTokenData.address, aaveDebtInfo.assetId, false, nullAddr);
+    const action = new dfs.actions.aaveV3.AaveV3PaybackAction(false, marketAddress, amountDebt.toString(), senderAcc._address, rateMode.toString(), debtTokenData.address, aaveDebtInfo.assetId, false, nullAddr);
 
     await executeAction("AaveV3Payback", action.encodeForDsProxyCall()[1], proxy);
 
-    return await getLoanData(market, proxy.address);
+    return await getLoanData(marketAddress, proxy.address);
 }
 
 module.exports = {

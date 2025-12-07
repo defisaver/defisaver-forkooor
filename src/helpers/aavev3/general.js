@@ -9,7 +9,6 @@ const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = r
  * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} collSymbol collateral token symbol
  * @param {string} debtSymbol debt token symbol
- * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} collAmount amount of collateral to be supplied (whole number)
  * @param {number} debtAmount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
@@ -18,7 +17,7 @@ const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = r
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function createAaveV3Position(market, collSymbol, debtSymbol, rateMode, collAmount, debtAmount, owner, proxyAddr, isEOA, useSafe = true) {
+async function createAaveV3Position(market, collSymbol, debtSymbol, collAmount, debtAmount, owner, proxyAddr, isEOA, useSafe = true) {
     const marketAddress = await getAaveV3MarketAddress(market);
 
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
@@ -90,7 +89,7 @@ async function createAaveV3Position(market, collSymbol, debtSymbol, rateMode, co
         marketAddress,
         amountDebt.toString(),
         senderAcc._address,
-        rateMode.toString(),
+        "2", // variable rate mode
         aaveDebtInfo.assetId,
         true,
         user
@@ -184,16 +183,15 @@ async function aaveV3Withdraw(market, collSymbol, amount, owner, proxyAddr = hre
 
 /**
  * Borrows a token from Aave
- * @param {string} market market address
+ * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} debtSymbol debt token symbol
- * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be generated (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function aaveV3Borrow(market, debtSymbol, rateMode, amount, owner, proxyAddr = hre.ethers.constants.AddressZero, useSafe = true) {
+async function aaveV3Borrow(market, debtSymbol, amount, owner, proxyAddr = hre.ethers.constants.AddressZero, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const marketAddress = await getAaveV3MarketAddress(market);
 
@@ -206,7 +204,7 @@ async function aaveV3Borrow(market, debtSymbol, rateMode, amount, owner, proxyAd
 
     const nullAddr = "0x0000000000000000000000000000000000000000";
     // eslint-disable-next-line max-len
-    const action = new dfs.actions.aaveV3.AaveV3BorrowAction(false, marketAddress, amountDebt.toString(), senderAcc._address, rateMode.toString(), aaveDebtInfo.assetId, false, nullAddr);
+    const action = new dfs.actions.aaveV3.AaveV3BorrowAction(false, marketAddress, amountDebt.toString(), senderAcc._address, "2", aaveDebtInfo.assetId, false, nullAddr);
 
     await executeAction("AaveV3Borrow", action.encodeForDsProxyCall()[1], proxy);
 
@@ -215,16 +213,15 @@ async function aaveV3Borrow(market, debtSymbol, rateMode, amount, owner, proxyAd
 
 /**
  * Payback a token to Aave
- * @param {string} market market address
+ * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} debtSymbol debt token symbol
- * @param {number} rateMode type of borrow debt [Stable: 1, Variable: 2]
  * @param {number} amount amount of debt to be payed back (whole number)
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} object that has users position data in it
  */
-async function aaveV3Payback(market, debtSymbol, rateMode, amount, owner, proxyAddr = hre.ethers.constants.AddressZero, useSafe = true) {
+async function aaveV3Payback(market, debtSymbol, amount, owner, proxyAddr = hre.ethers.constants.AddressZero, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
     const marketAddress = await getAaveV3MarketAddress(market);
 
@@ -243,7 +240,7 @@ async function aaveV3Payback(market, debtSymbol, rateMode, amount, owner, proxyA
 
     const nullAddr = "0x0000000000000000000000000000000000000000";
     // eslint-disable-next-line max-len
-    const action = new dfs.actions.aaveV3.AaveV3PaybackAction(false, marketAddress, amountDebt.toString(), senderAcc._address, rateMode.toString(), debtTokenData.address, aaveDebtInfo.assetId, false, nullAddr);
+    const action = new dfs.actions.aaveV3.AaveV3PaybackAction(false, marketAddress, amountDebt.toString(), senderAcc._address, "2", debtTokenData.address, aaveDebtInfo.assetId, false, nullAddr);
 
     await executeAction("AaveV3Payback", action.encodeForDsProxyCall()[1], proxy);
 

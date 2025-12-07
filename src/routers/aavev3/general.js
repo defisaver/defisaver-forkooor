@@ -261,9 +261,11 @@ router.post("/v1/get-safety-ratio",
  *              collAmount:
  *                type: number
  *                example: 2
+ *                description: "Amount of collateral to supply (whole number)
  *              debtAmount:
  *                type: number
  *                example: 2000
+ *                description: "Amount of debt to borrow (whole number)
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -367,7 +369,9 @@ router.post("/v1/get-safety-ratio",
  *                   type: string
  */
 router.post("/v1/create",
-    body(["vnetUrl", "collSymbol", "debtSymbol", "collAmount", "debtAmount", "positionOwner", "isEOA"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "debtSymbol", "positionOwner", "isEOA"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
+    body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -421,7 +425,7 @@ router.post("/v1/create",
  *                type: string
  *                example: "ETH"
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              amount:
+ *              collAmount:
  *                type: number
  *                example: 2
  *              walletAddr:
@@ -523,7 +527,8 @@ router.post("/v1/create",
  *                   type: string
  */
 router.post("/v1/supply",
-    body(["vnetUrl", "collSymbol", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "positionOwner"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -531,11 +536,11 @@ router.post("/v1/supply",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, collSymbol, amount, positionOwner } = req.body;
+        const { vnetUrl, market, collSymbol, collAmount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
 
-        aaveV3Supply(market, collSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Supply(market, collSymbol, collAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -575,7 +580,7 @@ router.post("/v1/supply",
  *                type: string
  *                example: "ETH"
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              amount:
+ *              collAmount:
  *                type: number
  *                example: 2
  *              walletAddr:
@@ -677,18 +682,19 @@ router.post("/v1/supply",
  *                   type: string
  */
 router.post("/v1/withdraw",
-    body(["vnetUrl", "collSymbol", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "positionOwner"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, market, collSymbol, amount, positionOwner } = req.body;
+        const { vnetUrl, market, collSymbol, collAmount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
 
-        aaveV3Withdraw(market, collSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Withdraw(market, collSymbol, collAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -727,7 +733,7 @@ router.post("/v1/withdraw",
  *                type: string
  *                example: "DAI"
  *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              amount:
+ *              debtAmount:
  *                type: number
  *                example: 2000
  *              walletAddr:
@@ -829,17 +835,18 @@ router.post("/v1/withdraw",
  *                   type: string
  */
 router.post("/v1/borrow",
-    body(["vnetUrl", "debtSymbol", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "debtSymbol", "positionOwner"]).notEmpty(),
+    body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, market, debtSymbol, amount, positionOwner } = req.body;
+        const { vnetUrl, market, debtSymbol, debtAmount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
-        aaveV3Borrow(market, debtSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Borrow(market, debtSymbol, debtAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -878,7 +885,7 @@ router.post("/v1/borrow",
  *                type: string
  *                example: "DAI"
  *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              amount:
+ *              debtAmount:
  *                type: number
  *                example: 2000
  *              walletAddr:
@@ -980,7 +987,8 @@ router.post("/v1/borrow",
  *                   type: string
  */
 router.post("/v1/payback",
-    body(["vnetUrl", "debtSymbol", "amount", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "debtSymbol", "positionOwner"]).notEmpty(),
+    body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -988,10 +996,10 @@ router.post("/v1/payback",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, debtSymbol, amount, positionOwner } = req.body;
+        const { vnetUrl, market, debtSymbol, debtAmount, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
-        aaveV3Payback(market, debtSymbol, amount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Payback(market, debtSymbol, debtAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

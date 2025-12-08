@@ -36,7 +36,7 @@ const router = express.Router();
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              strategyOrBundleId:
@@ -112,7 +112,7 @@ const router = express.Router();
 router.post("/close-with-maximum-gasprice", body(
     [
         "vnetUrl",
-        "positionOwner",
+        "eoa",
         "strategyOrBundleId",
         "triggerData.baseTokenAddress",
         "triggerData.quoteTokenAddress",
@@ -131,11 +131,11 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, strategyOrBundleId, positionOwner, triggerData, subData } = req.body;
+    const { vnetUrl, strategyOrBundleId, eoa, triggerData, subData } = req.body;
 
-    await setupVnet(vnetUrl, [positionOwner]);
+    await setupVnet(vnetUrl, [eoa]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
-        positionOwner,
+        eoa,
         strategyOrBundleId,
         triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
         subData.collSymbol, subData.collAssetId, subData.debtSymbol, subData.debtAssetId,
@@ -171,7 +171,7 @@ async (req, res) => {
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              triggerData:
@@ -235,7 +235,7 @@ async (req, res) => {
 router.post("/close-with-coll", body(
     [
         "vnetUrl",
-        "positionOwner",
+        "eoa",
         "triggerData.triggerBaseAssetSymbol",
         "triggerData.triggerQuoteAssetSymbol",
         "triggerData.price",
@@ -250,13 +250,13 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, positionOwner, triggerData, subData } = req.body;
+    const { vnetUrl, market, eoa, triggerData, subData } = req.body;
 
-    await setupVnet(vnetUrl, [positionOwner]);
+    await setupVnet(vnetUrl, [eoa]);
 
     subAaveCloseToCollStrategy(
         market,
-        positionOwner,
+        eoa,
         triggerData.triggerBaseAssetSymbol,
         triggerData.triggerQuoteAssetSymbol,
         triggerData.price,
@@ -291,7 +291,7 @@ async (req, res) => {
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              minRatio:
@@ -353,12 +353,12 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, positionOwner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        const { vnetUrl, eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         const sub = await subAaveV3LeverageManagementWithSubProxyStrategy(
-            positionOwner,
+            eoa,
             minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled,
             getWalletAddr(req), defaultsToSafe(req)
         );
@@ -393,7 +393,7 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              bundleId:
@@ -471,7 +471,7 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
 router.post("/open-order-from-collateral", body(
     [
         "vnetUrl",
-        "positionOwner",
+        "eoa",
         "bundleId",
         "triggerData.price",
         "triggerData.ratioState",
@@ -486,13 +486,13 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, positionOwner, bundleId, triggerData, subData } = req.body;
+    const { vnetUrl, market, eoa, bundleId, triggerData, subData } = req.body;
 
-    await setupVnet(vnetUrl, [positionOwner]);
+    await setupVnet(vnetUrl, [eoa]);
 
     subAaveV3OpenOrderFromCollateral(
         market,
-        positionOwner,
+        eoa,
         bundleId,
         triggerData.price,
         triggerData.ratioState,
@@ -531,7 +531,7 @@ async (req, res) => {
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              bundleId:
@@ -609,7 +609,7 @@ async (req, res) => {
 router.post("/repay-on-price", body(
     [
         "vnetUrl",
-        "positionOwner",
+        "eoa",
         "bundleId",
         "triggerData.price",
         "triggerData.ratioState",
@@ -624,13 +624,13 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, positionOwner, bundleId, triggerData, subData } = req.body;
+    const { vnetUrl, market, eoa, bundleId, triggerData, subData } = req.body;
 
-    await setupVnet(vnetUrl, [positionOwner]);
+    await setupVnet(vnetUrl, [eoa]);
 
     subAaveV3RepayOnPrice(
         market,
-        positionOwner,
+        eoa,
         bundleId,
         triggerData.price,
         triggerData.ratioState,
@@ -663,7 +663,7 @@ async (req, res) => {
  *             type: object
  *             required:
  *               - vnetUrl
- *               - positionOwner
+ *               - eoa
  *               - bundleId
  *               - ratioState
  *               - targetRatio
@@ -673,7 +673,7 @@ async (req, res) => {
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               positionOwner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
@@ -743,7 +743,7 @@ async (req, res) => {
  *                   example: "Failed to subscribe to Aave V3 Leverage Management Generic (EOA) strategy with error: ..."
  */
 router.post("/leverage-management/generic/eoa",
-    body(["vnetUrl", "positionOwner", "bundleId", "ratioState", "targetRatio", "triggerRatio"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "ratioState", "targetRatio", "triggerRatio"]).notEmpty(),
     body("bundleId").isInt(),
     body("ratioState").isInt(),
     body("targetRatio").isFloat({ gt: 0 }),
@@ -755,14 +755,14 @@ router.post("/leverage-management/generic/eoa",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, positionOwner, bundleId, market, ratioState, targetRatio, triggerRatio } = req.body;
+        const { vnetUrl, eoa, bundleId, market, ratioState, targetRatio, triggerRatio } = req.body;
         const isEOA = true; // Hardcoded for EOA route
         const isGeneric = true; // Hardcoded for generic route
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subAaveV3GenericAutomationStrategy(
-            positionOwner,
+            eoa,
             bundleId,
             market,
             isEOA,
@@ -798,7 +798,7 @@ router.post("/leverage-management/generic/eoa",
  *             type: object
  *             required:
  *               - vnetUrl
- *               - positionOwner
+ *               - eoa
  *               - bundleId
  *               - ratioState
  *               - targetRatio
@@ -808,10 +808,10 @@ router.post("/leverage-management/generic/eoa",
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               positionOwner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *                 description: "EOA address that will own the strategy"
+ *                 description: "EOA address"
  *               bundleId:
  *                 type: integer
  *                 example: 53
@@ -878,7 +878,7 @@ router.post("/leverage-management/generic/eoa",
  *                   example: "Failed to subscribe to Aave V3 Leverage Management Generic (Smart Wallet) strategy with error: ..."
  */
 router.post("/leverage-management/generic/smart-wallet",
-    body(["vnetUrl", "positionOwner", "bundleId", "ratioState", "targetRatio", "triggerRatio"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "ratioState", "targetRatio", "triggerRatio"]).notEmpty(),
     body("bundleId").isInt(),
     body("ratioState").isInt(),
     body("targetRatio").isFloat({ gt: 0 }),
@@ -890,14 +890,14 @@ router.post("/leverage-management/generic/smart-wallet",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, positionOwner, bundleId, market, ratioState, targetRatio, triggerRatio } = req.body;
+        const { vnetUrl, eoa, bundleId, market, ratioState, targetRatio, triggerRatio } = req.body;
         const isEOA = false; // Hardcoded for Smart Wallet route
         const isGeneric = true; // Hardcoded for generic route
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subAaveV3GenericAutomationStrategy(
-            positionOwner,
+            eoa,
             bundleId,
             market,
             isEOA,
@@ -933,7 +933,7 @@ router.post("/leverage-management/generic/smart-wallet",
  *             type: object
  *             required:
  *               - vnetUrl
- *               - positionOwner
+ *               - eoa
  *               - bundleId
  *               - ratioState
  *               - targetRatio
@@ -943,10 +943,10 @@ router.post("/leverage-management/generic/smart-wallet",
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               positionOwner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *                 description: "EOA address that will own the strategy"
+ *                 description: "EOA address"
  *               bundleId:
  *                 type: integer
  *                 example: 53
@@ -1013,7 +1013,7 @@ router.post("/leverage-management/generic/smart-wallet",
  *                   example: "Failed to subscribe to Aave V3 Leverage Management (Without Sub Proxy) strategy with error: ..."
  */
 router.post("/leverage-management/without-sub-proxy",
-    body(["vnetUrl", "positionOwner", "bundleId", "ratioState", "targetRatio", "triggerRatio"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "ratioState", "targetRatio", "triggerRatio"]).notEmpty(),
     body("bundleId").isInt(),
     body("ratioState").isInt(),
     body("targetRatio").isFloat({ gt: 0 }),
@@ -1025,14 +1025,14 @@ router.post("/leverage-management/without-sub-proxy",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, positionOwner, bundleId, market, ratioState, targetRatio, triggerRatio } = req.body;
+        const { vnetUrl, eoa, bundleId, market, ratioState, targetRatio, triggerRatio } = req.body;
         const isEOA = false; // Hardcoded for Smart Wallet route
         const isGeneric = false; // Hardcoded for non-generic route
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subAaveV3GenericAutomationStrategy(
-            positionOwner,
+            eoa,
             bundleId,
             market,
             isEOA,
@@ -1068,7 +1068,7 @@ router.post("/leverage-management/without-sub-proxy",
  *             type: object
  *             required:
  *               - vnetUrl
- *               - positionOwner
+ *               - eoa
  *               - bundleId
  *               - collSymbol
  *               - debtSymbol
@@ -1080,7 +1080,7 @@ router.post("/leverage-management/without-sub-proxy",
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               positionOwner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
@@ -1158,7 +1158,7 @@ router.post("/leverage-management/without-sub-proxy",
  *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price Generic (EOA) strategy with error: ..."
  */
 router.post("/leverage-management-on-price/generic/eoa",
-    body(["vnetUrl", "positionOwner", "bundleId", "collSymbol", "debtSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "collSymbol", "debtSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
     body("bundleId").isInt(),
     body("priceState").isInt(),
     body("triggerPrice").isFloat({ gt: 0 }),
@@ -1172,7 +1172,7 @@ router.post("/leverage-management-on-price/generic/eoa",
 
         const {
             vnetUrl,
-            positionOwner,
+            eoa,
             bundleId,
             market,
             collSymbol,
@@ -1183,10 +1183,10 @@ router.post("/leverage-management-on-price/generic/eoa",
         } = req.body;
         const isEOA = true; // Hardcoded for EOA route
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subAaveV3LeverageManagementOnPriceGeneric(
-            positionOwner,
+            eoa,
             bundleId,
             market,
             isEOA,
@@ -1202,7 +1202,7 @@ router.post("/leverage-management-on-price/generic/eoa",
                 res.status(200).send(sub);
             })
             .catch(err => {
-                res.status(500).send({ error: `Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ${err.toString()}` });
+                res.status(500).send({ error: `Failed to subscribe to Aave V3 Leverage Management On Price Generic (EOA) strategy with error: ${err.toString()}` });
             });
     });
 
@@ -1210,12 +1210,12 @@ router.post("/leverage-management-on-price/generic/eoa",
  * @swagger
  * /aave/v3/strategies/leverage-management-on-price/generic/smart-wallet:
  *   post:
- *     summary: Subscribe to Aave V3 Leverage Management On Price strategy (Smart Wallet)
+ *     summary: Subscribe to Aave V3 Leverage Management On Price Generic strategy (Smart Wallet)
  *     tags:
  *       - AaveV3
- *     description: Subscribes to Aave V3 Leverage Management On Price strategy for Smart Wallet positions.
+ *     description: Subscribes to Aave V3 Leverage Management On Price Generic strategy for Smart Wallet positions.
  *     requestBody:
- *       description: Request body for subscribing to Aave V3 Leverage Management On Price strategy (Smart Wallet)
+ *       description: Request body for subscribing to Aave V3 Leverage Management On Price Generic strategy (Smart Wallet)
  *       required: true
  *       content:
  *         application/json:
@@ -1223,7 +1223,7 @@ router.post("/leverage-management-on-price/generic/eoa",
  *             type: object
  *             required:
  *               - vnetUrl
- *               - positionOwner
+ *               - eoa
  *               - bundleId
  *               - collSymbol
  *               - debtSymbol
@@ -1235,10 +1235,10 @@ router.post("/leverage-management-on-price/generic/eoa",
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               positionOwner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *                 description: "EOA address that will own the strategy"
+ *                 description: "EOA address"
  *               bundleId:
  *                 type: integer
  *                 example: 54
@@ -1313,7 +1313,7 @@ router.post("/leverage-management-on-price/generic/eoa",
  *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ..."
  */
 router.post("/leverage-management-on-price/generic/smart-wallet",
-    body(["vnetUrl", "positionOwner", "bundleId", "collSymbol", "debtSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "collSymbol", "debtSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
     body("bundleId").isInt(),
     body("priceState").isInt(),
     body("triggerPrice").isFloat({ gt: 0 }),
@@ -1327,7 +1327,7 @@ router.post("/leverage-management-on-price/generic/smart-wallet",
 
         const {
             vnetUrl,
-            positionOwner,
+            eoa,
             bundleId,
             market,
             collSymbol,
@@ -1338,10 +1338,10 @@ router.post("/leverage-management-on-price/generic/smart-wallet",
         } = req.body;
         const isEOA = false; // Hardcoded for Smart Wallet route
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subAaveV3LeverageManagementOnPriceGeneric(
-            positionOwner,
+            eoa,
             bundleId,
             market,
             isEOA,
@@ -1357,7 +1357,7 @@ router.post("/leverage-management-on-price/generic/smart-wallet",
                 res.status(200).send(sub);
             })
             .catch(err => {
-                res.status(500).send({ error: `Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ${err.toString()}` });
+                res.status(500).send({ error: `Failed to subscribe to Aave V3 Leverage Management On Price Generic (Smart Wallet) strategy with error: ${err.toString()}` });
             });
     });
 
@@ -1365,12 +1365,12 @@ router.post("/leverage-management-on-price/generic/smart-wallet",
  * @swagger
  * /aave/v3/strategies/close-on-price/generic/eoa:
  *   post:
- *     summary: Subscribe to Aave V3 Close On Price strategy (EOA)
+ *     summary: Subscribe to Aave V3 Close On Price Generic strategy (EOA)
  *     tags:
  *       - AaveV3
  *     description: Subscribes to Aave V3 Close On Price strategy with stop loss and take profit functionality for EOA positions.
  *     requestBody:
- *       description: Request body for subscribing to Aave V3 Close On Price strategy (EOA)
+ *       description: Request body for subscribing to Aave V3 Close On Price Generic strategy (EOA)
  *       required: true
  *       content:
  *         application/json:
@@ -1378,7 +1378,7 @@ router.post("/leverage-management-on-price/generic/smart-wallet",
  *             type: object
  *             required:
  *               - vnetUrl
- *               - positionOwner
+ *               - eoa
  *               - bundleId
  *               - collSymbol
  *               - debtSymbol
@@ -1391,7 +1391,7 @@ router.post("/leverage-management-on-price/generic/smart-wallet",
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               positionOwner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
@@ -1473,7 +1473,7 @@ router.post("/leverage-management-on-price/generic/smart-wallet",
  *                   example: "Failed to subscribe to Aave V3 Close On Price Generic (EOA) strategy with error: ..."
  */
 router.post("/close-on-price/generic/eoa",
-    body(["vnetUrl", "positionOwner", "bundleId", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
     body("stopLossType").isFloat(),
@@ -1488,7 +1488,7 @@ router.post("/close-on-price/generic/eoa",
 
         const {
             vnetUrl,
-            positionOwner,
+            eoa,
             bundleId,
             market,
             collSymbol,
@@ -1500,10 +1500,10 @@ router.post("/close-on-price/generic/eoa",
         } = req.body;
         const isEOA = true; // Hardcoded for EOA route
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subAaveV3CloseOnPriceGeneric(
-            positionOwner,
+            eoa,
             bundleId,
             market,
             isEOA,
@@ -1528,12 +1528,12 @@ router.post("/close-on-price/generic/eoa",
  * @swagger
  * /aave/v3/strategies/close-on-price/generic/smart-wallet:
  *   post:
- *     summary: Subscribe to Aave V3 Close On Price strategy (Smart Wallet)
+ *     summary: Subscribe to Aave V3 Close On Price Generic strategy (Smart Wallet)
  *     tags:
  *       - AaveV3
  *     description: Subscribes to Aave V3 Close On Price strategy with stop loss and take profit functionality for Smart Wallet positions.
  *     requestBody:
- *       description: Request body for subscribing to Aave V3 Close On Price strategy (Smart Wallet)
+ *       description: Request body for subscribing to Aave V3 Close On Price Generic strategy (Smart Wallet)
  *       required: true
  *       content:
  *         application/json:
@@ -1541,7 +1541,7 @@ router.post("/close-on-price/generic/eoa",
  *             type: object
  *             required:
  *               - vnetUrl
- *               - positionOwner
+ *               - eoa
  *               - bundleId
  *               - collSymbol
  *               - debtSymbol
@@ -1554,10 +1554,10 @@ router.post("/close-on-price/generic/eoa",
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               positionOwner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *                 description: "EOA address that will own the strategy"
+ *                 description: "EOA address"
  *               bundleId:
  *                 type: integer
  *                 example: 56
@@ -1636,7 +1636,7 @@ router.post("/close-on-price/generic/eoa",
  *                   example: "Failed to subscribe to Aave V3 Close On Price Generic (Smart Wallet) strategy with error: ..."
  */
 router.post("/close-on-price/generic/smart-wallet",
-    body(["vnetUrl", "positionOwner", "bundleId", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
     body("stopLossType").isFloat(),
@@ -1651,7 +1651,7 @@ router.post("/close-on-price/generic/smart-wallet",
 
         const {
             vnetUrl,
-            positionOwner,
+            eoa,
             bundleId,
             market,
             collSymbol,
@@ -1663,10 +1663,10 @@ router.post("/close-on-price/generic/smart-wallet",
         } = req.body;
         const isEOA = false; // Hardcoded for Smart Wallet route
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subAaveV3CloseOnPriceGeneric(
-            positionOwner,
+            eoa,
             bundleId,
             market,
             isEOA,
@@ -1707,13 +1707,15 @@ router.post("/close-on-price/generic/smart-wallet",
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                description: "Unique identifier for the vnet"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "EOA address"
  *              strategyId:
  *                type: integer
  *                example: 135
@@ -1796,7 +1798,7 @@ router.post("/close-on-price/generic/smart-wallet",
 router.post("/collateral-switch", body(
     [
         "vnetUrl",
-        "positionOwner",
+        "eoa",
         "strategyId",
         "triggerData.price",
         "triggerData.ratioState",
@@ -1811,12 +1813,12 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, positionOwner, strategyId, triggerData, subData } = req.body;
+    const { vnetUrl, market, eoa, strategyId, triggerData, subData } = req.body;
 
-    await setupVnet(vnetUrl, [positionOwner]);
+    await setupVnet(vnetUrl, [eoa]);
 
     subAaveV3CollateralSwitch(
-        positionOwner,
+        eoa,
         strategyId,
         market,
         subData.fromAssetSymbol,

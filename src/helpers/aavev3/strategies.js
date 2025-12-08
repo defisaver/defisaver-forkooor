@@ -112,7 +112,7 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
 
 /**
  * Subscribes to Aave V3 Automation strategy
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {int} minRatio ratio under which the strategy will trigger
  * @param {int} maxRatio ratio over which the strategy will trigger
  * @param {int} targetRepayRatio wanted ratio after repay
@@ -123,7 +123,7 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
  * @returns {boolean} StrategySub object and ID of the subscription
  */
 async function subAaveV3LeverageManagementWithSubProxyStrategy(
-    owner,
+    eoa,
     minRatio,
     maxRatio,
     targetRepayRatio,
@@ -133,7 +133,7 @@ async function subAaveV3LeverageManagementWithSubProxyStrategy(
     useSafe = true
 ) {
     try {
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         const strategySub =
         automationSdk.strategySubService.aaveV3Encode.leverageManagement(
@@ -155,7 +155,7 @@ async function subAaveV3LeverageManagementWithSubProxyStrategy(
 
 /**
  * Subscribes to Aave V3 Generic Automation strategy. Supports EOA and SW subbing
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {uint} bundleId bundle ID
  * @param {string} market address of the market
  * @param {boolean} isEOA if it is EOA or SW strategy
@@ -167,21 +167,21 @@ async function subAaveV3LeverageManagementWithSubProxyStrategy(
  * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric, proxyAddr, useSafe = true) {
+async function subAaveV3GenericAutomationStrategy(eoa, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric, proxyAddr, useSafe = true) {
 
     try {
         const marketAddress = await getAaveV3MarketAddress(market);
-        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
-        const user = isEOA ? owner : proxy.address;
+        const user = isEOA ? eoa : proxy.address;
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementWithoutSubProxy(
             bundleId, marketAddress, user, ratioState, targetRatio, triggerRatio, isGeneric
         );
 
         if (isEOA) {
-            await giveApprovalsFromEOAToSmartWallet(marketAddress, owner, proxy.address, senderAcc);
+            await giveApprovalsFromEOAToSmartWallet(marketAddress, eoa, proxy.address, senderAcc);
         }
 
         const subId = await subToStrategy(proxy, strategySub);
@@ -195,7 +195,7 @@ async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA
 
 /**
  * Subscribes to Aave V3 Leverage Management On Price Generic strategy. Supports EOA and SW subbing
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {uint} bundleId bundle ID
  * @param {string} market address of the market
  * @param {boolean} isEOA if it is EOA or SW strategy
@@ -209,7 +209,7 @@ async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3LeverageManagementOnPriceGeneric(
-    owner,
+    eoa,
     bundleId,
     market,
     isEOA,
@@ -223,10 +223,10 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
 ) {
     try {
         const marketAddress = await getAaveV3MarketAddress(market);
-        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
-        const user = isEOA ? owner : proxy.address;
+        const user = isEOA ? eoa : proxy.address;
 
         // Get asset info
         const collAssetData = await getTokenInfo(collSymbol);
@@ -238,7 +238,7 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
         const debtAssetInfo = infos[1];
 
         if (isEOA) {
-            await giveApprovalsFromEOAToSmartWallet(marketAddress, owner, proxy.address, senderAcc);
+            await giveApprovalsFromEOAToSmartWallet(marketAddress, eoa, proxy.address, senderAcc);
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPriceGeneric(
@@ -265,7 +265,7 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
 
 /**
  * Subscribes to Aave V3 Close On Price Generic strategy. Supports EOA and SW subbing
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {uint} bundleId bundle ID
  * @param {string} market address of the market
  * @param {boolean} isEOA if it is EOA or SW strategy
@@ -280,7 +280,7 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3CloseOnPriceGeneric(
-    owner,
+    eoa,
     bundleId,
     market,
     isEOA,
@@ -295,10 +295,10 @@ async function subAaveV3CloseOnPriceGeneric(
 ) {
     try {
         const marketAddress = await getAaveV3MarketAddress(market);
-        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
-        const user = isEOA ? owner : proxy.address;
+        const user = isEOA ? eoa : proxy.address;
 
         // Get asset info
         const collAssetData = await getTokenInfo(collSymbol);
@@ -310,7 +310,7 @@ async function subAaveV3CloseOnPriceGeneric(
         const debtAssetInfo = infos[1];
 
         if (isEOA) {
-            await giveApprovalsFromEOAToSmartWallet(marketAddress, owner, proxy.address, senderAcc);
+            await giveApprovalsFromEOAToSmartWallet(marketAddress, eoa, proxy.address, senderAcc);
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.closeOnPriceGeneric(
@@ -339,7 +339,7 @@ async function subAaveV3CloseOnPriceGeneric(
 /**
  * Subscribes to Aave V3 Close To Coll strategy
  * @param {string} market aaveV3 market address (optional, will use default market if not provided)
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {string} triggerBaseAssetSymbol trigger base asset symbol
  * @param {string} triggerQuoteAssetSymbol trigger quote asset symbol
  * @param {number} targetPrice trigger price
@@ -352,7 +352,7 @@ async function subAaveV3CloseOnPriceGeneric(
  */
 async function subAaveCloseToCollStrategy(
     market,
-    owner,
+    eoa,
     triggerBaseAssetSymbol,
     triggerQuoteAssetSymbol,
     targetPrice,
@@ -364,7 +364,7 @@ async function subAaveCloseToCollStrategy(
 ) {
     try {
         const marketAddress = await getAaveV3MarketAddress(market);
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         const collTokenData = await getTokenInfo(collSymbol);
         const debtTokenData = await getTokenInfo(debtSymbol);
@@ -417,7 +417,7 @@ async function subAaveCloseToCollStrategy(
 /**
  * Subscribes to Aave V3 Close To Coll strategy bundle
  * @param {string} market aaveV3 market address (optional, will use default market if not provided)
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {number} bundleId bundle ID
  * @param {number} triggerPrice trigger price
  * @param {string} triggerState 'under' or 'over'
@@ -430,7 +430,7 @@ async function subAaveCloseToCollStrategy(
  */
 async function subAaveV3OpenOrderFromCollateral(
     market,
-    owner,
+    eoa,
     bundleId,
     triggerPrice,
     triggerState,
@@ -442,7 +442,7 @@ async function subAaveV3OpenOrderFromCollateral(
 ) {
     try {
         const marketAddress = await getAaveV3MarketAddress(market);
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
         const collTokenData = await getTokenInfo(collSymbol);
         const debtTokenData = await getTokenInfo(debtSymbol);
 
@@ -482,7 +482,7 @@ async function subAaveV3OpenOrderFromCollateral(
 /**
  * Subscribes to Aave V3 Repay on price strategy bundle
  * @param {string} market aaveV3 market address (optional, will use default market if not provided)
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {number} bundleId bundle ID
  * @param {number} triggerPrice trigger price
  * @param {string} triggerState 'under' or 'over'
@@ -495,7 +495,7 @@ async function subAaveV3OpenOrderFromCollateral(
  */
 async function subAaveV3RepayOnPrice(
     market,
-    owner,
+    eoa,
     bundleId,
     triggerPrice,
     triggerState,
@@ -507,7 +507,7 @@ async function subAaveV3RepayOnPrice(
 ) {
     try {
         const marketAddress = await getAaveV3MarketAddress(market);
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
         const collTokenData = await getTokenInfo(collSymbol);
         const debtTokenData = await getTokenInfo(debtSymbol);
 
@@ -547,7 +547,7 @@ async function subAaveV3RepayOnPrice(
 
 /**
  * Subscribes to Aave V3 Collateral Switch strategy
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {number} strategyId strategy ID
  * @param {string} market aaveV3 market address (optional, will use default market if not provided)
  * @param {string} fromAssetSymbol symbol of the collateral asset to switch from
@@ -561,7 +561,7 @@ async function subAaveV3RepayOnPrice(
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3CollateralSwitch(
-    owner,
+    eoa,
     strategyId,
     market,
     fromAssetSymbol,
@@ -575,7 +575,7 @@ async function subAaveV3CollateralSwitch(
 ) {
     try {
         const marketAddress = await getAaveV3MarketAddress(market);
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
         const fromTokenData = await getTokenInfo(fromAssetSymbol);
         const toTokenData = await getTokenInfo(toAssetSymbol);
         const fromAddr = fromTokenData.address;

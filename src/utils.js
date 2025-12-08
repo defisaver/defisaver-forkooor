@@ -704,7 +704,7 @@ async function subToSparkStrategy(proxy, strategySub) {
  * @param {string} strategySub strategySub properly encoded
  * @returns {number} ID of the subscription
  */
-async function subToAaveV3Automation(proxy, strategySub) {
+async function subToAaveV3LeverageManagementWithSubProxy(proxy, strategySub) {
     const { chainId } = await hre.ethers.provider.getNetwork();
     const subProxyAddr = addresses[chainId].AAVE_V3_SUB_PROXY;
     const [signer] = await hre.ethers.getSigners();
@@ -944,7 +944,7 @@ module.exports = {
     getLatestSubId,
     getSender,
     subToSparkStrategy,
-    subToAaveV3Automation,
+    subToAaveV3LeverageManagementWithSubProxy,
     subToMcdAutomation,
     subToLiquityLeverageManagementAutomation,
     isContract,

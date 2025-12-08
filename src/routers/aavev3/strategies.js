@@ -4,7 +4,7 @@ const express = require("express");
 const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const {
     subAaveV3CloseWithMaximumGasPriceStrategy,
-    subAaveAutomationStrategy,
+    subAaveV3LeverageManagementWithSubProxyStrategy,
     subAaveCloseToCollStrategy,
     subAaveV3OpenOrderFromCollateral,
     subAaveV3RepayOnPrice,
@@ -19,7 +19,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/close-with-maximum-gasprice:
+ * /aave/v3/strategies/close-with-maximum-gasprice:
  *   post:
  *     summary: Subscribe to a Aave V3 Close With Maximum Gas Price strategy
  *     tags:
@@ -109,7 +109,7 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/v1/close-with-maximum-gasprice", body(
+router.post("/close-with-maximum-gasprice", body(
     [
         "vnetUrl",
         "positionOwner",
@@ -150,7 +150,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/close-with-coll:
+ * /aave/v3/strategies/close-with-coll:
  *   post:
  *     summary: Subscribe to a Aave V3 Close With Collateral strategy
  *     tags:
@@ -232,7 +232,7 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/v1/close-with-coll", body(
+router.post("/close-with-coll", body(
     [
         "vnetUrl",
         "positionOwner",
@@ -274,9 +274,9 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/dfs-automation:
+ * /aave/v3/strategies/leverage-management/sub-proxy:
  *   post:
- *     summary: Subscribe to a Aave Automation strategy
+ *     summary: Subscribe to a Aave V3 Leverage Management Sub Proxy strategy
  *     tags:
  *      - AaveV3
  *     description:
@@ -349,7 +349,7 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/v1/dfs-automation", async (req, res) => {
+router.post("/leverage-management/sub-proxy", async (req, res) => {
     let resObj;
 
     try {
@@ -357,7 +357,7 @@ router.post("/v1/dfs-automation", async (req, res) => {
 
         await setupVnet(vnetUrl, [positionOwner]);
 
-        const sub = await subAaveAutomationStrategy(
+        const sub = await subAaveV3LeverageManagementWithSubProxyStrategy(
             positionOwner,
             minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled,
             getWalletAddr(req), defaultsToSafe(req)
@@ -372,7 +372,7 @@ router.post("/v1/dfs-automation", async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/open-order-from-collateral:
+ * /aave/v3/strategies/open-order-from-collateral:
  *   post:
  *     summary: Subscribe to a Aave V3 Open Order from collateral strategy
  *     tags:
@@ -468,7 +468,7 @@ router.post("/v1/dfs-automation", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/v1/open-order-from-collateral", body(
+router.post("/open-order-from-collateral", body(
     [
         "vnetUrl",
         "positionOwner",
@@ -510,7 +510,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/repay-on-price:
+ * /aave/v3/strategies/repay-on-price:
  *   post:
  *     summary: Subscribe to a Aave V3 Repay on price strategy
  *     tags:
@@ -606,7 +606,7 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/v1/repay-on-price", body(
+router.post("/repay-on-price", body(
     [
         "vnetUrl",
         "positionOwner",
@@ -648,7 +648,7 @@ async (req, res) => {
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/leverage-management-generic:
+ * /aave/v3/strategies/leverage-management-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Leverage Management Generic strategy (EOA or Smart Wallet)
  *     tags:
@@ -753,7 +753,7 @@ async (req, res) => {
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Leverage Management Generic strategy with error: ..."
  */
-router.post("/v1/leverage-management-generic",
+router.post("/leverage-management-generic",
     body(["vnetUrl", "positionOwner", "bundleId", "isEOA", "ratioState", "targetRatio", "triggerRatio", "isGeneric"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("isGeneric").isBoolean(),
@@ -794,7 +794,7 @@ router.post("/v1/leverage-management-generic",
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/leverage-management-on-price-generic:
+ * /aave/v3/strategies/leverage-management-on-price-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Leverage Management On Price strategy (EOA or Smart Wallet)
  *     tags:
@@ -904,7 +904,7 @@ router.post("/v1/leverage-management-generic",
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Leverage Management On Price strategy with error: ..."
  */
-router.post("/v1/leverage-management-on-price-generic",
+router.post("/leverage-management-on-price-generic",
     body(["vnetUrl", "positionOwner", "bundleId", "isEOA", "collSymbol", "debtSymbol", "triggerPrice", "priceState", "targetRatio"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
@@ -956,7 +956,7 @@ router.post("/v1/leverage-management-on-price-generic",
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/close-on-price-generic:
+ * /aave/v3/strategies/close-on-price-generic:
  *   post:
  *     summary: Subscribe to Aave V3 Close On Price strategy (EOA or Smart Wallet)
  *     tags:
@@ -1071,7 +1071,7 @@ router.post("/v1/leverage-management-on-price-generic",
  *                   type: string
  *                   example: "Failed to subscribe to Aave V3 Close On Price strategy with error: ..."
  */
-router.post("/v1/close-on-price-generic",
+router.post("/close-on-price-generic",
     body(["vnetUrl", "positionOwner", "bundleId", "isEOA", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("isEOA").isBoolean(),
     body("bundleId").isInt(),
@@ -1127,7 +1127,7 @@ router.post("/v1/close-on-price-generic",
 
 /**
  * @swagger
- * /aave/v3/strategies/v1/collateral-switch:
+ * /aave/v3/strategies/collateral-switch:
  *   post:
  *     summary: Subscribe to a Aave V3 Collateral Switch strategy
  *     tags:
@@ -1230,7 +1230,7 @@ router.post("/v1/close-on-price-generic",
  *                 error:
  *                   type: string
  */
-router.post("/v1/collateral-switch", body(
+router.post("/collateral-switch", body(
     [
         "vnetUrl",
         "positionOwner",

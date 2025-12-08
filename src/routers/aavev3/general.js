@@ -16,7 +16,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /aave/v3/general/v1/get-position:
+ * /aave/v3/general/get-position:
  *   post:
  *     summary: Fetch info about AaveV3 position on a vnet
  *     tags:
@@ -131,7 +131,7 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/v1/get-position",
+router.post("/get-position",
     body(["vnetUrl", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -154,7 +154,7 @@ router.post("/v1/get-position",
 
 /**
  * @swagger
- * /aave/v3/general/v1/get-safety-ratio:
+ * /aave/v3/general/get-safety-ratio:
  *   post:
  *     summary: Fetch safety ratio for user's AaveV3 position on a vnet
  *     tags:
@@ -201,7 +201,7 @@ router.post("/v1/get-position",
  *                 error:
  *                   type: string
  */
-router.post("/v1/get-safety-ratio",
+router.post("/get-safety-ratio",
     body(["vnetUrl", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -225,7 +225,7 @@ router.post("/v1/get-safety-ratio",
 
 /**
  * @swagger
- * /aave/v3/general/v1/create:
+ * /aave/v3/general/create:
  *   post:
  *     summary: Create AaveV3 position on a vnet
  *     tags:
@@ -261,11 +261,11 @@ router.post("/v1/get-safety-ratio",
  *              collAmount:
  *                type: number
  *                example: 2
- *                description: "Amount of collateral to supply (whole number)
+ *                description: "Amount of collateral to supply (whole number)"
  *              debtAmount:
  *                type: number
  *                example: 2000
- *                description: "Amount of debt to borrow (whole number)
+ *                description: "Amount of debt to borrow (whole number)"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -368,7 +368,7 @@ router.post("/v1/get-safety-ratio",
  *                 error:
  *                   type: string
  */
-router.post("/v1/create",
+router.post("/create",
     body(["vnetUrl", "collSymbol", "debtSymbol", "positionOwner", "isEOA"]).notEmpty(),
     body("collAmount").notEmpty().isNumeric(),
     body("debtAmount").notEmpty().isNumeric(),
@@ -397,7 +397,7 @@ router.post("/v1/create",
 
 /**
  * @swagger
- * /aave/v3/general/v1/supply:
+ * /aave/v3/general/supply:
  *   post:
  *     summary: Supply collateral to AaveV3 position on a vnet
  *     tags:
@@ -526,7 +526,7 @@ router.post("/v1/create",
  *                 error:
  *                   type: string
  */
-router.post("/v1/supply",
+router.post("/supply",
     body(["vnetUrl", "collSymbol", "positionOwner"]).notEmpty(),
     body("collAmount").notEmpty().isNumeric(),
     async (req, res) => {
@@ -552,7 +552,7 @@ router.post("/v1/supply",
 
 /**
  * @swagger
- * /aave/v3/general/v1/withdraw:
+ * /aave/v3/general/withdraw:
  *   post:
  *     summary: Withdraw collateral from AaveV3 position on a vnet
  *     tags:
@@ -681,7 +681,7 @@ router.post("/v1/supply",
  *                 error:
  *                   type: string
  */
-router.post("/v1/withdraw",
+router.post("/withdraw",
     body(["vnetUrl", "collSymbol", "positionOwner"]).notEmpty(),
     body("collAmount").notEmpty().isNumeric(),
     async (req, res) => {
@@ -705,7 +705,7 @@ router.post("/v1/withdraw",
 
 /**
  * @swagger
- * /aave/v3/general/v1/borrow:
+ * /aave/v3/general/borrow:
  *   post:
  *     summary: Borrow debt from AaveV3 position on a vnet
  *     tags:
@@ -834,7 +834,7 @@ router.post("/v1/withdraw",
  *                 error:
  *                   type: string
  */
-router.post("/v1/borrow",
+router.post("/borrow",
     body(["vnetUrl", "debtSymbol", "positionOwner"]).notEmpty(),
     body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
@@ -857,7 +857,7 @@ router.post("/v1/borrow",
 
 /**
  * @swagger
- * /aave/v3/general/v1/payback:
+ * /aave/v3/general/payback:
  *   post:
  *     summary: Borrow debt from AaveV3 position on a vnet
  *     tags:
@@ -986,7 +986,7 @@ router.post("/v1/borrow",
  *                 error:
  *                   type: string
  */
-router.post("/v1/payback",
+router.post("/payback",
     body(["vnetUrl", "debtSymbol", "positionOwner"]).notEmpty(),
     body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {

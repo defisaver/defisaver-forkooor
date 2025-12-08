@@ -122,13 +122,26 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {boolean} StrategySub object and ID of the subscription
  */
-async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
-
+async function subAaveV3LeverageManagementWithSubProxyStrategy(
+    owner,
+    minRatio,
+    maxRatio,
+    targetRepayRatio,
+    targetBoostRatio,
+    boostEnabled,
+    proxyAddr,
+    useSafe = true
+) {
     try {
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
-        const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagement(
-            minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
+        const strategySub =
+        automationSdk.strategySubService.aaveV3Encode.leverageManagement(
+            minRatio,
+            maxRatio,
+            targetBoostRatio,
+            targetRepayRatio,
+            boostEnabled
         );
 
         const subId = await subToAaveV3Automation(proxy, strategySub);
@@ -604,7 +617,7 @@ async function subAaveV3CollateralSwitch(
 
 module.exports = {
     subAaveV3CloseWithMaximumGasPriceStrategy,
-    subAaveAutomationStrategy,
+    subAaveV3LeverageManagementWithSubProxyStrategy,
     subAaveCloseToCollStrategy,
     subAaveV3OpenOrderFromCollateral,
     subAaveV3RepayOnPrice,

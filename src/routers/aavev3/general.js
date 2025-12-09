@@ -4,10 +4,6 @@ const express = require("express");
 const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
 const { getLoanData, getSafetyRatio } = require("../../helpers/aavev3/view");
 const {
-    aaveV3Supply,
-    aaveV3Withdraw,
-    aaveV3Borrow,
-    aaveV3Payback,
     createAaveV3Position
 } = require("../../helpers/aavev3/general");
 const { body, validationResult } = require("express-validator");

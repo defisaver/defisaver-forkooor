@@ -246,10 +246,10 @@ router.post("/get-safety-ratio",
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              collSymbol:
  *                type: string
  *                example: "ETH"
@@ -369,7 +369,7 @@ router.post("/get-safety-ratio",
  *                   type: string
  */
 router.post("/create",
-    body(["vnetUrl", "collSymbol", "debtSymbol", "positionOwner", "isEOA"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "debtSymbol", "eoa", "isEOA"]).notEmpty(),
     body("collAmount").notEmpty().isNumeric(),
     body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
@@ -379,12 +379,12 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, collSymbol, debtSymbol, collAmount, debtAmount, positionOwner, isEOA } = req.body;
+        const { vnetUrl, market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, isEOA } = req.body;
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         createAaveV3Position(
-            market, collSymbol, debtSymbol, collAmount, debtAmount, positionOwner, getWalletAddr(req), isEOA, defaultsToSafe(req)
+            market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, getWalletAddr(req), isEOA, defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);
@@ -418,9 +418,10 @@ router.post("/create",
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              collSymbol:
  *                type: string
  *                example: "ETH"
@@ -527,7 +528,7 @@ router.post("/create",
  *                   type: string
  */
 router.post("/supply",
-    body(["vnetUrl", "collSymbol", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "eoa"]).notEmpty(),
     body("collAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -536,11 +537,11 @@ router.post("/supply",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, collSymbol, collAmount, positionOwner } = req.body;
+        const { vnetUrl, market, collSymbol, collAmount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
-        aaveV3Supply(market, collSymbol, collAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Supply(market, collSymbol, collAmount, eoa, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -573,7 +574,7 @@ router.post("/supply",
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              collSymbol:
@@ -682,7 +683,7 @@ router.post("/supply",
  *                   type: string
  */
 router.post("/withdraw",
-    body(["vnetUrl", "collSymbol", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "eoa"]).notEmpty(),
     body("collAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -690,11 +691,11 @@ router.post("/withdraw",
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, market, collSymbol, collAmount, positionOwner } = req.body;
+        const { vnetUrl, market, collSymbol, collAmount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [positionOwner]);
+        await setupVnet(vnetUrl, [eoa]);
 
-        aaveV3Withdraw(market, collSymbol, collAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        aaveV3Withdraw(market, collSymbol, collAmount, eoa, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -726,7 +727,7 @@ router.post("/withdraw",
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              debtSymbol:
@@ -835,7 +836,7 @@ router.post("/withdraw",
  *                   type: string
  */
 router.post("/borrow",
-    body(["vnetUrl", "debtSymbol", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "debtSymbol", "eoa"]).notEmpty(),
     body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -843,10 +844,10 @@ router.post("/borrow",
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, market, debtSymbol, debtAmount, positionOwner } = req.body;
+        const { vnetUrl, market, debtSymbol, debtAmount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [positionOwner]);
-        aaveV3Borrow(market, debtSymbol, debtAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        await setupVnet(vnetUrl, [eoa]);
+        aaveV3Borrow(market, debtSymbol, debtAmount, eoa, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -878,7 +879,7 @@ router.post("/borrow",
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
  *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
- *              positionOwner:
+ *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *              debtSymbol:
@@ -987,7 +988,7 @@ router.post("/borrow",
  *                   type: string
  */
 router.post("/payback",
-    body(["vnetUrl", "debtSymbol", "positionOwner"]).notEmpty(),
+    body(["vnetUrl", "debtSymbol", "eoa"]).notEmpty(),
     body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -996,10 +997,10 @@ router.post("/payback",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, debtSymbol, debtAmount, positionOwner } = req.body;
+        const { vnetUrl, market, debtSymbol, debtAmount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [positionOwner]);
-        aaveV3Payback(market, debtSymbol, debtAmount, positionOwner, getWalletAddr(req), defaultsToSafe(req))
+        await setupVnet(vnetUrl, [eoa]);
+        aaveV3Payback(market, debtSymbol, debtAmount, eoa, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })

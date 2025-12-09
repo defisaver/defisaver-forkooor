@@ -32,6 +32,19 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - strategyOrBundleId
+ *               - baseTokenSymbol
+ *               - quoteTokenSymbol
+ *               - price
+ *               - maximumGasPrice
+ *               - ratioState
+ *               - collSymbol
+ *               - collAssetId
+ *               - debtSymbol
+ *               - debtAssetId
  *             properties:
  *              vnetUrl:
  *                type: string
@@ -42,41 +55,42 @@ const router = express.Router();
  *              strategyOrBundleId:
  *                  type: integer
  *                  example: 24
- *              triggerData:
- *                  type: object
- *                  properties:
- *                     baseTokenAddress:
- *                         type: string
- *                         example: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
- *                     quoteTokenAddress:
- *                         type: string
- *                         example: "0x6b175474e89094c44da98b954eedeac495271d0f"
- *                     price:
- *                         type: integer
- *                         example: 1000000000000000000
- *                     maximumGasPrice:
- *                         type: integer
- *                         example: 100
- *                     ratioState:
- *                         type: integer
- *                         example: 0
- *              subData:
- *                  type: object
- *                  properties:
- *                      collSymbol:
- *                          type: string
- *                          example: "ETH"
- *                          description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *                      collAssetId:
- *                          type: integer
- *                          example: 0
- *                      debtSymbol:
- *                          type: string
- *                          example: "DAI"
- *                          description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *                      debtAssetId:
- *                          type: integer
- *                          example: 4
+ *              baseTokenSymbol:
+ *                  type: string
+ *                  example: "WETH"
+ *                  description: "Base token symbol for the trigger (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              quoteTokenSymbol:
+ *                  type: string
+ *                  example: "DAI"
+ *                  description: "Quote token symbol for the trigger (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              price:
+ *                  type: integer
+ *                  example: 1000000000000000000
+ *                  description: "Trigger price"
+ *              maximumGasPrice:
+ *                  type: integer
+ *                  example: 100
+ *                  description: "Maximum gas price"
+ *              ratioState:
+ *                  type: integer
+ *                  example: 0
+ *                  description: "Ratio state"
+ *              collSymbol:
+ *                  type: string
+ *                  example: "ETH"
+ *                  description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              collAssetId:
+ *                  type: integer
+ *                  example: 0
+ *                  description: "Collateral asset ID"
+ *              debtSymbol:
+ *                  type: string
+ *                  example: "DAI"
+ *                  description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              debtAssetId:
+ *                  type: integer
+ *                  example: 4
+ *                  description: "Debt asset ID"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -114,15 +128,15 @@ router.post("/close-with-maximum-gasprice", body(
         "vnetUrl",
         "eoa",
         "strategyOrBundleId",
-        "triggerData.baseTokenAddress",
-        "triggerData.quoteTokenAddress",
-        "triggerData.price",
-        "triggerData.maximumGasPrice",
-        "triggerData.ratioState",
-        "subData.collSymbol",
-        "subData.collAssetId",
-        "subData.debtSymbol",
-        "subData.debtAssetId"
+        "baseTokenSymbol",
+        "quoteTokenSymbol",
+        "price",
+        "maximumGasPrice",
+        "ratioState",
+        "collSymbol",
+        "collAssetId",
+        "debtSymbol",
+        "debtAssetId"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -131,14 +145,34 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, strategyOrBundleId, eoa, triggerData, subData } = req.body;
+    const {
+        vnetUrl,
+        strategyOrBundleId,
+        eoa,
+        baseTokenSymbol,
+        quoteTokenSymbol,
+        price,
+        ratioState,
+        maximumGasPrice,
+        collSymbol,
+        collAssetId,
+        debtSymbol,
+        debtAssetId
+    } = req.body;
 
     await setupVnet(vnetUrl, [eoa]);
     subAaveV3CloseWithMaximumGasPriceStrategy(
         eoa,
         strategyOrBundleId,
-        triggerData.baseTokenAddress, triggerData.quoteTokenAddress, triggerData.price, triggerData.ratioState, triggerData.maximumGasPrice,
-        subData.collSymbol, subData.collAssetId, subData.debtSymbol, subData.debtAssetId,
+        baseTokenSymbol,
+        quoteTokenSymbol,
+        price,
+        ratioState,
+        maximumGasPrice,
+        collSymbol,
+        collAssetId,
+        debtSymbol,
+        debtAssetId,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -163,6 +197,15 @@ async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - triggerBaseAssetSymbol
+ *               - triggerQuoteAssetSymbol
+ *               - price
+ *               - ratioState
+ *               - collSymbol
+ *               - debtSymbol
  *             properties:
  *              vnetUrl:
  *                type: string
@@ -174,33 +217,30 @@ async (req, res) => {
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *              triggerData:
- *                  type: object
- *                  properties:
- *                     triggerBaseAssetSymbol:
- *                         type: string
- *                         example: "ETH"
- *                     triggerQuoteAssetSymbol:
- *                         type: string
- *                         example: "DAI"
- *                     price:
- *                         type: integer
- *                         example: 2000
- *                     ratioState:
- *                         type: string
- *                         description: "'OVER' or 'UNDER'"
- *                         example: "OVER"
- *              subData:
- *                  type: object
- *                  properties:
- *                      collSymbol:
- *                          type: string
- *                          example: "ETH"
- *                          description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *                      debtSymbol:
- *                          type: string
- *                          example: "DAI"
- *                          description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              baseTokenSymbol:
+ *                  type: string
+ *                  example: "ETH"
+ *                  description: "Base token symbol for the trigger (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              quoteTokenSymbol:
+ *                  type: string
+ *                  example: "DAI"
+ *                  description: "Quote token symbol for the trigger (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              price:
+ *                  type: integer
+ *                  example: 2000
+ *                  description: "Trigger price"
+ *              ratioState:
+ *                  type: string
+ *                  description: "'OVER' or 'UNDER'"
+ *                  example: "OVER"
+ *              collSymbol:
+ *                  type: string
+ *                  example: "ETH"
+ *                  description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              debtSymbol:
+ *                  type: string
+ *                  example: "DAI"
+ *                  description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -236,12 +276,12 @@ router.post("/close-with-coll", body(
     [
         "vnetUrl",
         "eoa",
-        "triggerData.triggerBaseAssetSymbol",
-        "triggerData.triggerQuoteAssetSymbol",
-        "triggerData.price",
-        "triggerData.ratioState",
-        "subData.collSymbol",
-        "subData.debtSymbol"
+        "baseTokenSymbol",
+        "quoteTokenSymbol",
+        "price",
+        "ratioState",
+        "collSymbol",
+        "debtSymbol"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -250,19 +290,29 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, eoa, triggerData, subData } = req.body;
+    const {
+        vnetUrl,
+        market,
+        eoa,
+        baseTokenSymbol,
+        quoteTokenSymbol,
+        price,
+        ratioState,
+        collSymbol,
+        debtSymbol
+    } = req.body;
 
     await setupVnet(vnetUrl, [eoa]);
 
     subAaveCloseToCollStrategy(
         market,
         eoa,
-        triggerData.triggerBaseAssetSymbol,
-        triggerData.triggerQuoteAssetSymbol,
-        triggerData.price,
-        triggerData.ratioState,
-        subData.collSymbol,
-        subData.debtSymbol,
+        baseTokenSymbol,
+        quoteTokenSymbol,
+        price,
+        ratioState,
+        collSymbol,
+        debtSymbol,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -385,6 +435,15 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - bundleId
+ *               - price
+ *               - ratioState
+ *               - collSymbol
+ *               - debtSymbol
+ *               - targetRatio
  *             properties:
  *              vnetUrl:
  *                type: string
@@ -399,28 +458,26 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
  *              bundleId:
  *                type: integer
  *                example: 36
- *              triggerData:
- *                  type: object
- *                  properties:
- *                     price:
- *                         type: integer
- *                         example: 2000
- *                     ratioState:
- *                         type: string
- *                         description: "'OVER' or 'UNDER'"
- *                         example: "UNDER"
- *              subData:
- *                  type: object
- *                  properties:
- *                      collSymbol:
- *                          type: string
- *                          example: "ETH"
- *                      debtSymbol:
- *                          type: string
- *                          example: "DAI"
- *                      targetRatio:
- *                          type: number
- *                          example: 130
+ *              price:
+ *                  type: integer
+ *                  example: 2000
+ *                  description: "Trigger price"
+ *              ratioState:
+ *                  type: string
+ *                  description: "'OVER' or 'UNDER'"
+ *                  example: "UNDER"
+ *              collSymbol:
+ *                  type: string
+ *                  example: "ETH"
+ *                  description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              debtSymbol:
+ *                  type: string
+ *                  example: "DAI"
+ *                  description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              targetRatio:
+ *                  type: number
+ *                  example: 130
+ *                  description: "Target ratio"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -473,11 +530,11 @@ router.post("/open-order-from-collateral", body(
         "vnetUrl",
         "eoa",
         "bundleId",
-        "triggerData.price",
-        "triggerData.ratioState",
-        "subData.collSymbol",
-        "subData.debtSymbol",
-        "subData.targetRatio"
+        "price",
+        "ratioState",
+        "collSymbol",
+        "debtSymbol",
+        "targetRatio"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -486,7 +543,17 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, eoa, bundleId, triggerData, subData } = req.body;
+    const {
+        vnetUrl,
+        market,
+        eoa,
+        bundleId,
+        price,
+        ratioState,
+        collSymbol,
+        debtSymbol,
+        targetRatio
+    } = req.body;
 
     await setupVnet(vnetUrl, [eoa]);
 
@@ -494,11 +561,11 @@ async (req, res) => {
         market,
         eoa,
         bundleId,
-        triggerData.price,
-        triggerData.ratioState,
-        subData.collSymbol,
-        subData.debtSymbol,
-        subData.targetRatio,
+        price,
+        ratioState,
+        collSymbol,
+        debtSymbol,
+        targetRatio,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -537,28 +604,26 @@ async (req, res) => {
  *              bundleId:
  *                type: integer
  *                example: 36
- *              triggerData:
- *                  type: object
- *                  properties:
- *                     price:
- *                         type: integer
- *                         example: 2000
- *                     ratioState:
- *                         type: string
- *                         description: "'OVER' or 'UNDER'"
- *                         example: "UNDER"
- *              subData:
- *                  type: object
- *                  properties:
- *                      collSymbol:
- *                          type: string
- *                          example: "ETH"
- *                      debtSymbol:
- *                          type: string
- *                          example: "DAI"
- *                      targetRatio:
- *                          type: number
- *                          example: 130
+ *              price:
+ *                  type: integer
+ *                  example: 2000
+ *                  description: "Trigger price"
+ *              ratioState:
+ *                  type: string
+ *                  description: "'OVER' or 'UNDER'"
+ *                  example: "UNDER"
+ *              collSymbol:
+ *                  type: string
+ *                  example: "ETH"
+ *                  description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              debtSymbol:
+ *                  type: string
+ *                  example: "DAI"
+ *                  description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              targetRatio:
+ *                  type: number
+ *                  example: 130
+ *                  description: "Target ratio"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -611,11 +676,11 @@ router.post("/repay-on-price", body(
         "vnetUrl",
         "eoa",
         "bundleId",
-        "triggerData.price",
-        "triggerData.ratioState",
-        "subData.collSymbol",
-        "subData.debtSymbol",
-        "subData.targetRatio"
+        "price",
+        "ratioState",
+        "collSymbol",
+        "debtSymbol",
+        "targetRatio"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -624,7 +689,17 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, eoa, bundleId, triggerData, subData } = req.body;
+    const {
+        vnetUrl,
+        market,
+        eoa,
+        bundleId,
+        price,
+        ratioState,
+        collSymbol,
+        debtSymbol,
+        targetRatio
+    } = req.body;
 
     await setupVnet(vnetUrl, [eoa]);
 
@@ -632,11 +707,11 @@ async (req, res) => {
         market,
         eoa,
         bundleId,
-        triggerData.price,
-        triggerData.ratioState,
-        subData.collSymbol,
-        subData.debtSymbol,
-        subData.targetRatio,
+        price,
+        ratioState,
+        collSymbol,
+        debtSymbol,
+        targetRatio,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -1719,35 +1794,30 @@ router.post("/close-on-price/generic/smart-wallet",
  *              strategyId:
  *                type: integer
  *                example: 135
- *              triggerData:
- *                  type: object
- *                  properties:
- *                     price:
- *                         type: integer
- *                         example: 2000
- *                     ratioState:
- *                         type: string
- *                         description: "'OVER' or 'UNDER'"
- *                         example: "UNDER"
- *              subData:
- *                  type: object
- *                  properties:
- *                      fromAssetSymbol:
- *                          type: string
- *                          example: "WETH"
- *                          description: "Symbol of the collateral asset to switch from"
- *                      toAssetSymbol:
- *                          type: string
- *                          example: "USDC"
- *                          description: "Symbol of the collateral asset to switch to"
- *                      amountToSwitch:
- *                          type: number
- *                          example: 1.5
- *                          description: "Amount of collateral to switch (ignored if isMaxUintSwitch is true)"
- *                      isMaxUintSwitch:
- *                          type: boolean
- *                          example: false
- *                          description: "If true, use MaxUint256 instead of amountToSwitch value"
+ *              price:
+ *                  type: integer
+ *                  example: 2000
+ *                  description: "Trigger price"
+ *              ratioState:
+ *                  type: string
+ *                  description: "'OVER' or 'UNDER'"
+ *                  example: "UNDER"
+ *              fromAssetSymbol:
+ *                  type: string
+ *                  example: "WETH"
+ *                  description: "Symbol of the collateral asset to switch from (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              toAssetSymbol:
+ *                  type: string
+ *                  example: "USDC"
+ *                  description: "Symbol of the collateral asset to switch to (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              amountToSwitch:
+ *                  type: number
+ *                  example: 1.5
+ *                  description: "Amount of collateral to switch (ignored if isMaxUintSwitch is true)"
+ *              isMaxUintSwitch:
+ *                  type: boolean
+ *                  example: false
+ *                  description: "If true, use MaxUint256 instead of amountToSwitch value"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -1800,11 +1870,11 @@ router.post("/collateral-switch", body(
         "vnetUrl",
         "eoa",
         "strategyId",
-        "triggerData.price",
-        "triggerData.ratioState",
-        "subData.fromAssetSymbol",
-        "subData.toAssetSymbol",
-        "subData.amountToSwitch"
+        "price",
+        "ratioState",
+        "fromAssetSymbol",
+        "toAssetSymbol",
+        "amountToSwitch"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -1813,7 +1883,18 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, market, eoa, strategyId, triggerData, subData } = req.body;
+    const {
+        vnetUrl,
+        market,
+        eoa,
+        strategyId,
+        price,
+        ratioState,
+        fromAssetSymbol,
+        toAssetSymbol,
+        amountToSwitch,
+        isMaxUintSwitch
+    } = req.body;
 
     await setupVnet(vnetUrl, [eoa]);
 
@@ -1821,12 +1902,12 @@ async (req, res) => {
         eoa,
         strategyId,
         market,
-        subData.fromAssetSymbol,
-        subData.toAssetSymbol,
-        subData.amountToSwitch,
-        subData.isMaxUintSwitch || false,
-        triggerData.price,
-        triggerData.ratioState,
+        fromAssetSymbol,
+        toAssetSymbol,
+        amountToSwitch,
+        isMaxUintSwitch || false,
+        price,
+        ratioState,
         getWalletAddr(req),
         defaultsToSafe(req)
     ).then(sub => {

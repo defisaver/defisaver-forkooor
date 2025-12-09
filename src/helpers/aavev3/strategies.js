@@ -62,8 +62,8 @@ async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, sen
  * Subscribes to Aave V3 Close With Maximum Gas Price strategy
  * @param {string} owner wallet owner
  * @param {number} strategyOrBundleId strategy or bundle ID
- * @param {string} triggerBaseTokenAddress base token address
- * @param {string} triggerQuoteTokenAddress quote token address
+ * @param {string} triggerBaseTokenSymbol base token symbol
+ * @param {string} triggerQuoteTokenSymbol quote token symbol
  * @param {string} triggerPrice trigger price
  * @param {number} triggerRatioState trigger ratio state
  * @param {string} triggerMaximumGasPrice trigger maximum gas price
@@ -78,7 +78,7 @@ async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, sen
 async function subAaveV3CloseWithMaximumGasPriceStrategy(
     owner,
     strategyOrBundleId,
-    triggerBaseTokenAddress, triggerQuoteTokenAddress, triggerPrice, triggerRatioState, triggerMaximumGasPrice,
+    triggerBaseTokenSymbol, triggerQuoteTokenSymbol, triggerPrice, triggerRatioState, triggerMaximumGasPrice,
     subCollSymbol, subCollAssetId, subDebtSymbol, subDebtAssetId,
     proxyAddr,
     useSafe = true
@@ -87,13 +87,15 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
 
     const collAssetData = await getTokenInfo(subCollSymbol);
     const debtAssetData = await getTokenInfo(subDebtSymbol);
+    const triggerBaseTokenData = await getTokenInfo(triggerBaseTokenSymbol);
+    const triggerQuoteTokenData = await getTokenInfo(triggerQuoteTokenSymbol);
 
     const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAssetWithMaximumGasPrice(
         strategyOrBundleId,
         true,
         {
-            baseTokenAddress: triggerBaseTokenAddress,
-            quoteTokenAddress: triggerQuoteTokenAddress,
+            baseTokenAddress: triggerBaseTokenData.address,
+            quoteTokenAddress: triggerQuoteTokenData.address,
             price: triggerPrice,
             ratioState: triggerRatioState,
             maximumGasPrice: triggerMaximumGasPrice

@@ -245,26 +245,26 @@ router.post("/get-safety-ratio",
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              market:
- *                type: string
- *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                description: "The EOA which will own the position"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *              collSymbol:
  *                type: string
  *                example: "ETH"
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              debtSymbol:
- *                type: string
- *                example: "DAI"
- *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 2
  *                description: "Amount of collateral to supply (whole number)"
+ *              debtSymbol:
+ *                type: string
+ *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              debtAmount:
  *                type: number
  *                example: 2000
@@ -370,7 +370,7 @@ router.post("/create/eoa",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, collSymbol, debtSymbol, collAmount, debtAmount, eoa } = req.body;
+        const { vnetUrl, eoa, market, collSymbol, collAmount, debtSymbol, debtAmount } = req.body;
         const isEOA = true; // Hardcoded for EOA route
 
         await setupVnet(vnetUrl, [eoa]);
@@ -413,34 +413,34 @@ router.post("/create/eoa",
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              market:
- *                type: string
- *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
- *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                description: "The EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              collSymbol:
- *                type: string
- *                example: "ETH"
- *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              debtSymbol:
- *                type: string
- *                example: "DAI"
- *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              collAmount:
- *                type: number
- *                example: 2
- *                description: "Amount of collateral to supply (whole number)"
- *              debtAmount:
- *                type: number
- *                example: 2000
- *                description: "Amount of debt to borrow (whole number)"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
+ *              collSymbol:
+ *                type: string
+ *                example: "ETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              collAmount:
+ *                type: number
+ *                example: 2
+ *                description: "Amount of collateral to supply (whole number)"
+ *              debtSymbol:
+ *                type: string
+ *                example: "DAI"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              debtAmount:
+ *                type: number
+ *                example: 2000
+ *                description: "Amount of debt to borrow (whole number)"
  *              walletType:
  *                type: string
  *                example: "safe"
@@ -546,7 +546,7 @@ router.post("/create/smart-wallet",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, market, collSymbol, debtSymbol, collAmount, debtAmount, eoa } = req.body;
+        const { vnetUrl, eoa, market, collSymbol, collAmount, debtSymbol, debtAmount } = req.body;
         const isEOA = false; // Hardcoded for Smart Wallet route
 
         await setupVnet(vnetUrl, [eoa]);

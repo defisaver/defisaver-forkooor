@@ -913,9 +913,9 @@ async (req, res) => {
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -1041,9 +1041,9 @@ router.post("/leverage-management/generic/eoa",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -1169,9 +1169,9 @@ router.post("/leverage-management/generic/smart-wallet",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -1307,9 +1307,9 @@ router.post("/leverage-management/without-sub-proxy",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -1456,9 +1456,9 @@ router.post("/repay-on-price/generic/eoa",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -1605,9 +1605,9 @@ router.post("/repay-on-price/generic/smart-wallet",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -1754,9 +1754,9 @@ router.post("/boost-on-price/generic/eoa",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -1908,9 +1908,9 @@ router.post("/boost-on-price/generic/smart-wallet",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':
@@ -2063,9 +2063,9 @@ router.post("/close-on-price/generic/eoa",
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
  *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
  *     responses:
  *       '200':

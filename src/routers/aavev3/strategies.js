@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getSmartWallet } = require("../../utils");
 const {
     subAaveV3CloseWithMaximumGasPriceStrategy,
     subAaveV3LeverageManagementWithSubProxyStrategy,
@@ -87,14 +87,14 @@ const router = express.Router();
  *                  type: integer
  *                  example: 4
  *                  description: "Debt asset ID"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -168,7 +168,7 @@ async (req, res) => {
         collAssetId,
         debtSymbol,
         debtAssetId,
-        getWalletAddr(req),
+        getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
         res.status(201).send(sub);
@@ -247,14 +247,14 @@ async (req, res) => {
  *                  type: integer
  *                  example: 4
  *                  description: "Debt asset ID"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -328,7 +328,7 @@ async (req, res) => {
         collAssetId,
         debtSymbol,
         debtAssetId,
-        getWalletAddr(req),
+        getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
         res.status(201).send(sub);
@@ -396,14 +396,14 @@ async (req, res) => {
  *                  type: string
  *                  example: "DAI"
  *                  description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -468,7 +468,7 @@ async (req, res) => {
         ratioState,
         collSymbol,
         debtSymbol,
-        getWalletAddr(req),
+        getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
@@ -514,14 +514,14 @@ async (req, res) => {
  *              boostEnabled:
  *                 type: boolean
  *                 example: true
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -565,7 +565,7 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
         const sub = await subAaveV3LeverageManagementWithSubProxyStrategy(
             eoa,
             minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled,
-            getWalletAddr(req), defaultsToSafe(req)
+            getSmartWallet(req), defaultsToSafe(req)
         );
 
         res.status(200).send(sub);
@@ -629,14 +629,14 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
  *                  type: number
  *                  example: 130
  *                  description: "Target ratio"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -714,7 +714,7 @@ async (req, res) => {
         collSymbol,
         debtSymbol,
         targetRatio,
-        getWalletAddr(req),
+        getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
@@ -769,14 +769,14 @@ async (req, res) => {
  *                  type: number
  *                  example: 130
  *                  description: "Target ratio"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -854,7 +854,7 @@ async (req, res) => {
         collSymbol,
         debtSymbol,
         targetRatio,
-        getWalletAddr(req),
+        getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
@@ -909,7 +909,7 @@ async (req, res) => {
  *                 type: integer
  *                 example: 1900000000000000000
  *                 description: "Trigger ratio for the strategy"
- *               walletAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -980,7 +980,7 @@ router.post("/leverage-management/generic/eoa",
             targetRatio,
             triggerRatio,
             isGeneric,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -1037,7 +1037,7 @@ router.post("/leverage-management/generic/eoa",
  *                 type: integer
  *                 example: 1900000000000000000
  *                 description: "Trigger ratio for the strategy"
- *               walletAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -1108,7 +1108,7 @@ router.post("/leverage-management/generic/smart-wallet",
             targetRatio,
             triggerRatio,
             isGeneric,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -1165,7 +1165,7 @@ router.post("/leverage-management/generic/smart-wallet",
  *                 type: integer
  *                 example: 1900000000000000000
  *                 description: "Trigger ratio for the strategy"
- *               walletAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -1236,7 +1236,7 @@ router.post("/leverage-management/without-sub-proxy",
             targetRatio,
             triggerRatio,
             isGeneric,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -1303,7 +1303,7 @@ router.post("/leverage-management/without-sub-proxy",
  *                 type: integer
  *                 example: 1800000000000000000
  *                 description: "Target ratio for the strategy"
- *               proxyAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -1385,7 +1385,7 @@ router.post("/repay-on-price/generic/eoa",
             triggerPrice,
             priceState,
             targetRatio,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -1452,7 +1452,7 @@ router.post("/repay-on-price/generic/eoa",
  *                 type: integer
  *                 example: 1800000000000000000
  *                 description: "Target ratio for the strategy"
- *               proxyAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -1534,7 +1534,7 @@ router.post("/repay-on-price/generic/smart-wallet",
             triggerPrice,
             priceState,
             targetRatio,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -1601,7 +1601,7 @@ router.post("/repay-on-price/generic/smart-wallet",
  *                 type: integer
  *                 example: 1800000000000000000
  *                 description: "Target ratio for the strategy"
- *               proxyAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -1683,7 +1683,7 @@ router.post("/boost-on-price/generic/eoa",
             triggerPrice,
             priceState,
             targetRatio,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -1750,7 +1750,7 @@ router.post("/boost-on-price/generic/eoa",
  *                 type: integer
  *                 example: 1800000000000000000
  *                 description: "Target ratio for the strategy"
- *               proxyAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -1832,7 +1832,7 @@ router.post("/boost-on-price/generic/smart-wallet",
             triggerPrice,
             priceState,
             targetRatio,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -1904,7 +1904,7 @@ router.post("/boost-on-price/generic/smart-wallet",
  *                 type: integer
  *                 example: 1
  *                 description: "Take profit type (0 for debt, 1 for collateral)"
- *               proxyAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -1987,7 +1987,7 @@ router.post("/close-on-price/generic/eoa",
             stopLossType,
             takeProfitPrice,
             takeProfitType,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -2059,7 +2059,7 @@ router.post("/close-on-price/generic/eoa",
  *                 type: integer
  *                 example: 1
  *                 description: "Take profit type (0 for debt, 1 for collateral)"
- *               proxyAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Optional proxy address. If not provided, a new wallet will be created"
@@ -2142,7 +2142,7 @@ router.post("/close-on-price/generic/smart-wallet",
             stopLossType,
             takeProfitPrice,
             takeProfitType,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {
@@ -2206,14 +2206,14 @@ router.post("/close-on-price/generic/smart-wallet",
  *                  type: boolean
  *                  example: false
  *                  description: "If true, use MaxUint256 instead of amountToSwitch value"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '201':
  *         description: OK
@@ -2293,7 +2293,7 @@ async (req, res) => {
         isMaxUintSwitch || false,
         price,
         ratioState,
-        getWalletAddr(req),
+        getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);

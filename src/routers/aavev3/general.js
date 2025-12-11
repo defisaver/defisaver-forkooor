@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getSmartWallet } = require("../../utils");
 const { getLoanData, getSafetyRatio } = require("../../helpers/aavev3/view");
 const {
     createAaveV3Position
@@ -376,7 +376,7 @@ router.post("/create/eoa",
         await setupVnet(vnetUrl, [eoa]);
 
         createAaveV3Position(
-            market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, getWalletAddr(req), isEOA, defaultsToSafe(req)
+            market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, getSmartWallet(req), isEOA, defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);
@@ -416,11 +416,7 @@ router.post("/create/eoa",
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
- *                description: "The EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              walletAddr:
- *                type: string
- *                example: "0x0000000000000000000000000000000000000000"
- *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -441,10 +437,14 @@ router.post("/create/eoa",
  *                type: number
  *                example: 2000
  *                description: "Amount of debt to borrow (whole number)"
+ *              smartWallet:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -552,7 +552,7 @@ router.post("/create/smart-wallet",
         await setupVnet(vnetUrl, [eoa]);
 
         createAaveV3Position(
-            market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, getWalletAddr(req), isEOA, defaultsToSafe(req)
+            market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, getSmartWallet(req), isEOA, defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);

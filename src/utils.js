@@ -784,12 +784,12 @@ function defaultsToSafe(req) {
 }
 
 /**
- * Read walletAddr from request. If not provided, return AddressZero, meaning new wallet will be created
+ * Read smartWallet from request. If not provided, return AddressZero, meaning new wallet will be created
  * @param {Object} req request object
  * @returns {string} wallet address
  */
-function getWalletAddr(req) {
-    return req.body.walletAddr ? req.body.walletAddr : hre.ethers.constants.AddressZero;
+function getSmartWallet(req) {
+    return req.body.smartWallet ? req.body.smartWallet : hre.ethers.constants.AddressZero;
 }
 
 /**
@@ -951,7 +951,7 @@ module.exports = {
     lowerSafesThreshold,
     defaultsToSafe,
     executeActionFromProxy,
-    getWalletAddr,
+    getSmartWallet,
     createSafe,
     validateTriggerPricesForCloseStrategyType,
     sendEth,

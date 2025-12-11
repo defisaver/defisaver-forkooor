@@ -19,23 +19,22 @@ const app = express();
 app.use(cors());
 app.use(express.json({ extended: true }));
 
-app.use("/utils", generalRouter);
-app.use("/maker", makerRouter);
-app.use("/spark", sparkRouter);
-app.use("/liquity", liquityRouter);
-app.use("/aave/v3", aaveV3Router);
-app.use("/curveusd", curveusdRouter);
-app.use("/compound/v3", compoundV3Router);
-app.use("/morpho-blue", morphoBlueRouter);
-app.use("/liquity/v2", liquityV2Router);
-app.use("/fluid", fluidRouter);
+app.use("/v1/utils", generalRouter);
+app.use("/v1/maker", makerRouter);
+app.use("/v1/spark", sparkRouter);
+app.use("/v1/liquity", liquityRouter);
+app.use("/v1/aave/v3", aaveV3Router);
+app.use("/v1/curveusd", curveusdRouter);
+app.use("/v1/compound/v3", compoundV3Router);
+app.use("/v1/morpho-blue", morphoBlueRouter);
+app.use("/v1/liquity/v2", liquityV2Router);
+app.use("/v1/fluid", fluidRouter);
 
 app.use("/swagger.json", (req, res) => {
     res.setHeader("Content-Type", "application/json");
     res.send(swaggerSpec);
 });
-app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+app.use("/v1", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const port = 3000;
 

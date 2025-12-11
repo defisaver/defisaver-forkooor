@@ -2,7 +2,7 @@
 const hre = require("hardhat");
 
 const { setBalance, approve, addresses, ETH_ADDRESS, getSender, executeAction } = require("../../utils");
-const { getAssetInfo } = require("@defisaver/tokens");
+const { getTokenInfo } = require("../../utils");
 const { configure } = require("@defisaver/sdk");
 const dfs = require("@defisaver/sdk");
 const { fluidVaultResolverAbi, fluidVaultT1Abi } = require("../../abi/fluid/abis");
@@ -11,9 +11,9 @@ const { getPositionByNftId } = require("./view");
 /**
  * Function that opens a fluid T1 Vault position
  * @param {string} vaultId ID of the vault
- * @param {string} collTokenSymbol collateral token symbol
+ * @param {string} collSymbol collateral token symbol
  * @param {number} collAmount collateral amount
- * @param {string} debtTokenSymbol debt token symbol
+ * @param {string} debtSymbol debt token symbol
  * @param {number} debtAmount debt amount
  * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
@@ -22,9 +22,9 @@ const { getPositionByNftId } = require("./view");
  */
 async function fluidT1Open(
     vaultId,
-    collTokenSymbol,
+    collSymbol,
     collAmount,
-    debtTokenSymbol,
+    debtSymbol,
     debtAmount,
     owner,
     proxyAddr,
@@ -46,19 +46,19 @@ async function fluidT1Open(
     const vaultContract = await hre.ethers.getContractAt(fluidVaultT1Abi, vaultAddress);
     const constantsView = await vaultContract.constantsView();
 
-    const collTokenData = getAssetInfo(collTokenSymbol === "ETH" ? "WETH" : collTokenSymbol, chainId);
-    const debtTokenData = getAssetInfo(debtTokenSymbol === "ETH" ? "WETH" : debtTokenSymbol, chainId);
+    const collTokenData = getTokenInfo(collSymbol, chainId);
+    const debtTokenData = getTokenInfo(debtSymbol, chainId);
 
-    if (collTokenSymbol === "ETH" && constantsView.supplyToken !== ETH_ADDRESS) {
+    if (collSymbol === "ETH" && constantsView.supplyToken !== ETH_ADDRESS) {
         throw new Error("Collateral token does not match vault collateral token");
     }
-    if (collTokenSymbol !== "ETH" && constantsView.supplyToken !== collTokenData.addresses[chainId]) {
+    if (collSymbol !== "ETH" && constantsView.supplyToken !== collTokenData.addresses[chainId]) {
         throw new Error("Collateral token does not match vault collateral token");
     }
-    if (debtTokenSymbol === "ETH" && constantsView.borrowToken !== ETH_ADDRESS) {
+    if (debtSymbol === "ETH" && constantsView.borrowToken !== ETH_ADDRESS) {
         throw new Error("Debt token does not match vault debt token");
     }
-    if (debtTokenSymbol !== "ETH" && constantsView.borrowToken !== debtTokenData.addresses[chainId]) {
+    if (debtSymbol !== "ETH" && constantsView.borrowToken !== debtTokenData.addresses[chainId]) {
         throw new Error("Debt token does not match vault debt token");
     }
 

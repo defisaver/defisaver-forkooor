@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { createCurveUsdPosition } = require("../../helpers/curveusd/general");
 const { getUserData } = require("../../helpers/curveusd/view");
@@ -12,7 +12,7 @@ const router = express.Router();
  * @swagger
  * /curveusd/general/create:
  *   post:
- *     summary: Create CurveUsd position on a fork
+ *     summary: Create CurveUsd position on a vnet
  *     tags:
  *      - CurveUsd
  *     description:
@@ -24,7 +24,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              controller:
@@ -119,16 +119,16 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/create",
-    body(["forkId", "controller", "coll", "debt", "owner", "numberOfBands"]).notEmpty(),
+    body(["vnetUrl", "controller", "coll", "debt", "owner", "numberOfBands"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, controller, owner, coll, debt, numberOfBands } = req.body;
+        const { vnetUrl, controller, owner, coll, debt, numberOfBands } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
         createCurveUsdPosition(controller, coll, debt, owner, numberOfBands, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
@@ -143,7 +143,7 @@ router.post("/create",
  * @swagger
  * /curveusd/general/get-position:
  *   post:
- *     summary: Fetch info about CurveUsd position on a fork
+ *     summary: Fetch info about CurveUsd position on a vnet
  *     tags:
  *      - CurveUsd
  *     description:
@@ -155,7 +155,7 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              controller:
@@ -233,16 +233,16 @@ router.post("/create",
  *                   type: string
  */
 router.post("/get-position",
-    body(["forkId", "controller", "owner"]).notEmpty(),
+    body(["vnetUrl", "controller", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { forkId, controller, owner } = req.body;
+        const { vnetUrl, controller, owner } = req.body;
 
-        setupFork(forkId);
+        setupVnet(vnetUrl);
 
         getUserData(controller, owner)
             .then(pos => {

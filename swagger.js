@@ -28,4 +28,11 @@ const options = {
 
 const swaggerSpec = swaggerJSDoc(options);
 
+// Add /v1 prefix to all paths
+if (swaggerSpec.paths) {
+    swaggerSpec.paths = Object.fromEntries(
+        Object.entries(swaggerSpec.paths).map(([path, spec]) => [`/v1${path}`, spec])
+    );
+}
+
 module.exports = swaggerSpec;

@@ -1,7 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 /* eslint-disable consistent-return */
 const express = require("express");
-const { setupFork, getProxy, isContract, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getProxy, isContract, getWalletAddr, defaultsToSafe } = require("../../utils");
 const { getLoanData, COMP_V3_MARKETS } = require("../../helpers/compoundV3/view");
 const {
     createCompoundV3Position,
@@ -18,7 +18,7 @@ const router = express.Router();
  * @swagger
  * /compound/v3/general/get-position:
  *   post:
- *     summary: Fetch info about CompoundV3 position on a fork
+ *     summary: Fetch info about CompoundV3 position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -30,7 +30,7 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -98,7 +98,7 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-position",
-    body(["forkId", "marketSymbol", "owner", "isEOA"]).notEmpty(),
+    body(["vnetUrl", "marketSymbol", "owner", "isEOA"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -106,10 +106,10 @@ router.post("/get-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, marketSymbol, owner, isEOA } = req.body;
+        const { vnetUrl, marketSymbol, owner, isEOA } = req.body;
         let proxy = owner;
 
-        await setupFork(forkId, []);
+        await setupVnet(vnetUrl, []);
 
         if (isEOA === false) {
             const isContractPromise = isContract(owner);
@@ -137,7 +137,7 @@ router.post("/get-position",
  * @swagger
  * /compound/v3/general/create:
  *   post:
- *     summary: Create CompoundV3 position on a fork
+ *     summary: Create CompoundV3 position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -149,7 +149,7 @@ router.post("/get-position",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
  *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
  *              market:
@@ -159,15 +159,17 @@ router.post("/get-position",
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              collToken:
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 3
- *              borrowToken:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              borrowAmount:
  *                type: number
  *                example: 2000
@@ -238,7 +240,7 @@ router.post("/get-position",
  *                   type: string
  */
 router.post("/create",
-    body(["forkId", "market", "collToken", "collAmount", "borrowToken", "borrowAmount", "owner"]).notEmpty(),
+    body(["vnetUrl", "market", "collSymbol", "collAmount", "debtSymbol", "borrowAmount", "owner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -246,11 +248,11 @@ router.post("/create",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, market, collToken, collAmount, borrowToken, borrowAmount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, collAmount, debtSymbol, borrowAmount, owner } = req.body;
 
-        await setupFork(forkId, [owner]);
+        await setupVnet(vnetUrl, [owner]);
 
-        createCompoundV3Position(market, collToken, collAmount, borrowToken, borrowAmount, owner, getWalletAddr(req), defaultsToSafe(req))
+        createCompoundV3Position(market, collSymbol, collAmount, debtSymbol, borrowAmount, owner, getWalletAddr(req), defaultsToSafe(req))
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -264,7 +266,7 @@ router.post("/create",
  * @swagger
  * /compound/v3/general/create-proxy-position:
  *   post:
- *     summary: Create CompoundV3 proxy position on a fork
+ *     summary: Create CompoundV3 proxy position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -276,21 +278,21 @@ router.post("/create",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
- *              collTokenSymbol:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of collateral token e.g WETH, USDC, USDT"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 3
  *                description: "Amount of collateral to supply (whole number)"
- *              borrowTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of borrow token e.g USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              borrowAmount:
  *                type: number
  *                example: 2000
@@ -366,7 +368,7 @@ router.post("/create",
  *                   type: string
  */
 router.post("/create-proxy-position",
-    body(["forkId", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "collAmount", "debtSymbol", "borrowAmount", "eoa"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -374,14 +376,14 @@ router.post("/create-proxy-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
+        const { vnetUrl, collSymbol, collAmount, debtSymbol, borrowAmount, eoa } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupVnet(vnetUrl, [eoa]);
 
         createCompoundV3ProxyPosition(
-            collTokenSymbol,
+            collSymbol,
             collAmount,
-            borrowTokenSymbol,
+            debtSymbol,
             borrowAmount,
             eoa,
             getWalletAddr(req),
@@ -399,7 +401,7 @@ router.post("/create-proxy-position",
  * @swagger
  * /compound/v3/general/create-eoa-position:
  *   post:
- *     summary: Create CompoundV3 EOA position on a fork
+ *     summary: Create CompoundV3 EOA position on a vnet
  *     tags:
  *      - CompoundV3
  *     description:
@@ -411,21 +413,21 @@ router.post("/create-proxy-position",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
- *              collTokenSymbol:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Symbol of collateral token e.g WETH, USDC, USDT"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
  *                example: 3
  *                description: "Amount of collateral to supply (whole number)"
- *              borrowTokenSymbol:
+ *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of borrow token e.g USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
  *              borrowAmount:
  *                type: number
  *                example: 2000
@@ -493,7 +495,7 @@ router.post("/create-proxy-position",
  *                   type: string
  */
 router.post("/create-eoa-position",
-    body(["forkId", "collTokenSymbol", "collAmount", "borrowTokenSymbol", "borrowAmount", "eoa"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "collAmount", "debtSymbol", "borrowAmount", "eoa"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -501,14 +503,14 @@ router.post("/create-eoa-position",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, collTokenSymbol, collAmount, borrowTokenSymbol, borrowAmount, eoa } = req.body;
+        const { vnetUrl, collSymbol, collAmount, debtSymbol, borrowAmount, eoa } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupVnet(vnetUrl, [eoa]);
 
         createCompoundV3EOAPosition(
-            collTokenSymbol,
+            collSymbol,
             collAmount,
-            borrowTokenSymbol,
+            debtSymbol,
             borrowAmount,
             eoa
         )
@@ -536,9 +538,9 @@ router.post("/create-eoa-position",
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/c36f1114-8b66-452a-8ce9-007dbe5a66d6"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              marketSymbol:
  *                type: string
  *                example: "USDC"
@@ -578,7 +580,7 @@ router.post("/create-eoa-position",
  *                   type: string
  */
 router.post("/add-manager",
-    body(["forkId", "marketSymbol", "eoa", "manager"]).notEmpty(),
+    body(["vnetUrl", "marketSymbol", "eoa", "manager"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -586,9 +588,9 @@ router.post("/add-manager",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { forkId, marketSymbol, eoa, manager } = req.body;
+        const { vnetUrl, marketSymbol, eoa, manager } = req.body;
 
-        await setupFork(forkId, [eoa], true);
+        await setupVnet(vnetUrl, [eoa]);
 
         addManager(marketSymbol, eoa, manager)
             .then(pos => {

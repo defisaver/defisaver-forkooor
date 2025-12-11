@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
+const { getAssetInfo } = require("@defisaver/tokens");
 
 const {
     dfsRegistryAbi, proxyRegistryAbi, proxyAbi, erc20Abi, iProxyERC20Abi, subProxyAbi, subStorageAbi, safeProxyFactoryAbi,
@@ -89,7 +90,7 @@ const addresses = {
         REGISTRY_ADDR: "0x44e98bB58d725F2eF93a195F518b335dCB784c78",
         OWNER_ACC: "0x13fa3D42C09E5E15153F08bb90A79A3Bd63E289D",
         DAI_ADDRESS: "", // No deployment on Plasma
-        AAVE_V3_VIEW: "0x5B0B7E38C2a8e46CfAe13c360BC5927570BeEe94",
+        AAVE_V3_VIEW: "0x5B0B7E38C2a8e46CfAe13c360BC5927570BeEe94"
     }
 };
 
@@ -400,7 +401,7 @@ function toBytes32(bn) {
 }
 
 /**
- * Sets ETH balance of a given address to desired amount on a tenderly fork
+ * Sets ETH balance of a given address to desired amount on a tenderly vnet
  * @param {string} address address whose balance we want to top up
  * @param {number} amount amount of ETH to top up the address with (whole number)
  * @returns {void}
@@ -423,24 +424,14 @@ async function topUpAccount(address, amount = 100) {
     }
 }
 
-/** Get the RPC URL for a Tenderly fork or vnet
- * @param {string} forkId ID of the Tenderly fork
- * @param {boolean} isVnet Whether fork is legacy or vnet
- * @returns {string} RPC URL
- */
-function getRpc(forkId, isVnet = false) {
-    return isVnet ? forkId : `https://rpc.tenderly.co/fork/${forkId}`;
-}
-
 /**
  * Sets up hre.ethers.providers object and gives 100 eth to each account
- * @param {string} forkId ID of the Tenderly fork
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {Array<string>} accounts all the accounts that will be sending transactions
- * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function setupFork(forkId, accounts = [], isVnet = true) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
+async function setupVnet(vnetUrl, accounts = []) {
+    hre.ethers.provider = await hre.ethers.getDefaultProvider(vnetUrl);
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
     }));
@@ -448,14 +439,13 @@ async function setupFork(forkId, accounts = [], isVnet = true) {
 
 /**
  * Lowers safe threshold to 1
- * @param {string} forkId ID of the Tenderly fork
+ * @param {string} vnetUrl RPC URL of the Tenderly vnet
  * @param {Array<string>} safes  all the accounts that will be sending transactions}
  * @param {Array<number>} thresholds new threshold value that will be set for matching safe
- * @param {boolean} isVnet Whether fork is legacy or vnet
  * @returns {void}
  */
-async function lowerSafesThreshold(forkId, safes, thresholds, isVnet = false) {
-    const provider = await hre.ethers.getDefaultProvider(getRpc(forkId, isVnet));
+async function lowerSafesThreshold(vnetUrl, safes, thresholds) {
+    const provider = await hre.ethers.getDefaultProvider(vnetUrl);
     const thresholdSlot = toBytes32(hre.ethers.utils.parseUnits("4", 0)).toString();
 
     for (let i = 0; i < safes.length; i++) {
@@ -714,7 +704,7 @@ async function subToSparkStrategy(proxy, strategySub) {
  * @param {string} strategySub strategySub properly encoded
  * @returns {number} ID of the subscription
  */
-async function subToAaveV3Automation(proxy, strategySub) {
+async function subToAaveV3LeverageManagementWithSubProxy(proxy, strategySub) {
     const { chainId } = await hre.ethers.provider.getNetwork();
     const subProxyAddr = addresses[chainId].AAVE_V3_SUB_PROXY;
     const [signer] = await hre.ethers.getSigners();
@@ -794,12 +784,12 @@ function defaultsToSafe(req) {
 }
 
 /**
- * Read walletAddr from request. If not provided, return AddressZero, meaning new wallet will be created
+ * Read smartWallet from request. If not provided, return AddressZero, meaning new wallet will be created
  * @param {Object} req request object
  * @returns {string} wallet address
  */
-function getWalletAddr(req) {
-    return req.body.walletAddr ? req.body.walletAddr : hre.ethers.constants.AddressZero;
+function getSmartWallet(req) {
+    return req.body.smartWallet ? req.body.smartWallet : hre.ethers.constants.AddressZero;
 }
 
 /**
@@ -916,6 +906,27 @@ async function sendEth(from, to, amount) {
     });
 }
 
+/**
+ * Get asset info from tokens package, handling ETH → WETH conversion
+ * @param {string} symbol Token symbol (e.g., "ETH", "WETH", "DAI")
+ * @returns {Object} Asset info object with address, symbol, and other properties
+ */
+async function getTokenInfo(symbol) {
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const normalizedSymbol = symbol === "ETH" ? "WETH" : symbol;
+
+    return getAssetInfo(normalizedSymbol, chainId);
+}
+
+/**
+ * Get Aave V3 market address, returning default market if not provided
+ * @param {string} market Optional market address
+ * @returns {string} Market address (provided or default for current chain)
+ */
+async function getAaveV3MarketAddress(market) {
+    return market || addresses[(await hre.ethers.provider.getNetwork()).chainId].AAVE_V3_MARKET;
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -925,26 +936,27 @@ module.exports = {
     getProxy,
     approve,
     executeAction,
+    getAaveV3MarketAddress,
     topUpAccount,
-    setupFork,
+    setupVnet,
     setBalance,
     subToStrategy,
     getLatestSubId,
     getSender,
     subToSparkStrategy,
-    subToAaveV3Automation,
+    subToAaveV3LeverageManagementWithSubProxy,
     subToMcdAutomation,
     subToLiquityLeverageManagementAutomation,
     isContract,
     lowerSafesThreshold,
     defaultsToSafe,
     executeActionFromProxy,
-    getWalletAddr,
+    getSmartWallet,
     createSafe,
     validateTriggerPricesForCloseStrategyType,
-    getRpc,
     sendEth,
     isWalletSafe,
     getWalletOwner,
-    ETH_ADDRESS
+    ETH_ADDRESS,
+    getTokenInfo
 };

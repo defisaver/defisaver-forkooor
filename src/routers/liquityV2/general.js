@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupFork } = require("../../utils");
+const { setupVnet } = require("../../utils");
 const { getTroveInfo } = require("../../helpers/liquityV2/view");
 const { openTroveV2 } = require("../../helpers/liquityV2/general");
 const { body } = require("express-validator");
@@ -11,7 +11,7 @@ const router = express.Router();
  * @swagger
  * /liquity/v2/general/get-trove:
  *   post:
- *     summary: Fetch info about liquityV2 trove on a fork
+ *     summary: Fetch info about liquityV2 trove on a vnet
  *     tags:
  *      - LiquityV2
  *     description: Fetch info about liquityV2 trove
@@ -23,12 +23,9 @@ const router = express.Router();
  *           schema:
  *             type: object
  *             properties:
- *              forkId:
+ *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *              isVnet:
- *                type: boolean
- *                example: true
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *              market:
  *                type: string
  *                example: "WETH"
@@ -88,14 +85,14 @@ const router = express.Router();
  *                   type: string
  */
 router.post("/get-trove",
-    body(["forkId", "market", "troveId", "isVnet"]).notEmpty(),
+    body(["vnetUrl", "market", "troveId"]).notEmpty(),
     async (req, res) => {
         let resObj;
 
         try {
-            const { forkId, market, troveId, isVnet } = req.body;
+            const { vnetUrl, market, troveId } = req.body;
 
-            await setupFork(forkId, [], isVnet);
+            await setupVnet(vnetUrl, []);
             const troveInfo = await getTroveInfo(market, troveId);
 
             res.status(200).send(troveInfo);
@@ -109,7 +106,7 @@ router.post("/get-trove",
  * @swagger
  * /liquity/v2/general/open-trove:
  *   post:
- *     summary: Open a liquityV2 trove on a fork
+ *     summary: Open a liquityV2 trove on a vnet
  *     tags:
  *       - LiquityV2
  *     description: Open a new trove for Liquity V2
@@ -121,12 +118,9 @@ router.post("/get-trove",
  *           schema:
  *             type: object
  *             properties:
- *               forkId:
+ *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.rpc.tenderly.co/9b8557b8-8bb4-46e7-90e1-de0918cb8c2e"
- *               isVnet:
- *                 type: boolean
- *                 example: true
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *               sender:
  *                 type: string
  *                 example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
@@ -212,14 +206,14 @@ router.post("/get-trove",
  */
 router.post("/open-trove",
     body([
-        "forkId", "sender", "troveOwner", "troveOwnerIndex", "market", "collAmount", "debtAmount", "interestRate", "interestBatchManager", "isVnet"
+        "vnetUrl", "sender", "troveOwner", "troveOwnerIndex", "market", "collAmount", "debtAmount", "interestRate", "interestBatchManager"
     ]).notEmpty(),
     async (req, res) => {
         let resObj;
 
         try {
             const {
-                forkId,
+                vnetUrl,
                 sender,
                 troveOwner,
                 troveOwnerIndex,
@@ -227,11 +221,10 @@ router.post("/open-trove",
                 collAmount,
                 debtAmount,
                 interestRate,
-                interestBatchManager,
-                isVnet
+                interestBatchManager
             } = req.body;
 
-            await setupFork(forkId, [], isVnet);
+            await setupVnet(vnetUrl, []);
 
             const troveInfo = await openTroveV2(
                 sender,

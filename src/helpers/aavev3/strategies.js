@@ -1,8 +1,7 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToStrategy, subToAaveV3Automation, addresses, approve } = require("../../utils");
+const { getSender, subToStrategy, subToAaveV3LeverageManagementWithSubProxy, approve, getTokenInfo, getAaveV3MarketAddress } = require("../../utils");
 const { getFullTokensInfo, getLoanData } = require("./view");
-const { getAssetInfo } = require("@defisaver/tokens");
 const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = require("../../abi/aaveV3/abis");
 
 /**
@@ -14,12 +13,13 @@ const { IPoolAddressesProviderAbi, IPoolV3Abi, IL2PoolV3Abi, IDebtTokenAbi } = r
  * @returns {void}
  */
 async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, senderAcc) {
+    const marketAddress = await getAaveV3MarketAddress(market);
 
     // Get user position data to identify all tokens in position
-    const userLoanData = await getLoanData(market, user);
+    const userLoanData = await getLoanData(marketAddress, user);
 
     // Get market contract and pool address for getting reserve data
-    const aaveMarketContract = new hre.ethers.Contract(market, IPoolAddressesProviderAbi, senderAcc);
+    const aaveMarketContract = new hre.ethers.Contract(marketAddress, IPoolAddressesProviderAbi, senderAcc);
     const poolAddress = await aaveMarketContract.getPool();
 
     // Use the appropriate interface based on network
@@ -61,15 +61,15 @@ async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, sen
 /**
  * Subscribes to Aave V3 Close With Maximum Gas Price strategy
  * @param {string} owner wallet owner
- * @param {number} strategyOrBundleId strategy or bundle ID
- * @param {string} triggerBaseTokenAddress base token address
- * @param {string} triggerQuoteTokenAddress quote token address
+ * @param {boolean} isCloseToColl true if closing to collateral, false if closing to debt
+ * @param {string} triggerBaseTokenSymbol base token symbol
+ * @param {string} triggerQuoteTokenSymbol quote token symbol
  * @param {string} triggerPrice trigger price
  * @param {number} triggerRatioState trigger ratio state
  * @param {string} triggerMaximumGasPrice trigger maximum gas price
- * @param {string} subCollAsset collateral asset
+ * @param {string} subCollSymbol collateral asset symbol
  * @param {number} subCollAssetId collateral asset ID
- * @param {string} subDebtAsset debt asset
+ * @param {string} subDebtSymbol debt asset symbol
  * @param {number} subDebtAssetId debt asset ID
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
@@ -77,28 +77,39 @@ async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, sen
  */
 async function subAaveV3CloseWithMaximumGasPriceStrategy(
     owner,
-    strategyOrBundleId,
-    triggerBaseTokenAddress, triggerQuoteTokenAddress, triggerPrice, triggerRatioState, triggerMaximumGasPrice,
-    subCollAsset, subCollAssetId, subDebtAsset, subDebtAssetId,
+    isCloseToColl,
+    triggerBaseTokenSymbol, triggerQuoteTokenSymbol, triggerPrice, triggerRatioState, triggerMaximumGasPrice,
+    subCollSymbol, subCollAssetId, subDebtSymbol, subDebtAssetId,
     proxyAddr,
     useSafe = true
 ) {
     const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
+    const collAssetData = await getTokenInfo(subCollSymbol);
+    const debtAssetData = await getTokenInfo(subDebtSymbol);
+    const triggerBaseTokenData = await getTokenInfo(triggerBaseTokenSymbol);
+    const triggerQuoteTokenData = await getTokenInfo(triggerQuoteTokenSymbol);
+
+    // only supported on mainnet
+    const strategyOrBundleId = isCloseToColl
+        ? automationSdk.enums.Bundles.MainnetIds.AAVE_V3_CLOSE_TO_COLLATERAL_WITH_GAS_PRICE
+        : automationSdk.enums.Bundles.MainnetIds.AAVE_V3_CLOSE_TO_DEBT_WITH_GAS_PRICE;
+
+
     const strategySub = automationSdk.strategySubService.aaveV3Encode.closeToAssetWithMaximumGasPrice(
         strategyOrBundleId,
         true,
         {
-            baseTokenAddress: triggerBaseTokenAddress,
-            quoteTokenAddress: triggerQuoteTokenAddress,
+            baseTokenAddress: triggerBaseTokenData.address,
+            quoteTokenAddress: triggerQuoteTokenData.address,
             price: triggerPrice,
             ratioState: triggerRatioState,
             maximumGasPrice: triggerMaximumGasPrice
         },
         {
-            collAsset: subCollAsset,
+            collAsset: collAssetData.address,
             collAssetId: subCollAssetId,
-            debtAsset: subDebtAsset,
+            debtAsset: debtAssetData.address,
             debtAssetId: subDebtAssetId
         }
     );
@@ -109,7 +120,7 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
 
 /**
  * Subscribes to Aave V3 Automation strategy
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {int} minRatio ratio under which the strategy will trigger
  * @param {int} maxRatio ratio over which the strategy will trigger
  * @param {int} targetRepayRatio wanted ratio after repay
@@ -119,16 +130,29 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {boolean} StrategySub object and ID of the subscription
  */
-async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
-
+async function subAaveV3LeverageManagementWithSubProxyStrategy(
+    eoa,
+    minRatio,
+    maxRatio,
+    targetRepayRatio,
+    targetBoostRatio,
+    boostEnabled,
+    proxyAddr,
+    useSafe = true
+) {
     try {
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
-        const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagement(
-            minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
+        const strategySub =
+        automationSdk.strategySubService.aaveV3Encode.leverageManagement(
+            minRatio,
+            maxRatio,
+            targetBoostRatio,
+            targetRepayRatio,
+            boostEnabled
         );
 
-        const subId = await subToAaveV3Automation(proxy, strategySub);
+        const subId = await subToAaveV3LeverageManagementWithSubProxy(proxy, strategySub);
 
         return { subId, strategySub };
     } catch (err) {
@@ -139,8 +163,7 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
 
 /**
  * Subscribes to Aave V3 Generic Automation strategy. Supports EOA and SW subbing
- * @param {string} owner proxy owner
- * @param {uint} bundleId bundle ID
+ * @param {string} eoa EOA address
  * @param {string} market address of the market
  * @param {boolean} isEOA if it is EOA or SW strategy
  * @param {uint} ratioState if it is boost or repay. 0 for boost, 1 for repay
@@ -151,20 +174,42 @@ async function subAaveAutomationStrategy(owner, minRatio, maxRatio, targetRepayR
  * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric, proxyAddr, useSafe = true) {
+async function subAaveV3GenericAutomationStrategy(eoa, market, isEOA, ratioState, targetRatio, triggerRatio, isGeneric, proxyAddr, useSafe = true) {
 
     try {
-        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const marketAddress = await getAaveV3MarketAddress(market);
+        const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
-        const user = isEOA ? owner : proxy.address;
+        const user = isEOA ? eoa : proxy.address;
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let bundleId;
+
+        if (chainId === 42161) {
+
+            // Arbitrum
+            bundleId = ratioState === 1 ? 18 : 19; // REPAY : BOOST
+        } else if (chainId === 10) {
+
+            // Optimism
+            bundleId = ratioState === 1 ? 6 : 7; // REPAY : BOOST
+        } else if (chainId === 8453) {
+
+            // Base
+            bundleId = ratioState === 1 ? 23 : 24; // REPAY : BOOST
+        } else {
+
+            // Mainnet (default)
+            bundleId = ratioState === 1 ? 52 : 53; // REPAY : BOOST
+        }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementWithoutSubProxy(
-            bundleId, market, user, ratioState, targetRatio, triggerRatio, isGeneric
+            bundleId, marketAddress, user, ratioState, targetRatio, triggerRatio, isGeneric
         );
 
         if (isEOA) {
-            await giveApprovalsFromEOAToSmartWallet(market, owner, proxy.address, senderAcc);
+            await giveApprovalsFromEOAToSmartWallet(marketAddress, eoa, proxy.address, senderAcc);
         }
 
         const subId = await subToStrategy(proxy, strategySub);
@@ -178,12 +223,12 @@ async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA
 
 /**
  * Subscribes to Aave V3 Leverage Management On Price Generic strategy. Supports EOA and SW subbing
- * @param {string} owner proxy owner
- * @param {uint} bundleId bundle ID
+ * @param {string} eoa EOA address
  * @param {string} market address of the market
  * @param {boolean} isEOA if it is EOA or SW strategy
- * @param {string} collAssetSymbol collateral asset symbol
- * @param {string} debtAssetSymbol debt asset symbol
+ * @param {boolean} isBoost true for boost strategy, false for repay strategy
+ * @param {string} collSymbol collateral asset symbol
+ * @param {string} debtSymbol debt asset symbol
  * @param {uint} triggerPrice trigger price
  * @param {uint} priceState price state (0 for under, 1 for over)
  * @param {uint} targetRatio target ratio
@@ -192,12 +237,12 @@ async function subAaveV3GenericAutomationStrategy(owner, bundleId, market, isEOA
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3LeverageManagementOnPriceGeneric(
-    owner,
-    bundleId,
+    eoa,
     market,
     isEOA,
-    collAssetSymbol,
-    debtAssetSymbol,
+    isBoost,
+    collSymbol,
+    debtSymbol,
     triggerPrice,
     priceState,
     targetRatio,
@@ -205,23 +250,44 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const marketAddress = await getAaveV3MarketAddress(market);
+        const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
-        const user = isEOA ? owner : proxy.address;
+        const user = isEOA ? eoa : proxy.address;
 
         // Get asset info
-        const collAssetData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
-        const debtAssetData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+        const collAssetData = await getTokenInfo(collSymbol);
+        const debtAssetData = await getTokenInfo(debtSymbol);
 
         // Get full tokens info for asset IDs
-        const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
+        const infos = await getFullTokensInfo(marketAddress, [collAssetData.address, debtAssetData.address]);
         const collAssetInfo = infos[0];
         const debtAssetInfo = infos[1];
 
         if (isEOA) {
-            await giveApprovalsFromEOAToSmartWallet(market, owner, proxy.address, senderAcc);
+            await giveApprovalsFromEOAToSmartWallet(marketAddress, eoa, proxy.address, senderAcc);
+        }
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let bundleId;
+
+        if (chainId === 42161) {
+
+            // Arbitrum
+            bundleId = isBoost ? 21 : 20; // BOOST_ON_PRICE : REPAY_ON_PRICE
+        } else if (chainId === 10) {
+
+            // Optimism
+            bundleId = isBoost ? 9 : 8; // BOOST_ON_PRICE : REPAY_ON_PRICE
+        } else if (chainId === 8453) {
+
+            // Base
+            bundleId = isBoost ? 26 : 25; // BOOST_ON_PRICE : REPAY_ON_PRICE
+        } else {
+
+            // Mainnet (default)
+            bundleId = isBoost ? 55 : 54; // BOOST_ON_PRICE : REPAY_ON_PRICE
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPriceGeneric(
@@ -232,7 +298,7 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
             collAssetInfo.assetId,
             debtAssetData.address,
             debtAssetInfo.assetId,
-            market,
+            marketAddress,
             targetRatio,
             user
         );
@@ -248,12 +314,11 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
 
 /**
  * Subscribes to Aave V3 Close On Price Generic strategy. Supports EOA and SW subbing
- * @param {string} owner proxy owner
- * @param {uint} bundleId bundle ID
+ * @param {string} eoa EOA address
  * @param {string} market address of the market
  * @param {boolean} isEOA if it is EOA or SW strategy
- * @param {string} collAssetSymbol collateral asset symbol
- * @param {string} debtAssetSymbol debt asset symbol
+ * @param {string} collSymbol collateral asset symbol
+ * @param {string} debtSymbol debt asset symbol
  * @param {number} stopLossPrice stop loss price (0 if not used)
  * @param {number} stopLossType stop loss type (0 for collateral, 1 for debt)
  * @param {number} takeProfitPrice take profit price (0 if not used)
@@ -263,12 +328,11 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3CloseOnPriceGeneric(
-    owner,
-    bundleId,
+    eoa,
     market,
     isEOA,
-    collAssetSymbol,
-    debtAssetSymbol,
+    collSymbol,
+    debtSymbol,
     stopLossPrice,
     stopLossType,
     takeProfitPrice,
@@ -277,23 +341,44 @@ async function subAaveV3CloseOnPriceGeneric(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const marketAddress = await getAaveV3MarketAddress(market);
+        const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         // Determine user field based on isEOA parameter
-        const user = isEOA ? owner : proxy.address;
+        const user = isEOA ? eoa : proxy.address;
 
         // Get asset info
-        const collAssetData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
-        const debtAssetData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+        const collAssetData = await getTokenInfo(collSymbol);
+        const debtAssetData = await getTokenInfo(debtSymbol);
 
         // Get full tokens info for asset IDs
-        const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
+        const infos = await getFullTokensInfo(marketAddress, [collAssetData.address, debtAssetData.address]);
         const collAssetInfo = infos[0];
         const debtAssetInfo = infos[1];
 
         if (isEOA) {
-            await giveApprovalsFromEOAToSmartWallet(market, owner, proxy.address, senderAcc);
+            await giveApprovalsFromEOAToSmartWallet(marketAddress, eoa, proxy.address, senderAcc);
+        }
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let bundleId;
+
+        if (chainId === 42161) {
+
+            // Arbitrum
+            bundleId = 22; // CLOSE
+        } else if (chainId === 10) {
+
+            // Optimism
+            bundleId = 10; // CLOSE
+        } else if (chainId === 8453) {
+
+            // Base
+            bundleId = 27; // CLOSE
+        } else {
+
+            // Mainnet (default)
+            bundleId = 56; // CLOSE
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.closeOnPriceGeneric(
@@ -302,7 +387,7 @@ async function subAaveV3CloseOnPriceGeneric(
             collAssetInfo.assetId,
             debtAssetData.address,
             debtAssetInfo.assetId,
-            market,
+            marketAddress,
             user,
             stopLossPrice,
             stopLossType,
@@ -321,46 +406,38 @@ async function subAaveV3CloseOnPriceGeneric(
 
 /**
  * Subscribes to Aave V3 Close To Coll strategy
- * @param {boolean} useDefaultMarket whether to use the default market or not
- * @param {string} market aaveV3 market address
- * @param {string} owner proxy owner
+ * @param {string} market aaveV3 market address (optional, will use default market if not provided)
+ * @param {string} eoa EOA address
  * @param {string} triggerBaseAssetSymbol trigger base asset symbol
  * @param {string} triggerQuoteAssetSymbol trigger quote asset symbol
  * @param {number} targetPrice trigger price
  * @param {number} priceState 'under' or 'over'
- * @param {string} collAssetSymbol symbol of the collateral asset
- * @param {string} debtAssetSymbol symbol of the debt asset
+ * @param {string} collSymbol symbol of the collateral asset
+ * @param {string} debtSymbol symbol of the debt asset
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveCloseToCollStrategy(
-    useDefaultMarket,
     market,
-    owner,
+    eoa,
     triggerBaseAssetSymbol,
     triggerQuoteAssetSymbol,
     targetPrice,
     priceState,
-    collAssetSymbol,
-    debtAssetSymbol,
+    collSymbol,
+    debtSymbol,
     proxyAddr,
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const marketAddress = await getAaveV3MarketAddress(market);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
-        let marketAddress = market;
-
-        if (useDefaultMarket) {
-            marketAddress = addresses[chainId].AAVE_V3_MARKET;
-        }
-
-        const collTokenData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
-        const debtTokenData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
-        const triggerBaseAssetData = getAssetInfo(triggerBaseAssetSymbol === "ETH" ? "WETH" : triggerBaseAssetSymbol, chainId);
-        const triggerQuoteAssetData = getAssetInfo(triggerQuoteAssetSymbol === "ETH" ? "WETH" : triggerQuoteAssetSymbol, chainId);
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
+        const triggerBaseAssetData = await getTokenInfo(triggerBaseAssetSymbol);
+        const triggerQuoteAssetData = await getTokenInfo(triggerQuoteAssetSymbol);
 
         const triggerData = {
             baseTokenAddress: triggerBaseAssetData.address,
@@ -380,6 +457,7 @@ async function subAaveCloseToCollStrategy(
             debtAssetId: aaveDebtInfo.assetId
         };
 
+        const { chainId } = await hre.ethers.provider.getNetwork();
         let bundleId = automationSdk.enums.Bundles.MainnetIds.AAVE_V3_CLOSE_TO_COLLATERAL;
 
         if (chainId === 42161) {
@@ -405,44 +483,59 @@ async function subAaveCloseToCollStrategy(
 }
 
 /**
- * Subscribes to Aave V3 Close To Coll strategy bundle
- * @param {boolean} useDefaultMarket whether to use the default market or not
- * @param {string} market aaveV3 market address
- * @param {string} owner proxy owner
- * @param {number} bundleId bundle ID
+ * Subscribes to Aave V3 Open Order From Collateral strategy bundle
+ * @param {string} market aaveV3 market address (optional, will use default market if not provided)
+ * @param {string} eoa EOA address
  * @param {number} triggerPrice trigger price
  * @param {string} triggerState 'under' or 'over'
- * @param {string} collAssetSymbol symbol of the collateral asset
- * @param {string} debtAssetSymbol symbol of the debt asset
+ * @param {string} collSymbol symbol of the collateral asset
+ * @param {string} debtSymbol symbol of the debt asset
  * @param {number} targetRatio target ratio
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3OpenOrderFromCollateral(
-    useDefaultMarket,
     market,
-    owner,
-    bundleId,
+    eoa,
     triggerPrice,
     triggerState,
-    collAssetSymbol,
-    debtAssetSymbol,
+    collSymbol,
+    debtSymbol,
     targetRatio,
     proxyAddr,
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-
-        const marketAddress = useDefaultMarket ? addresses[chainId].AAVE_V3_MARKET : market;
-        const collTokenData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
-        const debtTokenData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+        const marketAddress = await getAaveV3MarketAddress(market);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
 
         const infos = await getFullTokensInfo(marketAddress, [collTokenData.address, debtTokenData.address]);
         const aaveCollInfo = infos[0];
         const aaveDebtInfo = infos[1];
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let bundleId;
+
+        if (chainId === 42161) {
+
+            // Arbitrum
+            bundleId = 6;
+        } else if (chainId === 10) {
+
+            // Optimism
+            bundleId = 4;
+        } else if (chainId === 8453) {
+
+            // Base
+            bundleId = 10;
+        } else {
+
+            // Mainnet (default)
+            bundleId = 36;
+        }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPrice(
             bundleId,
@@ -475,43 +568,58 @@ async function subAaveV3OpenOrderFromCollateral(
 
 /**
  * Subscribes to Aave V3 Repay on price strategy bundle
- * @param {boolean} useDefaultMarket whether to use the default market or not
- * @param {string} market aaveV3 market address
- * @param {string} owner proxy owner
- * @param {number} bundleId bundle ID
+ * @param {string} market aaveV3 market address (optional, will use default market if not provided)
+ * @param {string} eoa EOA address
  * @param {number} triggerPrice trigger price
  * @param {string} triggerState 'under' or 'over'
- * @param {string} collAssetSymbol symbol of the collateral asset
- * @param {string} debtAssetSymbol symbol of the debt asset
+ * @param {string} collSymbol symbol of the collateral asset
+ * @param {string} debtSymbol symbol of the debt asset
  * @param {number} targetRatio target ratio
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3RepayOnPrice(
-    useDefaultMarket,
     market,
-    owner,
-    bundleId,
+    eoa,
     triggerPrice,
     triggerState,
-    collAssetSymbol,
-    debtAssetSymbol,
+    collSymbol,
+    debtSymbol,
     targetRatio,
     proxyAddr,
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-
-        const marketAddress = useDefaultMarket ? addresses[chainId].AAVE_V3_MARKET : market;
-        const collTokenData = getAssetInfo(collAssetSymbol === "ETH" ? "WETH" : collAssetSymbol, chainId);
-        const debtTokenData = getAssetInfo(debtAssetSymbol === "ETH" ? "WETH" : debtAssetSymbol, chainId);
+        const marketAddress = await getAaveV3MarketAddress(market);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
 
         const infos = await getFullTokensInfo(marketAddress, [collTokenData.address, debtTokenData.address]);
         const aaveCollInfo = infos[0];
         const aaveDebtInfo = infos[1];
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let bundleId;
+
+        if (chainId === 42161) {
+
+            // Arbitrum
+            bundleId = 7;
+        } else if (chainId === 10) {
+
+            // Optimism
+            bundleId = 5;
+        } else if (chainId === 8453) {
+
+            // Base
+            bundleId = 11;
+        } else {
+
+            // Mainnet (default)
+            bundleId = 37;
+        }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPrice(
             bundleId,
@@ -545,10 +653,9 @@ async function subAaveV3RepayOnPrice(
 
 /**
  * Subscribes to Aave V3 Collateral Switch strategy
- * @param {string} owner proxy owner
+ * @param {string} eoa EOA address
  * @param {number} strategyId strategy ID
- * @param {boolean} useDefaultMarket whether to use the default market or not
- * @param {string} market aaveV3 market address
+ * @param {string} market aaveV3 market address (optional, will use default market if not provided)
  * @param {string} fromAssetSymbol symbol of the collateral asset to switch from
  * @param {string} toAssetSymbol symbol of the collateral asset to switch to
  * @param {number} amountToSwitch amount of collateral to switch (ignored if isMaxUintSwitch is true)
@@ -560,9 +667,8 @@ async function subAaveV3RepayOnPrice(
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subAaveV3CollateralSwitch(
-    owner,
+    eoa,
     strategyId,
-    useDefaultMarket,
     market,
     fromAssetSymbol,
     toAssetSymbol,
@@ -574,12 +680,10 @@ async function subAaveV3CollateralSwitch(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-
-        const marketAddress = useDefaultMarket ? addresses[chainId].AAVE_V3_MARKET : market;
-        const fromTokenData = getAssetInfo(fromAssetSymbol === "ETH" ? "WETH" : fromAssetSymbol, chainId);
-        const toTokenData = getAssetInfo(toAssetSymbol === "ETH" ? "WETH" : toAssetSymbol, chainId);
+        const marketAddress = await getAaveV3MarketAddress(market);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+        const fromTokenData = await getTokenInfo(fromAssetSymbol);
+        const toTokenData = await getTokenInfo(toAssetSymbol);
         const fromAddr = fromTokenData.address;
         const toAddr = toTokenData.address;
 
@@ -619,7 +723,7 @@ async function subAaveV3CollateralSwitch(
 
 module.exports = {
     subAaveV3CloseWithMaximumGasPriceStrategy,
-    subAaveAutomationStrategy,
+    subAaveV3LeverageManagementWithSubProxyStrategy,
     subAaveCloseToCollStrategy,
     subAaveV3OpenOrderFromCollateral,
     subAaveV3RepayOnPrice,

@@ -189,19 +189,31 @@ async function subAaveV3GenericAutomationStrategy(eoa, market, isEOA, ratioState
         if (chainId === 42161) {
 
             // Arbitrum
-            bundleId = ratioState === 1 ? 18 : 19; // REPAY : BOOST
+            bundleId =
+            ratioState === 1
+                ? automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_EOA_REPAY
+                : automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_EOA_BOOST;
         } else if (chainId === 10) {
 
             // Optimism
-            bundleId = ratioState === 1 ? 6 : 7; // REPAY : BOOST
+            bundleId =
+            ratioState === 1
+                ? automationSdk.enums.Bundles.OptimismIds.AAVE_V3_EOA_REPAY
+                : automationSdk.enums.Bundles.OptimismIds.AAVE_V3_EOA_BOOST;
         } else if (chainId === 8453) {
 
             // Base
-            bundleId = ratioState === 1 ? 23 : 24; // REPAY : BOOST
+            bundleId =
+            ratioState === 1
+                ? automationSdk.enums.Bundles.BaseIds.AAVE_V3_EOA_REPAY
+                : automationSdk.enums.Bundles.BaseIds.AAVE_V3_EOA_BOOST;
         } else {
 
             // Mainnet (default)
-            bundleId = ratioState === 1 ? 52 : 53; // REPAY : BOOST
+            bundleId =
+            ratioState === 1
+                ? automationSdk.enums.Bundles.MainnetIds.AAVE_V3_EOA_REPAY
+                : automationSdk.enums.Bundles.MainnetIds.AAVE_V3_EOA_BOOST;
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementWithoutSubProxy(
@@ -275,19 +287,27 @@ async function subAaveV3LeverageManagementOnPriceGeneric(
         if (chainId === 42161) {
 
             // Arbitrum
-            bundleId = isBoost ? 21 : 20; // BOOST_ON_PRICE : REPAY_ON_PRICE
+            bundleId = isBoost
+                ? automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_EOA_BOOST_ON_PRICE
+                : automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_EOA_REPAY_ON_PRICE;
         } else if (chainId === 10) {
 
             // Optimism
-            bundleId = isBoost ? 9 : 8; // BOOST_ON_PRICE : REPAY_ON_PRICE
+            bundleId = isBoost
+                ? automationSdk.enums.Bundles.OptimismIds.AAVE_V3_EOA_BOOST_ON_PRICE
+                : automationSdk.enums.Bundles.OptimismIds.AAVE_V3_EOA_REPAY_ON_PRICE;
         } else if (chainId === 8453) {
 
             // Base
-            bundleId = isBoost ? 26 : 25; // BOOST_ON_PRICE : REPAY_ON_PRICE
+            bundleId = isBoost
+                ? automationSdk.enums.Bundles.BaseIds.AAVE_V3_EOA_BOOST_ON_PRICE
+                : automationSdk.enums.Bundles.BaseIds.AAVE_V3_EOA_REPAY_ON_PRICE;
         } else {
 
             // Mainnet (default)
-            bundleId = isBoost ? 55 : 54; // BOOST_ON_PRICE : REPAY_ON_PRICE
+            bundleId = isBoost
+                ? automationSdk.enums.Bundles.MainnetIds.AAVE_V3_EOA_BOOST_ON_PRICE
+                : automationSdk.enums.Bundles.MainnetIds.AAVE_V3_EOA_REPAY_ON_PRICE;
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPriceGeneric(
@@ -366,19 +386,20 @@ async function subAaveV3CloseOnPriceGeneric(
         if (chainId === 42161) {
 
             // Arbitrum
-            bundleId = 22; // CLOSE
+            // Arbitrum
+            bundleId = automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_EOA_CLOSE;
         } else if (chainId === 10) {
 
             // Optimism
-            bundleId = 10; // CLOSE
+            bundleId = automationSdk.enums.Bundles.OptimismIds.AAVE_V3_EOA_CLOSE;
         } else if (chainId === 8453) {
 
             // Base
-            bundleId = 27; // CLOSE
+            bundleId = automationSdk.enums.Bundles.BaseIds.AAVE_V3_EOA_CLOSE;
         } else {
 
             // Mainnet (default)
-            bundleId = 56; // CLOSE
+            bundleId = automationSdk.enums.Bundles.MainnetIds.AAVE_V3_EOA_CLOSE;
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.closeOnPriceGeneric(
@@ -522,19 +543,19 @@ async function subAaveV3OpenOrderFromCollateral(
         if (chainId === 42161) {
 
             // Arbitrum
-            bundleId = 6;
+            bundleId = automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_OPEN_ORDER_FROM_COLLATERAL;
         } else if (chainId === 10) {
 
             // Optimism
-            bundleId = 4;
+            bundleId = automationSdk.enums.Bundles.OptimismIds.AAVE_V3_OPEN_ORDER_FROM_COLLATERAL;
         } else if (chainId === 8453) {
 
             // Base
-            bundleId = 10;
+            bundleId = automationSdk.enums.Bundles.BaseIds.AAVE_V3_OPEN_ORDER_FROM_COLLATERAL;
         } else {
 
             // Mainnet (default)
-            bundleId = 36;
+            bundleId = automationSdk.enums.Bundles.MainnetIds.AAVE_V3_OPEN_ORDER_FROM_COLLATERAL;
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPrice(
@@ -606,19 +627,19 @@ async function subAaveV3RepayOnPrice(
         if (chainId === 42161) {
 
             // Arbitrum
-            bundleId = 7;
+            bundleId = automationSdk.enums.Bundles.ArbitrumIds.AAVE_V3_REPAY_ON_PRICE;
         } else if (chainId === 10) {
 
             // Optimism
-            bundleId = 5;
+            bundleId = automationSdk.enums.Bundles.OptimismIds.AAVE_V3_REPAY_ON_PRICE;
         } else if (chainId === 8453) {
 
             // Base
-            bundleId = 11;
+            bundleId = automationSdk.enums.Bundles.BaseIds.AAVE_V3_REPAY_ON_PRICE;
         } else {
 
             // Mainnet (default)
-            bundleId = 37;
+            bundleId = automationSdk.enums.Bundles.MainnetIds.AAVE_V3_REPAY_ON_PRICE;
         }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.leverageManagementOnPrice(
@@ -654,7 +675,6 @@ async function subAaveV3RepayOnPrice(
 /**
  * Subscribes to Aave V3 Collateral Switch strategy
  * @param {string} eoa EOA address
- * @param {number} strategyId strategy ID
  * @param {string} market aaveV3 market address (optional, will use default market if not provided)
  * @param {string} fromAssetSymbol symbol of the collateral asset to switch from
  * @param {string} toAssetSymbol symbol of the collateral asset to switch to
@@ -668,7 +688,6 @@ async function subAaveV3RepayOnPrice(
  */
 async function subAaveV3CollateralSwitch(
     eoa,
-    strategyId,
     market,
     fromAssetSymbol,
     toAssetSymbol,
@@ -694,6 +713,27 @@ async function subAaveV3CollateralSwitch(
         const amountToSwitchFormatted = isMaxUintSwitch
             ? hre.ethers.constants.MaxUint256
             : hre.ethers.utils.parseUnits(amountToSwitch.toString(), fromTokenData.decimals);
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let strategyId;
+
+        if (chainId === 42161) {
+
+            // Arbitrum
+            strategyId = automationSdk.enums.Strategies.ArbitrumIds.AAVE_V3_COLLATERAL_SWITCH;
+        } else if (chainId === 10) {
+
+            // Optimism
+            strategyId = automationSdk.enums.Strategies.OptimismIds.AAVE_V3_COLLATERAL_SWITCH;
+        } else if (chainId === 8453) {
+
+            // Base
+            strategyId = automationSdk.enums.Strategies.BaseIds.AAVE_V3_COLLATERAL_SWITCH;
+        } else {
+
+            // Mainnet (default)
+            strategyId = automationSdk.enums.Strategies.MainnetIds.AAVE_V3_COLLATERAL_SWITCH;
+        }
 
         const strategySub = automationSdk.strategySubService.aaveV3Encode.collateralSwitch(
             strategyId,

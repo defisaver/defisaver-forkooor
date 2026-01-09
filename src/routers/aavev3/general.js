@@ -259,8 +259,8 @@ router.post("/get-safety-ratio",
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
- *                example: 2
- *                description: "Amount of collateral to supply (whole number)"
+ *                example: 1.5
+ *                description: "Amount of collateral to supply in token units (e.g., 1.5 for 1.5 ETH, 1000.25 for 1000.25 DAI). Not USD value. Supports decimals."
  *              debtSymbol:
  *                type: string
  *                example: "DAI"
@@ -268,7 +268,15 @@ router.post("/get-safety-ratio",
  *              debtAmount:
  *                type: number
  *                example: 2000
- *                description: "Amount of debt to borrow (whole number)"
+ *                description: "Amount of debt to borrow in token units (e.g., 2000 for 2000 DAI, 1000 for 1000 USDC). Not USD value. Supports decimals."
+ *              smartWallet:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *              walletType:
+ *                type: string
+ *                example: "safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -427,8 +435,8 @@ router.post("/create/eoa",
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
  *              collAmount:
  *                type: number
- *                example: 2
- *                description: "Amount of collateral to supply (whole number)"
+ *                example: 1.5
+ *                description: "Amount of collateral to supply in token units (e.g., 1.5 for 1.5 ETH, 1000.25 for 1000.25 DAI). Not USD value. Supports decimals."
  *              debtSymbol:
  *                type: string
  *                example: "DAI"
@@ -436,7 +444,7 @@ router.post("/create/eoa",
  *              debtAmount:
  *                type: number
  *                example: 2000
- *                description: "Amount of debt to borrow (whole number)"
+ *                description: "Amount of debt to borrow in token units (e.g., 2000 for 2000 DAI, 1000 for 1000 USDC). Not USD value. Supports decimals."
  *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"

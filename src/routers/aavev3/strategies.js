@@ -2201,7 +2201,7 @@ router.post("/close-on-price/generic/smart-wallet",
  *              amountToSwitch:
  *                  type: number
  *                  example: 1.5
- *                  description: "Amount of collateral to switch (ignored if isMaxUintSwitch is true)"
+ *                  description: "Amount of collateral to switch in token units (e.g., 1.5 for 1.5 WETH). Not USD value. Supports decimals. Ignored if isMaxUintSwitch is true"
  *              isMaxUintSwitch:
  *                  type: boolean
  *                  example: false

@@ -789,7 +789,7 @@ function defaultsToSafe(req) {
  * @returns {string} wallet address
  */
 function getSmartWallet(req) {
-    return req.body.smartWallet ? req.body.smartWallet : hre.ethers.constants.AddressZero;
+    return req.body.smartWallet || hre.ethers.constants.AddressZero;
 }
 
 /**

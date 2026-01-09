@@ -41,13 +41,15 @@ const router = express.Router();
  *               - maximumGasPrice
  *               - ratioState
  *               - collSymbol
- *               - collAssetId
  *               - debtSymbol
- *               - debtAssetId
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -75,18 +77,10 @@ const router = express.Router();
  *                  type: string
  *                  example: "ETH"
  *                  description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              collAssetId:
- *                  type: integer
- *                  example: 0
- *                  description: "Collateral asset ID"
  *              debtSymbol:
  *                  type: string
  *                  example: "DAI"
  *                  description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              debtAssetId:
- *                  type: integer
- *                  example: 4
- *                  description: "Debt asset ID"
  *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -129,9 +123,7 @@ router.post("/close-with-maximum-gasprice/to-collateral", body(
         "maximumGasPrice",
         "ratioState",
         "collSymbol",
-        "collAssetId",
-        "debtSymbol",
-        "debtAssetId"
+        "debtSymbol"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -142,6 +134,7 @@ async (req, res) => {
     }
     const {
         vnetUrl,
+        market,
         eoa,
         baseTokenSymbol,
         quoteTokenSymbol,
@@ -149,9 +142,7 @@ async (req, res) => {
         ratioState,
         maximumGasPrice,
         collSymbol,
-        collAssetId,
-        debtSymbol,
-        debtAssetId
+        debtSymbol
     } = req.body;
     const isCloseToColl = true; // Hardcoded for close to collateral route
 
@@ -159,15 +150,14 @@ async (req, res) => {
     subAaveV3CloseWithMaximumGasPriceStrategy(
         eoa,
         isCloseToColl,
+        market,
         baseTokenSymbol,
         quoteTokenSymbol,
         price,
         ratioState,
         maximumGasPrice,
         collSymbol,
-        collAssetId,
         debtSymbol,
-        debtAssetId,
         getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -201,13 +191,15 @@ async (req, res) => {
  *               - maximumGasPrice
  *               - ratioState
  *               - collSymbol
- *               - collAssetId
  *               - debtSymbol
- *               - debtAssetId
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -235,18 +227,10 @@ async (req, res) => {
  *                  type: string
  *                  example: "ETH"
  *                  description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              collAssetId:
- *                  type: integer
- *                  example: 0
- *                  description: "Collateral asset ID"
  *              debtSymbol:
  *                  type: string
  *                  example: "DAI"
  *                  description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              debtAssetId:
- *                  type: integer
- *                  example: 4
- *                  description: "Debt asset ID"
  *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -289,9 +273,7 @@ router.post("/close-with-maximum-gasprice/to-debt", body(
         "maximumGasPrice",
         "ratioState",
         "collSymbol",
-        "collAssetId",
-        "debtSymbol",
-        "debtAssetId"
+        "debtSymbol"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -302,6 +284,7 @@ async (req, res) => {
     }
     const {
         vnetUrl,
+        market,
         eoa,
         baseTokenSymbol,
         quoteTokenSymbol,
@@ -309,9 +292,7 @@ async (req, res) => {
         ratioState,
         maximumGasPrice,
         collSymbol,
-        collAssetId,
-        debtSymbol,
-        debtAssetId
+        debtSymbol
     } = req.body;
     const isCloseToColl = false; // Hardcoded for close to debt route
 
@@ -319,15 +300,14 @@ async (req, res) => {
     subAaveV3CloseWithMaximumGasPriceStrategy(
         eoa,
         isCloseToColl,
+        market,
         baseTokenSymbol,
         quoteTokenSymbol,
         price,
         ratioState,
         maximumGasPrice,
         collSymbol,
-        collAssetId,
         debtSymbol,
-        debtAssetId,
         getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
@@ -496,6 +476,10 @@ async (req, res) => {
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *              market:
+ *                type: string
+ *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
+ *                description: "Aave V3 market address. Optional - if not provided, the default market for the chain will be used."
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"

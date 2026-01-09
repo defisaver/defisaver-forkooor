@@ -62,15 +62,14 @@ async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, sen
  * Subscribes to Aave V3 Close With Maximum Gas Price strategy
  * @param {string} owner wallet owner
  * @param {boolean} isCloseToColl true if closing to collateral, false if closing to debt
+ * @param {string} market aaveV3 market address (optional, will use default market if not provided)
  * @param {string} triggerBaseTokenSymbol base token symbol
  * @param {string} triggerQuoteTokenSymbol quote token symbol
  * @param {string} triggerPrice trigger price
  * @param {number} triggerRatioState trigger ratio state
  * @param {string} triggerMaximumGasPrice trigger maximum gas price
  * @param {string} subCollSymbol collateral asset symbol
- * @param {number} subCollAssetId collateral asset ID
  * @param {string} subDebtSymbol debt asset symbol
- * @param {number} subDebtAssetId debt asset ID
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
@@ -78,17 +77,24 @@ async function giveApprovalsFromEOAToSmartWallet(market, user, proxyAddress, sen
 async function subAaveV3CloseWithMaximumGasPriceStrategy(
     owner,
     isCloseToColl,
+    market,
     triggerBaseTokenSymbol, triggerQuoteTokenSymbol, triggerPrice, triggerRatioState, triggerMaximumGasPrice,
-    subCollSymbol, subCollAssetId, subDebtSymbol, subDebtAssetId,
+    subCollSymbol, subDebtSymbol,
     proxyAddr,
     useSafe = true
 ) {
+    const marketAddress = await getAaveV3MarketAddress(market);
     const [, proxy] = await getSender(owner, proxyAddr, useSafe);
 
     const collAssetData = await getTokenInfo(subCollSymbol);
     const debtAssetData = await getTokenInfo(subDebtSymbol);
     const triggerBaseTokenData = await getTokenInfo(triggerBaseTokenSymbol);
     const triggerQuoteTokenData = await getTokenInfo(triggerQuoteTokenSymbol);
+
+    // Get full tokens info for asset IDs
+    const infos = await getFullTokensInfo(marketAddress, [collAssetData.address, debtAssetData.address]);
+    const aaveCollInfo = infos[0];
+    const aaveDebtInfo = infos[1];
 
     // only supported on mainnet
     const strategyOrBundleId = isCloseToColl
@@ -108,9 +114,9 @@ async function subAaveV3CloseWithMaximumGasPriceStrategy(
         },
         {
             collAsset: collAssetData.address,
-            collAssetId: subCollAssetId,
+            collAssetId: aaveCollInfo.assetId,
             debtAsset: debtAssetData.address,
-            debtAssetId: subDebtAssetId
+            debtAssetId: aaveDebtInfo.assetId
         }
     );
     const subId = await subToStrategy(proxy, strategySub);

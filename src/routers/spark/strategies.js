@@ -59,7 +59,7 @@ const router = express.Router();
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK

@@ -12,7 +12,7 @@ const { getFullTokensInfo } = require("./view");
  * @param {number} targetBoostRatio Target ratio for boost feature (decimal number)
  * @param {boolean} boostEnabled Is boost feature enabled
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subSparkDfsAutomationStrategy(eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
@@ -38,11 +38,11 @@ async function subSparkDfsAutomationStrategy(eoa, minRatio, maxRatio, targetRepa
  * @param {string} collSymbol collateral asset symbol
  * @param {string} debtSymbol debt asset symbol
  * @param {number} stopLossPrice stop loss price (0 if not used)
- * @param {number} stopLossType stop loss type (0 for collateral, 1 for debt)
+ * @param {number} stopLossType stop loss type (0 for debt, 1 for collateral)
  * @param {number} takeProfitPrice take profit price (0 if not used)
- * @param {number} takeProfitType take profit type (0 for collateral, 1 for debt)
+ * @param {number} takeProfitType take profit type (0 for debt, 1 for collateral)
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subSparkCloseOnPriceGeneric(

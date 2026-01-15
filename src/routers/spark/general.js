@@ -176,7 +176,7 @@ router.post("/get-position",
  *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              collSymbol:
  *                type: string
  *                example: "ETH"
@@ -200,7 +200,7 @@ router.post("/get-position",
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -361,7 +361,7 @@ router.post("/create/smart-wallet",
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -521,7 +521,7 @@ router.post("/supply/smart-wallet",
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -681,7 +681,7 @@ router.post("/withdraw/smart-wallet",
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -841,7 +841,7 @@ router.post("/borrow/smart-wallet",
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK

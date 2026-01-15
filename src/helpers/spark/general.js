@@ -8,11 +8,11 @@ const { getFullTokensInfo, getLoanData } = require("./view");
  * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} collSymbol collateral token symbol
  * @param {string} debtSymbol debt token symbol
- * @param {number} collAmount amount of collateral to be supplied (whole number)
- * @param {number} debtAmount amount of debt to be generated (whole number)
- * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {number} collAmount amount of collateral to be supplied in token units (supports decimals, e.g. 1.5)
+ * @param {number} debtAmount amount of debt to be generated in token units (supports decimals, e.g. 2000.25)
+ * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} object that has users position data in it
  */
 async function createSparkPosition(market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, proxyAddr, useSafe = true) {
@@ -66,10 +66,10 @@ async function createSparkPosition(market, collSymbol, debtSymbol, collAmount, d
  * Supply collateral for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} collSymbol collateral token symbol
- * @param {number} collAmount amount of collateral to be supplied (whole number)
- * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {number} collAmount amount of collateral to be supplied in token units (supports decimals, e.g. 1.5)
+ * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} object that has users position data in it
  */
 async function sparkSupply(market, collSymbol, collAmount, eoa, proxyAddr, useSafe = true) {
@@ -103,10 +103,10 @@ async function sparkSupply(market, collSymbol, collAmount, eoa, proxyAddr, useSa
  * Withdraw collateral for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} collSymbol collateral token symbol
- * @param {number} collAmount amount of collateral to be supplied (whole number)
- * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {number} collAmount amount of collateral to be supplied in token units (supports decimals, e.g. 1.5)
+ * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} object that has users position data in it
  */
 async function sparkWithdraw(market, collSymbol, collAmount, eoa, proxyAddr, useSafe = true) {
@@ -134,10 +134,10 @@ async function sparkWithdraw(market, collSymbol, collAmount, eoa, proxyAddr, use
  * Borrow debt for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} debtSymbol debt token symbol
- * @param {number} debtAmount amount of debt to be generated (whole number)
- * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {number} debtAmount amount of debt to be generated in token units (supports decimals, e.g. 2000.25)
+ * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} object that has users position data in it
  */
 async function sparkBorrow(market, debtSymbol, debtAmount, eoa, proxyAddr, useSafe = true) {
@@ -169,10 +169,10 @@ async function sparkBorrow(market, debtSymbol, debtAmount, eoa, proxyAddr, useSa
  * Payback debt for sender on his proxy (created if he doesn't have one)
  * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} debtSymbol debt token symbol
- * @param {number} debtAmount amount of debt to be generated (whole number)
- * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {number} debtAmount amount of debt to be generated in token units (supports decimals, e.g. 2000.25)
+ * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} object that has users position data in it
  */
 async function sparkPayback(market, debtSymbol, debtAmount, eoa, proxyAddr, useSafe = true) {

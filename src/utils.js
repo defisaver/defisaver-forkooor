@@ -37,7 +37,9 @@ const addresses = {
         CURVE_USD_VIEW: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701",
         LIQUITY_V2_VIEW: "0xF1f3D940392ddAD78A5e2dE1b595aB529f63c365",
         FLUID_VAULT_RESOLVER: "0x814c8C7ceb1411B364c2940c4b9380e739e06686",
-        FLUID_VIEW: "0xf8e3bbf7c95057be1fD5E741a9ADb73E956dC724"
+        FLUID_VIEW: "0xf8e3bbf7c95057be1fD5E741a9ADb73E956dC724",
+        AAVE_V4_VIEW: "0xF0D440dE7f82A1e598992A648E5Bfa5d69b8E3a9",
+        AAVE_V4_CORE_SPOKE: "0x0000000000000000000000000000000000000000" // placeholder - update with actual spoke address
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -927,6 +929,15 @@ async function getAaveV3MarketAddress(market) {
     return market || addresses[(await hre.ethers.provider.getNetwork()).chainId].AAVE_V3_MARKET;
 }
 
+/**
+ * Get Aave V4 spoke address, returning default spoke if not provided
+ * @param {string} spoke Optional spoke address
+ * @returns {string} Spoke address (provided or default for current chain)
+ */
+async function getAaveV4SpokeAddress(spoke) {
+    return spoke || addresses[(await hre.ethers.provider.getNetwork()).chainId].AAVE_V4_CORE_SPOKE;
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -937,6 +948,7 @@ module.exports = {
     approve,
     executeAction,
     getAaveV3MarketAddress,
+    getAaveV4SpokeAddress,
     topUpAccount,
     setupVnet,
     setBalance,

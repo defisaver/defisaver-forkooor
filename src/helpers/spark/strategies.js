@@ -1,4 +1,3 @@
-const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
 const { getSender, subToSparkStrategy, subToStrategy, getTokenInfo } = require("../../utils");
 const { getFullTokensInfo } = require("./view");
@@ -60,12 +59,11 @@ async function subSparkCloseOnPriceGeneric(
     useSafe = true
 ) {
     try {
-        const { chainId } = await hre.ethers.provider.getNetwork();
         const [, proxy] = await getSender(owner, proxyAddr, useSafe);
         const user = proxy.address;
 
-        const collAssetData = getTokenInfo(collSymbol, chainId);
-        const debtAssetData = getTokenInfo(debtSymbol, chainId);
+        const collAssetData = await getTokenInfo(collSymbol);
+        const debtAssetData = await getTokenInfo(debtSymbol);
 
         const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
         const collAssetInfo = infos[0];

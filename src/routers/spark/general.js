@@ -1,6 +1,6 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, defaultsToSafe, getSmartWallet } = require("../../utils");
 const { getLoanData } = require("../../helpers/spark/view");
 const { createSparkPosition, sparkSupply, sparkWithdraw, sparkBorrow, sparkPayback } = require("../../helpers/spark/general");
 
@@ -28,7 +28,7 @@ const router = express.Router();
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
- *              owner:
+ *              positionOwner:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *     responses:
@@ -125,11 +125,11 @@ router.post("/get-position", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, market, owner } = req.body;
+        const { vnetUrl, market, positionOwner } = req.body;
 
-        await setupVnet(vnetUrl);
+        await setupVnet(vnetUrl, [positionOwner]);
 
-        const pos = await getLoanData(market, owner);
+        const pos = await getLoanData(market, positionOwner);
 
         res.status(200).send(pos);
     } catch (err) {
@@ -160,7 +160,7 @@ router.post("/get-position", async (req, res) => {
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
@@ -181,7 +181,7 @@ router.post("/get-position", async (req, res) => {
  *              debt:
  *                type: number
  *                example: 2000
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
@@ -283,10 +283,10 @@ router.post("/create", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, market, collSymbol, debtSymbol, rateMode, coll, debt, owner } = req.body;
+        const { vnetUrl, market, collSymbol, debtSymbol, rateMode, coll, debt, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
-        const pos = await createSparkPosition(market, collSymbol, debtSymbol, rateMode, coll, debt, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [eoa]);
+        const pos = await createSparkPosition(market, collSymbol, debtSymbol, rateMode, coll, debt, eoa, getSmartWallet(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -317,7 +317,7 @@ router.post("/create", async (req, res) => {
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *              collSymbol:
@@ -327,7 +327,7 @@ router.post("/create", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
@@ -429,10 +429,10 @@ router.post("/supply", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, market, collSymbol, amount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
-        const pos = await sparkSupply(market, collSymbol, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [eoa]);
+        const pos = await sparkSupply(market, collSymbol, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -463,7 +463,7 @@ router.post("/supply", async (req, res) => {
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *              collSymbol:
@@ -473,7 +473,7 @@ router.post("/supply", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
@@ -575,10 +575,10 @@ router.post("/withdraw", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, market, collSymbol, amount, owner } = req.body;
+        const { vnetUrl, market, collSymbol, amount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
-        const pos = await sparkWithdraw(market, collSymbol, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [eoa]);
+        const pos = await sparkWithdraw(market, collSymbol, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -609,7 +609,7 @@ router.post("/withdraw", async (req, res) => {
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *              debtSymbol:
@@ -622,7 +622,7 @@ router.post("/withdraw", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2000
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
@@ -724,10 +724,10 @@ router.post("/borrow", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, market, debtSymbol, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
-        const pos = await sparkBorrow(market, debtSymbol, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [eoa]);
+        const pos = await sparkBorrow(market, debtSymbol, rateMode, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {
@@ -758,7 +758,7 @@ router.post("/borrow", async (req, res) => {
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
  *              debtSymbol:
@@ -771,7 +771,7 @@ router.post("/borrow", async (req, res) => {
  *              amount:
  *                type: number
  *                example: 2000
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
@@ -873,10 +873,10 @@ router.post("/payback", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, market, debtSymbol, rateMode, amount, owner } = req.body;
+        const { vnetUrl, market, debtSymbol, rateMode, amount, eoa } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
-        const pos = await sparkPayback(market, debtSymbol, rateMode, amount, owner, getWalletAddr(req), defaultsToSafe(req));
+        await setupVnet(vnetUrl, [eoa]);
+        const pos = await sparkPayback(market, debtSymbol, rateMode, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
         res.status(200).send(pos);
     } catch (err) {

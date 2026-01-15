@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, defaultsToSafe, getSmartWallet } = require("../../utils");
 const { subSparkDfsAutomationStrategy, subSparkCloseOnPriceGeneric } = require("../../helpers/spark/strategies");
 const { body, validationResult } = require("express-validator");
 
@@ -26,7 +26,7 @@ const router = express.Router();
  *              vnetUrl:
  *                type: string
  *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              minRatio:
@@ -44,7 +44,7 @@ const router = express.Router();
  *              boostEnabled:
  *                type: boolean
  *                example: true
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
@@ -83,12 +83,12 @@ router.post("/dfs-automation", async (req, res) => {
     let resObj;
 
     try {
-        const { vnetUrl, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        const { vnetUrl, eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         const sub = await subSparkDfsAutomationStrategy(
-            owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)
+            eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getSmartWallet(req), defaultsToSafe(req)
         );
 
         res.status(200).send(sub);
@@ -115,7 +115,7 @@ router.post("/dfs-automation", async (req, res) => {
  *             type: object
  *             required:
  *               - vnetUrl
- *               - owner
+ *               - eoa
  *               - bundleId
  *               - market
  *               - collSymbol
@@ -129,7 +129,7 @@ router.post("/dfs-automation", async (req, res) => {
  *                 type: string
  *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
  *                 description: "Unique identifier for the vnet"
- *               owner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
@@ -211,7 +211,7 @@ router.post("/dfs-automation", async (req, res) => {
  *                   example: "Failed to subscribe to Spark Close On Price strategy with error: ..."
  */
 router.post("/close-on-price-generic",
-    body(["vnetUrl", "owner", "bundleId", "market", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
+    body(["vnetUrl", "eoa", "bundleId", "market", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("bundleId").isInt(),
     body("stopLossPrice").isFloat(),
     body("stopLossType").isFloat(),
@@ -226,7 +226,7 @@ router.post("/close-on-price-generic",
 
         const {
             vnetUrl,
-            owner,
+            eoa,
             bundleId,
             market,
             collSymbol,
@@ -237,10 +237,10 @@ router.post("/close-on-price-generic",
             takeProfitType
         } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subSparkCloseOnPriceGeneric(
-            owner,
+            eoa,
             bundleId,
             market,
             collSymbol,
@@ -249,7 +249,7 @@ router.post("/close-on-price-generic",
             stopLossType,
             takeProfitPrice,
             takeProfitType,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {

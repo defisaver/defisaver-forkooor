@@ -18,10 +18,8 @@ const { getFullTokensInfo, getLoanData } = require("./view");
  */
 async function createSparkPosition(market, collSymbol, debtSymbol, rateMode, coll, debt, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-
-    const collTokenData = getTokenInfo(collSymbol, chainId);
-    const debtTokenData = getTokenInfo(debtSymbol, chainId);
+    const collTokenData = await getTokenInfo(collSymbol);
+    const debtTokenData = await getTokenInfo(debtSymbol);
 
     // set coll balance for the user
     await setBalance(collTokenData.address, owner, coll);
@@ -68,9 +66,7 @@ async function createSparkPosition(market, collSymbol, debtSymbol, rateMode, col
  */
 async function sparkSupply(market, collSymbol, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-
-    const collTokenData = getTokenInfo(collSymbol, chainId);
+    const collTokenData = await getTokenInfo(collSymbol);
 
     // set coll balance for the user
     await setBalance(collTokenData.address, owner, amount);
@@ -109,9 +105,7 @@ async function sparkSupply(market, collSymbol, amount, owner, proxyAddr, useSafe
  */
 async function sparkWithdraw(market, collSymbol, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-
-    const collTokenData = getTokenInfo(collSymbol, chainId);
+    const collTokenData = await getTokenInfo(collSymbol);
     const amountColl = hre.ethers.utils.parseUnits(amount.toString(), collTokenData.decimals);
 
     const infos = await getFullTokensInfo(market, [collTokenData.address]);
@@ -143,9 +137,7 @@ async function sparkWithdraw(market, collSymbol, amount, owner, proxyAddr, useSa
  */
 async function sparkBorrow(market, debtSymbol, rateMode, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-
-    const debtTokenData = getTokenInfo(debtSymbol, chainId);
+    const debtTokenData = await getTokenInfo(debtSymbol);
 
     const amountDebt = hre.ethers.utils.parseUnits(amount.toString(), debtTokenData.decimals);
 
@@ -179,9 +171,7 @@ async function sparkBorrow(market, debtSymbol, rateMode, amount, owner, proxyAdd
  */
 async function sparkPayback(market, debtSymbol, rateMode, amount, owner, proxyAddr, useSafe = true) {
     const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-
-    const debtTokenData = getTokenInfo(debtSymbol, chainId);
+    const debtTokenData = await getTokenInfo(debtSymbol);
 
     const amountDebt = hre.ethers.utils.parseUnits(amount.toString(), debtTokenData.decimals);
 

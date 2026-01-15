@@ -1,10 +1,11 @@
+const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToSparkStrategy, subToStrategy, getTokenInfo } = require("../../utils");
+const { getSender, subToSparkStrategy, subToStrategy, getTokenInfo, getSparkMarketAddress } = require("../../utils");
 const { getFullTokensInfo } = require("./view");
 
 /**
  * Subscribes to DfsAutomation strategy
- * @param {string} owner Owner of Spark position
+ * @param {string} eoa EOA address used as tx sender
  * @param {number} minRatio Minimum ratio of Spark position (decimal number)
  * @param {number} maxRatio Maximum ratio of Spark position (decimal number)
  * @param {number} targetRepayRatio Target ratio for repay feature (decimal number)
@@ -14,10 +15,10 @@ const { getFullTokensInfo } = require("./view");
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
-    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-
+async function subSparkDfsAutomationStrategy(eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
     try {
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+
         const strategySub = automationSdk.strategySubService.sparkEncode.leverageManagement(
             minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled
         );
@@ -25,16 +26,15 @@ async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRe
 
         return { strategySub, boostSubId: boostEnabled ? subId : "0", repaySubId: boostEnabled ? (subId - 1).toString() : subId };
     } catch (err) {
-        console.log(err);
+        console.error(err);
         throw err;
     }
 }
 
 /**
  * Subscribes to Spark Close On Price Generic strategy
- * @param {string} owner proxy owner
- * @param {uint} bundleId bundle ID
- * @param {string} market address of the market
+ * @param {string} eoa EOA address used as tx sender
+ * @param {string} market market address (optional, will use default market if not provided)
  * @param {string} collSymbol collateral asset symbol
  * @param {string} debtSymbol debt asset symbol
  * @param {number} stopLossPrice stop loss price (0 if not used)
@@ -46,8 +46,7 @@ async function subSparkDfsAutomationStrategy(owner, minRatio, maxRatio, targetRe
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subSparkCloseOnPriceGeneric(
-    owner,
-    bundleId,
+    eoa,
     market,
     collSymbol,
     debtSymbol,
@@ -59,15 +58,25 @@ async function subSparkCloseOnPriceGeneric(
     useSafe = true
 ) {
     try {
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const marketAddress = await getSparkMarketAddress(market);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
         const user = proxy.address;
 
         const collAssetData = await getTokenInfo(collSymbol);
         const debtAssetData = await getTokenInfo(debtSymbol);
 
-        const infos = await getFullTokensInfo(market, [collAssetData.address, debtAssetData.address]);
+        const infos = await getFullTokensInfo(marketAddress, [collAssetData.address, debtAssetData.address]);
         const collAssetInfo = infos[0];
         const debtAssetInfo = infos[1];
+
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let bundleId;
+
+        if (chainId === 1) {
+            bundleId = automationSdk.enums.Bundles.MainnetIds.SPARK_CLOSE;
+        } else {
+            throw new Error(`Spark close-on-price bundle not available for chainId=${chainId}`);
+        }
 
         const strategySub = automationSdk.strategySubService.sparkEncode.closeOnPriceGeneric(
             bundleId,
@@ -75,7 +84,7 @@ async function subSparkCloseOnPriceGeneric(
             collAssetInfo.assetId,
             debtAssetData.address,
             debtAssetInfo.assetId,
-            market,
+            marketAddress,
             user,
             stopLossPrice,
             stopLossType,
@@ -87,7 +96,7 @@ async function subSparkCloseOnPriceGeneric(
 
         return { subId, strategySub };
     } catch (err) {
-        console.log(err);
+        console.error(err);
         throw err;
     }
 }

@@ -122,22 +122,27 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/get-position", async (req, res) => {
-    let resObj;
+router.post("/get-position",
+    body(["vnetUrl", "positionOwner"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
         const { vnetUrl, market, positionOwner } = req.body;
 
         await setupVnet(vnetUrl, [positionOwner]);
 
-        const pos = await getLoanData(market, positionOwner);
-
-        res.status(200).send(pos);
-    } catch (err) {
-        resObj = { error: `Failed to fetch position info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return getLoanData(market, positionOwner)
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to fetch position info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger

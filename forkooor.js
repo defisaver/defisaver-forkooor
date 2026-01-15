@@ -13,6 +13,7 @@ const compoundV3Router = require("./src/routers/compoundV3/index");
 const morphoBlueRouter = require("./src/routers/morpho-blue/index");
 const liquityV2Router = require("./src/routers/liquityV2/index");
 const fluidRouter = require("./src/routers/fluid/index");
+const aaveV4Router = require("./src/routers/aaveV4/index");
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/v1/compound/v3", compoundV3Router);
 app.use("/v1/morpho-blue", morphoBlueRouter);
 app.use("/v1/liquity/v2", liquityV2Router);
 app.use("/v1/fluid", fluidRouter);
+app.use("/v1/aave/v4", aaveV4Router);
 
 app.use("/swagger.json", (req, res) => {
     res.setHeader("Content-Type", "application/json");

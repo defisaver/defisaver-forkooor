@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getSender, subToStrategy, getTokenInfo, getAaveV4SpokeAddress } = require("../../utils");
+const { getSender, subToStrategy, getTokenInfoForAaveV4, getAaveV4SpokeAddress } = require("../../utils");
 const { getReserveInfoForTokens } = require("./view");
 
 /**
@@ -71,8 +71,8 @@ async function subAaveV4LeverageManagementOnPrice(
         const spokeAddress = await getAaveV4SpokeAddress(spoke);
         const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
-        const collAssetData = await getTokenInfo(collSymbol);
-        const debtAssetData = await getTokenInfo(debtSymbol);
+        const collAssetData = await getTokenInfoForAaveV4(collSymbol);
+        const debtAssetData = await getTokenInfoForAaveV4(debtSymbol);
 
         const reserveInfos = await getReserveInfoForTokens(spokeAddress, [collAssetData.address, debtAssetData.address]);
         const collReserveInfo = reserveInfos[0];
@@ -134,8 +134,8 @@ async function subAaveV4CloseOnPrice(
         const spokeAddress = await getAaveV4SpokeAddress(spoke);
         const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
-        const collAssetData = await getTokenInfo(collSymbol);
-        const debtAssetData = await getTokenInfo(debtSymbol);
+        const collAssetData = await getTokenInfoForAaveV4(collSymbol);
+        const debtAssetData = await getTokenInfoForAaveV4(debtSymbol);
 
         const reserveInfos = await getReserveInfoForTokens(spokeAddress, [collAssetData.address, debtAssetData.address]);
         const collReserveInfo = reserveInfos[0];
@@ -196,8 +196,8 @@ async function subAaveV4CollateralSwitch(
         const spokeAddress = await getAaveV4SpokeAddress(spoke);
         const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
-        const fromTokenData = await getTokenInfo(fromAssetSymbol);
-        const toTokenData = await getTokenInfo(toAssetSymbol);
+        const fromTokenData = await getTokenInfoForAaveV4(fromAssetSymbol);
+        const toTokenData = await getTokenInfoForAaveV4(toAssetSymbol);
 
         const reserveInfos = await getReserveInfoForTokens(spokeAddress, [fromTokenData.address, toTokenData.address]);
         const fromReserveInfo = reserveInfos[0];

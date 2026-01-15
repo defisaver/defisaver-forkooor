@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 const { aaveV4ViewAbi } = require("../../abi/aaveV4/abis");
-const { addresses } = require("../../utils");
+const { addresses, getAaveV4SpokeAddress } = require("../../utils");
 
 /**
  * return data about a particular users position in AaveV4
@@ -11,10 +11,11 @@ const { addresses } = require("../../utils");
 async function getLoanData(spoke, user) {
     const [signer] = await hre.ethers.getSigners();
     const { chainId } = await hre.ethers.provider.getNetwork();
+    const spokeAddr = await getAaveV4SpokeAddress(spoke);
     const viewAddress = addresses[chainId].AAVE_V4_VIEW;
     const viewContract = new hre.ethers.Contract(viewAddress, aaveV4ViewAbi, signer);
 
-    const loanData = await viewContract.getLoanData(spoke, user);
+    const loanData = await viewContract.getLoanData(spokeAddr, user);
 
     return {
         user: loanData.user,

@@ -1,6 +1,6 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
-const { getSender, approve, executeAction, setBalance, getTokenInfo, getAaveV4SpokeAddress } = require("../../utils");
+const { getSender, approve, executeAction, setBalance, getTokenInfoForAaveV4, getAaveV4SpokeAddress } = require("../../utils");
 const { getReserveInfoForTokens, getLoanData } = require("./view");
 
 /**
@@ -22,8 +22,8 @@ async function createAaveV4Position(spoke, collSymbol, debtSymbol, collAmount, d
 
     const user = proxy.address;
 
-    const collTokenData = await getTokenInfo(collSymbol);
-    const debtTokenData = await getTokenInfo(debtSymbol);
+    const collTokenData = await getTokenInfoForAaveV4(collSymbol);
+    const debtTokenData = await getTokenInfoForAaveV4(debtSymbol);
 
     // set coll balance for the user
     await setBalance(collTokenData.address, eoa, collAmount);

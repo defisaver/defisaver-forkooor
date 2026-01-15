@@ -3,6 +3,7 @@ const express = require("express");
 const { setupVnet, defaultsToSafe, getSmartWallet } = require("../../utils");
 const { getLoanData } = require("../../helpers/spark/view");
 const { createSparkPosition, sparkSupply, sparkWithdraw, sparkBorrow, sparkPayback } = require("../../helpers/spark/general");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -140,9 +141,9 @@ router.post("/get-position", async (req, res) => {
 
 /**
  * @swagger
- * /spark/general/create:
+ * /spark/general/create/smart-wallet:
  *   post:
- *     summary: Create Spark position on a vnet
+ *     summary: Create Spark Smart Wallet position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -153,10 +154,17 @@ router.post("/get-position", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collSymbol
+ *               - debtSymbol
+ *               - collAmount
+ *               - debtAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -172,15 +180,14 @@ router.post("/get-position", async (req, res) => {
  *                type: string
  *                example: "DAI"
  *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              rateMode:
+ *              collAmount:
  *                type: number
- *                example: 2
- *              coll:
- *                type: number
- *                example: 2
- *              debt:
+ *                example: 1.5
+ *                description: "Amount of collateral to supply in token units (e.g., 1.5 for 1.5 ETH, 1000 for 1000 DAI). Not USD value. Supports decimals."
+ *              debtAmount:
  *                type: number
  *                example: 2000
+ *                description: "Amount of debt to borrow in token units (e.g., 2000 for 2000 DAI, 1000 for 1000 USDC). Not USD value. Supports decimals."
  *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -279,27 +286,37 @@ router.post("/get-position", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/create", async (req, res) => {
-    let resObj;
+router.post("/create/smart-wallet",
+    body(["vnetUrl", "collSymbol", "debtSymbol", "eoa"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
+    body("debtAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, market, collSymbol, debtSymbol, rateMode, coll, debt, eoa } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { vnetUrl, eoa, market, collSymbol, collAmount, debtSymbol, debtAmount } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
-        const pos = await createSparkPosition(market, collSymbol, debtSymbol, rateMode, coll, debt, eoa, getSmartWallet(req), defaultsToSafe(req));
 
-        res.status(200).send(pos);
-    } catch (err) {
-        resObj = { error: `Failed to create spark position info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return createSparkPosition(
+            market, collSymbol, debtSymbol, collAmount, debtAmount, eoa, getSmartWallet(req), defaultsToSafe(req)
+        )
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to create position info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
- * /spark/general/supply:
+ * /spark/general/supply/smart-wallet:
  *   post:
- *     summary: Supply collateral to Spark position on a vnet
+ *     summary: Supply collateral to Spark Smart Wallet position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -310,10 +327,15 @@ router.post("/create", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collSymbol
+ *               - collAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -324,7 +346,7 @@ router.post("/create", async (req, res) => {
  *                type: string
  *                example: "ETH"
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              amount:
+ *              collAmount:
  *                type: number
  *                example: 2
  *              smartWallet:
@@ -425,27 +447,36 @@ router.post("/create", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/supply", async (req, res) => {
-    let resObj;
+router.post("/supply/smart-wallet",
+    body(["vnetUrl", "collSymbol", "eoa"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, market, collSymbol, amount, eoa } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { vnetUrl, eoa, market, collSymbol, collAmount } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
-        const pos = await sparkSupply(market, collSymbol, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
-        res.status(200).send(pos);
-    } catch (err) {
-        resObj = { error: `Failed to supply to an Spark position info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return sparkSupply(
+            market, collSymbol, collAmount, eoa, getSmartWallet(req), defaultsToSafe(req)
+        )
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to supply to position with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
- * /spark/general/withdraw:
+ * /spark/general/withdraw/smart-wallet:
  *   post:
- *     summary: Withdraw collateral from Spark position on a vnet
+ *     summary: Withdraw collateral from Spark Smart Wallet position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -456,10 +487,15 @@ router.post("/supply", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collSymbol
+ *               - collAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -470,7 +506,7 @@ router.post("/supply", async (req, res) => {
  *                type: string
  *                example: "ETH"
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
- *              amount:
+ *              collAmount:
  *                type: number
  *                example: 2
  *              smartWallet:
@@ -571,27 +607,36 @@ router.post("/supply", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/withdraw", async (req, res) => {
-    let resObj;
+router.post("/withdraw/smart-wallet",
+    body(["vnetUrl", "collSymbol", "eoa"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, market, collSymbol, amount, eoa } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { vnetUrl, eoa, market, collSymbol, collAmount } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
-        const pos = await sparkWithdraw(market, collSymbol, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
-        res.status(200).send(pos);
-    } catch (err) {
-        resObj = { error: `Failed to withdraw from an Spark position info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return sparkWithdraw(
+            market, collSymbol, collAmount, eoa, getSmartWallet(req), defaultsToSafe(req)
+        )
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to withdraw from position with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
- * /spark/general/borrow:
+ * /spark/general/borrow/smart-wallet:
  *   post:
- *     summary: Borrow debt from Spark position on a vnet
+ *     summary: Borrow debt from Spark Smart Wallet position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -602,10 +647,15 @@ router.post("/withdraw", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - debtSymbol
+ *               - debtAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -616,10 +666,7 @@ router.post("/withdraw", async (req, res) => {
  *                type: string
  *                example: "DAI"
  *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              rateMode:
- *                type: number
- *                example: 2
- *              amount:
+ *              debtAmount:
  *                type: number
  *                example: 2000
  *              smartWallet:
@@ -720,27 +767,36 @@ router.post("/withdraw", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/borrow", async (req, res) => {
-    let resObj;
+router.post("/borrow/smart-wallet",
+    body(["vnetUrl", "debtSymbol", "eoa"]).notEmpty(),
+    body("debtAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, market, debtSymbol, rateMode, amount, eoa } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { vnetUrl, eoa, market, debtSymbol, debtAmount } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
-        const pos = await sparkBorrow(market, debtSymbol, rateMode, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
-        res.status(200).send(pos);
-    } catch (err) {
-        resObj = { error: `Failed to borrow from an Spark position info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return sparkBorrow(
+            market, debtSymbol, debtAmount, eoa, getSmartWallet(req), defaultsToSafe(req)
+        )
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to borrow from position with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
- * /spark/general/payback:
+ * /spark/general/payback/smart-wallet:
  *   post:
- *     summary: Borrow debt from Spark position on a vnet
+ *     summary: Payback debt for Spark Smart Wallet position on a vnet
  *     tags:
  *      - Spark
  *     description:
@@ -751,10 +807,15 @@ router.post("/borrow", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - debtSymbol
+ *               - debtAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -765,10 +826,7 @@ router.post("/borrow", async (req, res) => {
  *                type: string
  *                example: "DAI"
  *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
- *              rateMode:
- *                type: number
- *                example: 2
- *              amount:
+ *              debtAmount:
  *                type: number
  *                example: 2000
  *              smartWallet:
@@ -869,20 +927,29 @@ router.post("/borrow", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/payback", async (req, res) => {
-    let resObj;
+router.post("/payback/smart-wallet",
+    body(["vnetUrl", "debtSymbol", "eoa"]).notEmpty(),
+    body("debtAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, market, debtSymbol, rateMode, amount, eoa } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { vnetUrl, eoa, market, debtSymbol, debtAmount } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
-        const pos = await sparkPayback(market, debtSymbol, rateMode, amount, eoa, getSmartWallet(req), defaultsToSafe(req));
 
-        res.status(200).send(pos);
-    } catch (err) {
-        resObj = { error: `Failed to payback an Spark info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return sparkPayback(
+            market, debtSymbol, debtAmount, eoa, getSmartWallet(req), defaultsToSafe(req)
+        )
+            .then(pos => {
+                res.status(200).send(pos);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to payback position with error : ${err.toString()}` });
+            });
+    });
 
 module.exports = router;

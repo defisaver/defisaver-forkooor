@@ -50,7 +50,7 @@ async function subAaveV4LeverageManagement(eoa, spoke, ratioState, targetRatio, 
  * @param {string} debtSymbol debt asset symbol
  * @param {number} targetRatio target ratio
  * @param {number} price trigger price
- * @param {number} ratioState price state (0 for under, 1 for over)
+ * @param {number} priceState price state (under/over)
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
@@ -63,7 +63,7 @@ async function subAaveV4LeverageManagementOnPrice(
     debtSymbol,
     targetRatio,
     price,
-    ratioState,
+    priceState,
     proxyAddr,
     useSafe = true
 ) {
@@ -92,7 +92,9 @@ async function subAaveV4LeverageManagementOnPrice(
             debtReserveInfo.reserveId,
             targetRatio,
             price,
-            ratioState
+            (priceState.toString().toLowerCase() === "under")
+                ? automationSdk.enums.RatioState.UNDER
+                : automationSdk.enums.RatioState.OVER
         );
 
         const subId = await subToStrategy(proxy, strategySub);
@@ -175,7 +177,7 @@ async function subAaveV4CloseOnPrice(
  * @param {number} amountToSwitch amount of collateral to switch (ignored if isMaxUintSwitch is true)
  * @param {boolean} isMaxUintSwitch if true, use MaxUint256 instead of amountToSwitch
  * @param {number} price trigger price
- * @param {string} ratioState 'under' or 'over'
+ * @param {string} priceState 'under' or 'over'
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the Safe as smart wallet or DSProxy if walletAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
@@ -188,7 +190,7 @@ async function subAaveV4CollateralSwitch(
     amountToSwitch,
     isMaxUintSwitch,
     price,
-    ratioState,
+    priceState,
     proxyAddr,
     useSafe = true
 ) {
@@ -209,7 +211,7 @@ async function subAaveV4CollateralSwitch(
 
         const strategyId = automationSdk.enums.Strategies.MainnetIds.AAVE_V4_COLLATERAL_SWITCH;
 
-        const priceState = (ratioState.toString().toLowerCase() === "under")
+        const state = (priceState.toString().toLowerCase() === "under")
             ? automationSdk.enums.RatioState.UNDER
             : automationSdk.enums.RatioState.OVER;
 
@@ -223,7 +225,7 @@ async function subAaveV4CollateralSwitch(
             toReserveInfo.reserveId,
             amountToSwitchFormatted,
             price,
-            priceState
+            state
         );
 
         const subId = await subToStrategy(proxy, strategySub);

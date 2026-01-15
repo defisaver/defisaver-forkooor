@@ -14,14 +14,14 @@ const router = express.Router();
 
 /**
  * @swagger
- * /aave/v4/strategies/leverage-management:
+ * /aave/v4/strategies/leverage-management/boost:
  *   post:
- *     summary: Subscribe to Aave V4 Leverage Management strategy
+ *     summary: Subscribe to Aave V4 Boost strategy
  *     tags:
  *       - AaveV4
- *     description: Subscribes to Aave V4 Leverage Management strategy for Smart Wallet positions.
+ *     description: Subscribes to Aave V4 Boost strategy for Smart Wallet positions.
  *     requestBody:
- *       description: Request body for subscribing to Aave V4 Leverage Management strategy
+ *       description: Request body for subscribing to Aave V4 Boost strategy
  *       required: true
  *       content:
  *         application/json:
@@ -30,7 +30,6 @@ const router = express.Router();
  *             required:
  *               - vnetUrl
  *               - eoa
- *               - ratioState
  *               - targetRatio
  *               - triggerRatio
  *             properties:
@@ -46,17 +45,13 @@ const router = express.Router();
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
  *                 description: "Aave V4 spoke address. Optional - if not provided, the default spoke for the chain will be used."
- *               ratioState:
- *                 type: integer
- *                 example: 0
- *                 description: "If it is boost or repay. 0 for boost, 1 for repay"
  *               targetRatio:
  *                 type: number
- *                 example: 1800000000000000000
+ *                 example: 180
  *                 description: "Target ratio for the strategy"
  *               triggerRatio:
  *                 type: number
- *                 example: 1900000000000000000
+ *                 example: 200
  *                 description: "Trigger ratio for the strategy"
  *               smartWallet:
  *                 type: string
@@ -102,9 +97,8 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/leverage-management",
-    body(["vnetUrl", "eoa", "ratioState", "targetRatio", "triggerRatio"]).notEmpty(),
-    body("ratioState").isInt(),
+router.post("/leverage-management/boost",
+    body(["vnetUrl", "eoa", "targetRatio", "triggerRatio"]).notEmpty(),
     body("targetRatio").isFloat({ gt: 0 }),
     body("triggerRatio").isFloat({ gt: 0 }),
     async (req, res) => {
@@ -114,7 +108,8 @@ router.post("/leverage-management",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, eoa, spoke, ratioState, targetRatio, triggerRatio } = req.body;
+        const { vnetUrl, eoa, spoke, targetRatio, triggerRatio } = req.body;
+        const ratioState = 0; // Boost
 
         await setupVnet(vnetUrl, [eoa]);
 
@@ -131,7 +126,125 @@ router.post("/leverage-management",
                 res.status(200).send(sub);
             })
             .catch(err => {
-                res.status(500).send({ error: `Failed to subscribe to Aave V4 Leverage Management strategy with error: ${err.toString()}` });
+                res.status(500).send({ error: `Failed to subscribe to Aave V4 Boost strategy with error: ${err.toString()}` });
+            });
+    });
+
+/**
+ * @swagger
+ * /aave/v4/strategies/leverage-management/repay:
+ *   post:
+ *     summary: Subscribe to Aave V4 Repay strategy
+ *     tags:
+ *       - AaveV4
+ *     description: Subscribes to Aave V4 Repay strategy for Smart Wallet positions.
+ *     requestBody:
+ *       description: Request body for subscribing to Aave V4 Repay strategy
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - targetRatio
+ *               - triggerRatio
+ *             properties:
+ *               vnetUrl:
+ *                 type: string
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                 description: "Unique identifier for the vnet"
+ *               eoa:
+ *                 type: string
+ *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
+ *                 description: "EOA address"
+ *               spoke:
+ *                 type: string
+ *                 example: "0x0000000000000000000000000000000000000000"
+ *                 description: "Aave V4 spoke address. Optional - if not provided, the default spoke for the chain will be used."
+ *               targetRatio:
+ *                 type: number
+ *                 example: 200
+ *                 description: "Target ratio for the strategy"
+ *               triggerRatio:
+ *                 type: number
+ *                 example: 180
+ *                 description: "Trigger ratio for the strategy"
+ *               smartWallet:
+ *                 type: string
+ *                 example: "0x0000000000000000000000000000000000000000"
+ *                 description: "Optional proxy address. If not provided, a new wallet will be created"
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
+ *                 description: "Whether to use Safe as smart wallet or dsproxy (default: safe)"
+ *     responses:
+ *       '200':
+ *         description: Strategy subscribed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "12345"
+ *                   description: "ID of the subscription"
+ *                 strategySub:
+ *                   type: object
+ *                   description: "StrategySub object"
+ *       '400':
+ *         description: Bad request - validation errors
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       '500':
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/leverage-management/repay",
+    body(["vnetUrl", "eoa", "targetRatio", "triggerRatio"]).notEmpty(),
+    body("targetRatio").isFloat({ gt: 0 }),
+    body("triggerRatio").isFloat({ gt: 0 }),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        const { vnetUrl, eoa, spoke, targetRatio, triggerRatio } = req.body;
+        const ratioState = 1; // Repay
+
+        await setupVnet(vnetUrl, [eoa]);
+
+        subAaveV4LeverageManagement(
+            eoa,
+            spoke,
+            ratioState,
+            targetRatio,
+            triggerRatio,
+            getSmartWallet(req),
+            defaultsToSafe(req)
+        )
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Aave V4 Repay strategy with error: ${err.toString()}` });
             });
     });
 
@@ -157,7 +270,7 @@ router.post("/leverage-management",
  *               - debtSymbol
  *               - targetRatio
  *               - price
- *               - ratioState
+ *               - priceState
  *             properties:
  *               vnetUrl:
  *                 type: string
@@ -179,16 +292,16 @@ router.post("/leverage-management",
  *                 description: "Debt asset symbol"
  *               targetRatio:
  *                 type: number
- *                 example: 1800000000000000000
+ *                 example: 180
  *                 description: "Target ratio for the strategy"
  *               price:
  *                 type: number
  *                 example: 2000
  *                 description: "Trigger price"
- *               ratioState:
- *                 type: integer
- *                 example: 0
- *                 description: "Price state (0 for under, 1 for over)"
+ *               priceState:
+ *                 type: string
+ *                 example: "under"
+ *                 description: "Price state ('under' or 'over')"
  *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
@@ -213,8 +326,8 @@ router.post("/leverage-management",
  *         description: Internal server error
  */
 router.post("/leverage-management-on-price/boost",
-    body(["vnetUrl", "eoa", "collSymbol", "debtSymbol", "targetRatio", "price", "ratioState"]).notEmpty(),
-    body("ratioState").isInt(),
+    body(["vnetUrl", "eoa", "collSymbol", "debtSymbol", "targetRatio", "price", "priceState"]).notEmpty(),
+    body("priceState").isString().isIn(["under", "over", "UNDER", "OVER"]),
     body("targetRatio").isFloat({ gt: 0 }),
     body("price").isFloat({ gt: 0 }),
     async (req, res) => {
@@ -224,7 +337,7 @@ router.post("/leverage-management-on-price/boost",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, eoa, spoke, collSymbol, debtSymbol, targetRatio, price, ratioState } = req.body;
+        const { vnetUrl, eoa, spoke, collSymbol, debtSymbol, targetRatio, price, priceState } = req.body;
         const isBoost = true;
 
         await setupVnet(vnetUrl, [eoa]);
@@ -237,7 +350,7 @@ router.post("/leverage-management-on-price/boost",
             debtSymbol,
             targetRatio,
             price,
-            ratioState,
+            priceState,
             getSmartWallet(req),
             defaultsToSafe(req)
         )
@@ -271,7 +384,7 @@ router.post("/leverage-management-on-price/boost",
  *               - debtSymbol
  *               - targetRatio
  *               - price
- *               - ratioState
+ *               - priceState
  *             properties:
  *               vnetUrl:
  *                 type: string
@@ -293,16 +406,16 @@ router.post("/leverage-management-on-price/boost",
  *                 description: "Debt asset symbol"
  *               targetRatio:
  *                 type: number
- *                 example: 1800000000000000000
+ *                 example: 180
  *                 description: "Target ratio for the strategy"
  *               price:
  *                 type: number
  *                 example: 2000
  *                 description: "Trigger price"
- *               ratioState:
- *                 type: integer
- *                 example: 0
- *                 description: "Price state (0 for under, 1 for over)"
+ *               priceState:
+ *                 type: string
+ *                 example: "under"
+ *                 description: "Price state ('under' or 'over')"
  *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
@@ -327,8 +440,8 @@ router.post("/leverage-management-on-price/boost",
  *         description: Internal server error
  */
 router.post("/leverage-management-on-price/repay",
-    body(["vnetUrl", "eoa", "collSymbol", "debtSymbol", "targetRatio", "price", "ratioState"]).notEmpty(),
-    body("ratioState").isInt(),
+    body(["vnetUrl", "eoa", "collSymbol", "debtSymbol", "targetRatio", "price", "priceState"]).notEmpty(),
+    body("priceState").isString().isIn(["under", "over", "UNDER", "OVER"]),
     body("targetRatio").isFloat({ gt: 0 }),
     body("price").isFloat({ gt: 0 }),
     async (req, res) => {
@@ -338,7 +451,7 @@ router.post("/leverage-management-on-price/repay",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, eoa, spoke, collSymbol, debtSymbol, targetRatio, price, ratioState } = req.body;
+        const { vnetUrl, eoa, spoke, collSymbol, debtSymbol, targetRatio, price, priceState } = req.body;
         const isBoost = false;
 
         await setupVnet(vnetUrl, [eoa]);
@@ -351,7 +464,7 @@ router.post("/leverage-management-on-price/repay",
             debtSymbol,
             targetRatio,
             price,
-            ratioState,
+            priceState,
             getSmartWallet(req),
             defaultsToSafe(req)
         )
@@ -514,7 +627,7 @@ router.post("/close-on-price",
  *               - toAssetSymbol
  *               - amountToSwitch
  *               - price
- *               - ratioState
+ *               - priceState
  *             properties:
  *               vnetUrl:
  *                 type: string
@@ -546,10 +659,10 @@ router.post("/close-on-price",
  *                 type: number
  *                 example: 2000
  *                 description: "Trigger price"
- *               ratioState:
+ *               priceState:
  *                 type: string
- *                 example: "UNDER"
- *                 description: "'OVER' or 'UNDER'"
+ *                 example: "under"
+ *                 description: "Price state ('under' or 'over')"
  *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
@@ -574,7 +687,7 @@ router.post("/close-on-price",
  *         description: Internal server error
  */
 router.post("/collateral-switch",
-    body(["vnetUrl", "eoa", "fromAssetSymbol", "toAssetSymbol", "amountToSwitch", "price", "ratioState"]).notEmpty(),
+    body(["vnetUrl", "eoa", "fromAssetSymbol", "toAssetSymbol", "amountToSwitch", "price", "priceState"]).notEmpty(),
     body("price").isFloat({ gt: 0 }),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -592,7 +705,7 @@ router.post("/collateral-switch",
             amountToSwitch,
             isMaxUintSwitch,
             price,
-            ratioState
+            priceState
         } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
@@ -605,7 +718,7 @@ router.post("/collateral-switch",
             amountToSwitch,
             isMaxUintSwitch || false,
             price,
-            ratioState,
+            priceState,
             getSmartWallet(req),
             defaultsToSafe(req)
         )

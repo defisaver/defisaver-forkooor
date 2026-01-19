@@ -1,8 +1,6 @@
 const hre = require("hardhat");
-
 const { sparkViewAbi } = require("../../abi/spark/abis");
-
-const SPARK_VIEW = "0x29d01EF37514912ab874D51fEc76c8f5d4d6712e";
+const { addresses, getSparkMarketAddress } = require("../../utils");
 
 /**
  * Convert loan data to Spark position with key names
@@ -38,12 +36,20 @@ async function convertToJson(loanData) {
 async function getFullTokensInfo(market, assets) {
     try {
         const [signer] = await hre.ethers.getSigners();
-        const sparkView = new hre.ethers.Contract(SPARK_VIEW, sparkViewAbi, signer);
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const marketAddress = await getSparkMarketAddress(market);
+        const viewAddress = addresses[chainId].SPARK_VIEW;
 
-        return await sparkView.getFullTokensInfo(market, assets);
+        if (!viewAddress) {
+            throw new Error(`Spark view address not configured for chainId=${chainId}`);
+        }
+
+        const sparkView = new hre.ethers.Contract(viewAddress, sparkViewAbi, signer);
+
+        return await sparkView.getFullTokensInfo(marketAddress, assets);
     } catch (err) {
         console.error(err);
-        return null;
+        throw err;
     }
 }
 
@@ -56,14 +62,17 @@ async function getFullTokensInfo(market, assets) {
 async function getLoanData(market, user) {
     try {
         const [signer] = await hre.ethers.getSigners();
-        const sparkView = new hre.ethers.Contract(SPARK_VIEW, sparkViewAbi, signer);
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        const marketAddress = await getSparkMarketAddress(market);
+        const viewAddress = addresses[chainId].SPARK_VIEW;
+        const viewContract = new hre.ethers.Contract(viewAddress, sparkViewAbi, signer);
 
-        const ld = await sparkView.getLoanData(market, user);
+        const ld = await viewContract.getLoanData(marketAddress, user);
 
         return convertToJson(ld);
-    } catch (e) {
-        console.error(e);
-        return null;
+    } catch (err) {
+        console.error(err);
+        throw err;
     }
 }
 

@@ -1,11 +1,9 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe, getTokenInfo } = require("../../utils");
+const { setupVnet, getSmartWallet, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { subMorphoBlueRepayBundle, subMorphoBlueBoostBundle, subMorphoBlueBoostOnPriceBundle, subMorphoBlueCloseOnPriceBundle } = require("../../helpers/morpho-blue/strategies");
-const { getMarketId } = require("../../helpers/morpho-blue/view");
-const hre = require("hardhat");
 
 const router = express.Router();
 
@@ -28,13 +26,10 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              bundleId:
- *                  type: integer
- *                  example: 32
  *              debtSymbol:
  *                type: string
  *                example: "USDC"
@@ -58,17 +53,14 @@ const router = express.Router();
  *              targetRatio:
  *                  type: integer
  *                  example: 300
- *              user:
- *                type: string
- *                example: "0x0000000000000000000000000000000000000000"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -96,16 +88,14 @@ const router = express.Router();
 router.post("/repay", body(
     [
         "vnetUrl",
-        "owner",
-        "bundleId",
+        "eoa",
         "collSymbol",
         "debtSymbol",
         "oracle",
         "irm",
         "lltv",
         "minRatio",
-        "targetRatio",
-        "user"
+        "targetRatio"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -114,16 +104,20 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, owner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, minRatio, targetRatio, user } = req.body;
+    const { vnetUrl, eoa, collSymbol, debtSymbol, oracle, irm, lltv, minRatio, targetRatio } = req.body;
 
-    await setupVnet(vnetUrl, [owner]);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const loanToken = getTokenInfo(debtSymbol, chainId).address;
-    const collateralToken = getTokenInfo(collSymbol, chainId).address;
-    const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
-
+    await setupVnet(vnetUrl, [eoa]);
     subMorphoBlueRepayBundle(
-        owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, minRatio, targetRatio, user, getWalletAddr(req), defaultsToSafe(req)
+        eoa,
+        collSymbol,
+        debtSymbol,
+        oracle,
+        irm,
+        lltv,
+        minRatio,
+        targetRatio,
+        getSmartWallet(req),
+        defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -149,13 +143,10 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              bundleId:
- *                  type: integer
- *                  example: 33
  *              debtSymbol:
  *                type: string
  *                example: "USDC"
@@ -179,17 +170,14 @@ async (req, res) => {
  *              targetRatio:
  *                  type: integer
  *                  example: 250
- *              user:
- *                type: string
- *                example: "0x0000000000000000000000000000000000000000"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -217,16 +205,14 @@ async (req, res) => {
 router.post("/boost", body(
     [
         "vnetUrl",
-        "owner",
-        "bundleId",
+        "eoa",
         "collSymbol",
         "debtSymbol",
         "oracle",
         "irm",
         "lltv",
         "maxRatio",
-        "targetRatio",
-        "user"
+        "targetRatio"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -235,16 +221,20 @@ async (req, res) => {
     if (!validationErrors.isEmpty()) {
         return res.status(400).send({ error: validationErrors.array() });
     }
-    const { vnetUrl, owner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, maxRatio, targetRatio, user } = req.body;
+    const { vnetUrl, eoa, collSymbol, debtSymbol, oracle, irm, lltv, maxRatio, targetRatio } = req.body;
 
-    await setupVnet(vnetUrl, [owner]);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const loanToken = getTokenInfo(debtSymbol, chainId).address;
-    const collateralToken = getTokenInfo(collSymbol, chainId).address;
-    const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
-
+    await setupVnet(vnetUrl, [eoa]);
     subMorphoBlueBoostBundle(
-        owner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], marketId, maxRatio, targetRatio, user, getWalletAddr(req), defaultsToSafe(req)
+        eoa,
+        collSymbol,
+        debtSymbol,
+        oracle,
+        irm,
+        lltv,
+        maxRatio,
+        targetRatio,
+        getSmartWallet(req),
+        defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -270,13 +260,10 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
- *              walletOwner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              bundleId:
- *                type: integer
- *                example: 37
  *              debtSymbol:
  *                type: string
  *                example: "USDC"
@@ -305,18 +292,14 @@ async (req, res) => {
  *                type: string
  *                example: 'under'
  *                description: whether to trigger when current price is 'under' or 'over' the 'price' field
- *              user:
- *                type: string
- *                example: "0x0000000000000000000000000000000000000000"
- *                description: "address(0) will default to the wallet address. Put walletOwner address for EOA automation"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -344,8 +327,7 @@ async (req, res) => {
 router.post("/boostOnPrice", body(
     [
         "vnetUrl",
-        "walletOwner",
-        "bundleId",
+        "eoa",
         "collSymbol",
         "debtSymbol",
         "oracle",
@@ -353,8 +335,7 @@ router.post("/boostOnPrice", body(
         "lltv",
         "targetRatio",
         "price",
-        "priceState",
-        "user"
+        "priceState"
     ]
 ).notEmpty(),
 async (req, res) => {
@@ -364,16 +345,22 @@ async (req, res) => {
         return res.status(400).send({ error: validationErrors.array() });
     }
     const {
-        vnetUrl, walletOwner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, targetRatio, price, priceState, user
+        vnetUrl, eoa, collSymbol, debtSymbol, oracle, irm, lltv, targetRatio, price, priceState
     } = req.body;
 
-    await setupVnet(vnetUrl, [walletOwner]);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const loanToken = getTokenInfo(debtSymbol, chainId).address;
-    const collateralToken = getTokenInfo(collSymbol, chainId).address;
-
+    await setupVnet(vnetUrl, [eoa]);
     subMorphoBlueBoostOnPriceBundle(
-        walletOwner, bundleId, [loanToken, collateralToken, oracle, irm, lltv], targetRatio, user, price, priceState, getWalletAddr(req), defaultsToSafe(req)
+        eoa,
+        collSymbol,
+        debtSymbol,
+        oracle,
+        irm,
+        lltv,
+        targetRatio,
+        price,
+        priceState,
+        getSmartWallet(req),
+        defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);
     }).catch(err => {
@@ -400,13 +387,10 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{vnetUrl}"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              bundleId:
- *                  type: integer
- *                  example: 57
  *              debtSymbol:
  *                type: string
  *                example: "USDC"
@@ -440,14 +424,14 @@ async (req, res) => {
  *                type: integer
  *                example: 1
  *                description: "Take profit type (0 for debt, 1 for collateral)"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -475,8 +459,7 @@ async (req, res) => {
 router.post("/close-on-price", body(
     [
         "vnetUrl",
-        "owner",
-        "bundleId",
+        "eoa",
         "collSymbol",
         "debtSymbol",
         "oracle",
@@ -495,23 +478,22 @@ async (req, res) => {
         return res.status(400).send({ error: validationErrors.array() });
     }
     const {
-        vnetUrl, owner, bundleId, collSymbol, debtSymbol, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
+        vnetUrl, eoa, collSymbol, debtSymbol, oracle, irm, lltv, stopLossPrice, stopLossType, takeProfitPrice, takeProfitType
     } = req.body;
 
-    await setupVnet(vnetUrl, [owner]);
-    const { chainId } = await hre.ethers.provider.getNetwork();
-    const loanToken = getTokenInfo(debtSymbol, chainId).address;
-    const collateralToken = getTokenInfo(collSymbol, chainId).address;
-
+    await setupVnet(vnetUrl, [eoa]);
     subMorphoBlueCloseOnPriceBundle(
-        owner,
-        bundleId,
-        [loanToken, collateralToken, oracle, irm, lltv],
+        eoa,
+        collSymbol,
+        debtSymbol,
+        oracle,
+        irm,
+        lltv,
         stopLossPrice,
         stopLossType,
         takeProfitPrice,
         takeProfitType,
-        getWalletAddr(req),
+        getSmartWallet(req),
         defaultsToSafe(req)
     ).then(sub => {
         res.status(200).send(sub);

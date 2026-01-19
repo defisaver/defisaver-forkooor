@@ -2,7 +2,8 @@
 const express = require("express");
 const { createMcdVault, openEmptyMcdVault, mcdSupply, mcdWithdraw, mcdBorrow, mcdPayback, mcdDsrWithdraw, mcdDsrDeposit } = require("../../helpers/maker/general");
 const { getVaultInfo } = require("../../helpers/maker/view");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getSmartWallet, defaultsToSafe } = require("../../utils");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              vaultId:
  *                type: integer
  *                example: 29721
@@ -60,25 +61,30 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/get-vault", async (req, res) => {
-    let resObj;
+router.post("/get-vault",
+    body(["vnetUrl", "vaultId"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
         const { vnetUrl, vaultId } = req.body;
 
         await setupVnet(vnetUrl);
-        const vaultInfo = await getVaultInfo(vaultId);
-
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to fetch vault info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return getVaultInfo(vaultId)
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to fetch vault info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
- * /maker/general/create-vault:
+ * /maker/general/create-vault/smart-wallet:
  *   post:
  *     summary: Create a MCD position with given coll and debt for a user
  *     tags:
@@ -92,29 +98,39 @@ router.post("/get-vault", async (req, res) => {
  *           schema:
  *             type: object
  *             properties:
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collType
+ *               - collAmount
+ *               - debtAmount
+ *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              collType:
  *                type: string
  *                example: "ETH-A"
  *              collAmount:
- *                type: integer
+ *                type: number
  *                example: 100
+ *                description: "Amount of collateral to supply in token units (e.g., 100 for 100 ETH, 1.5 for 1.5 ETH). Not USD value. Supports decimals."
  *              debtAmount:
- *                type: integer
+ *                type: number
  *                example: 50000
- *              walletAddr:
+ *                description: "Amount of debt to borrow in token units (e.g., 50000 for 50000 DAI, 1000.25 for 1000.25 DAI). Not USD value. Supports decimals."
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -147,25 +163,32 @@ router.post("/get-vault", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/create-vault", async (req, res) => {
-    let resObj;
+router.post("/create-vault/smart-wallet",
+    body(["vnetUrl", "collType", "eoa"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
+    body("debtAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner, collType, collAmount, debtAmount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
-        const vaultInfo = await createMcdVault(collType, collAmount, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, collType, collAmount, debtAmount } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to create vault info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return createMcdVault(collType, collAmount, debtAmount, eoa, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to create vault info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
- * /maker/general/open-empty-vault:
+ * /maker/general/open-empty-vault/smart-wallet:
  *   post:
  *     summary: Create an empty MCD position with given coll and debt for a user
  *     tags:
@@ -178,24 +201,29 @@ router.post("/create-vault", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collType
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              collType:
  *                type: string
  *                example: "ETH-A"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -228,21 +256,26 @@ router.post("/create-vault", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/open-empty-vault", async (req, res) => {
-    let resObj;
+router.post("/open-empty-vault/smart-wallet",
+    body(["vnetUrl", "collType", "eoa"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner, collType } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
-        const vaultInfo = await openEmptyMcdVault(collType, owner, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, collType } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to create an empty vault info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return openEmptyMcdVault(collType, eoa, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to create an empty vault info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -259,27 +292,33 @@ router.post("/open-empty-vault", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - vaultId
+ *               - supplyAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              vaultId:
  *                type: integer
  *                example: 30375
  *              supplyAmount:
- *                type: integer
+ *                type: number
  *                example: 50
- *              walletAddr:
+ *                description: "Amount of collateral to supply in token units (supports decimals)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -312,21 +351,27 @@ router.post("/open-empty-vault", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/supply", async (req, res) => {
-    let resObj;
+router.post("/supply",
+    body(["vnetUrl", "vaultId", "eoa"]).notEmpty(),
+    body("supplyAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner, vaultId, supplyAmount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
-        const vaultInfo = await mcdSupply(owner, vaultId, supplyAmount, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, vaultId, supplyAmount } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to supply to an MCD vault info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return mcdSupply(eoa, vaultId, supplyAmount, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to supply to an MCD vault info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -346,24 +391,34 @@ router.post("/supply", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - vaultId
+ *               - withdrawAmount
+ *             properties:
+ *              vnetUrl:
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              vaultId:
  *                type: integer
  *                example: 30375
  *              withdrawAmount:
- *                type: integer
+ *                type: number
  *                example: 50
- *              walletAddr:
+ *                description: "Amount of collateral to withdraw in token units (supports decimals, -1 for full withdrawal)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -396,21 +451,27 @@ router.post("/supply", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/withdraw", async (req, res) => {
-    let resObj;
+router.post("/withdraw",
+    body(["vnetUrl", "vaultId", "eoa"]).notEmpty(),
+    body("withdrawAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner, vaultId, withdrawAmount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
-        const vaultInfo = await mcdWithdraw(owner, vaultId, withdrawAmount, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, vaultId, withdrawAmount } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to withdraw from an MCD vault info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return mcdWithdraw(eoa, vaultId, withdrawAmount, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to withdraw from an MCD vault info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -427,27 +488,33 @@ router.post("/withdraw", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - vaultId
+ *               - borrowAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              vaultId:
  *                type: integer
  *                example: 30375
  *              borrowAmount:
- *                type: integer
+ *                type: number
  *                example: 50000
- *              walletAddr:
+ *                description: "Amount of DAI to borrow in token units (supports decimals)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -480,21 +547,27 @@ router.post("/withdraw", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/borrow", async (req, res) => {
-    let resObj;
+router.post("/borrow",
+    body(["vnetUrl", "vaultId", "eoa"]).notEmpty(),
+    body("borrowAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner, vaultId, borrowAmount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
-        const vaultInfo = await mcdBorrow(owner, vaultId, borrowAmount, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, vaultId, borrowAmount } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to borrow from an MCD vault info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return mcdBorrow(eoa, vaultId, borrowAmount, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to borrow from an MCD vault info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -511,27 +584,33 @@ router.post("/borrow", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - vaultId
+ *               - paybackAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              vaultId:
  *                type: integer
  *                example: 30375
  *              paybackAmount:
- *                type: integer
+ *                type: number
  *                example: 50
- *              walletAddr:
+ *                description: "Amount of DAI to payback in token units (supports decimals, -1 for full payback)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -564,21 +643,27 @@ router.post("/borrow", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/payback", async (req, res) => {
-    let resObj;
+router.post("/payback",
+    body(["vnetUrl", "vaultId", "eoa"]).notEmpty(),
+    body("paybackAmount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner, vaultId, paybackAmount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
-        const vaultInfo = await mcdPayback(owner, vaultId, paybackAmount, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, vaultId, paybackAmount } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to payback an MCD vault info with error : ${err.toString()}` };
-        res.status(500).send(resObj, err);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return mcdPayback(eoa, vaultId, paybackAmount, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to payback an MCD vault info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -595,24 +680,29 @@ router.post("/payback", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - amount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              amount:
- *                type: integer
+ *                type: number
  *                example: 2000
- *              walletAddr:
+ *                description: "Amount of DAI to deposit in token units (supports decimals)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -632,21 +722,27 @@ router.post("/payback", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/dsr-deposit", async (req, res) => {
-    let resObj;
+router.post("/dsr-deposit",
+    body(["vnetUrl", "eoa"]).notEmpty(),
+    body("amount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, sender, amount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [sender]);
-        const vaultInfo = await mcdDsrDeposit(sender, amount, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, amount } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to deposit into Maker DSR with error : ${err.toString()}` };
-        res.status(500).send(resObj, err);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return mcdDsrDeposit(eoa, amount, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to deposit into Maker DSR with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -663,24 +759,29 @@ router.post("/dsr-deposit", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - amount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              amount:
- *                type: integer
+ *                type: number
  *                example: 2000
- *              walletAddr:
+ *                description: "Amount of DAI to withdraw in token units (supports decimals)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -700,20 +801,26 @@ router.post("/dsr-deposit", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/dsr-withdraw", async (req, res) => {
-    let resObj;
+router.post("/dsr-withdraw",
+    body(["vnetUrl", "eoa"]).notEmpty(),
+    body("amount").notEmpty().isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, sender, amount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [sender]);
-        const vaultInfo = await mcdDsrWithdraw(sender, amount, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, amount } = req.body;
 
-        res.status(200).send(vaultInfo);
-    } catch (err) {
-        resObj = { error: `Failed to withdraw from Maker DSR with error : ${err.toString()}` };
-        res.status(500).send(resObj, err);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return mcdDsrWithdraw(eoa, amount, getSmartWallet(req), defaultsToSafe(req))
+            .then(vaultInfo => {
+                res.status(200).send(vaultInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to withdraw from Maker DSR with error : ${err.toString()}` });
+            });
+    });
 
 module.exports = router;

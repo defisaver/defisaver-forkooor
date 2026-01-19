@@ -24,7 +24,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
@@ -102,7 +102,7 @@ router.post("/get-trove", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              sender:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
@@ -196,7 +196,7 @@ router.post("/open-trove", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              sender:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"

@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe, getTokenInfo } = require("../../utils");
+const { setupVnet, defaultsToSafe, getSmartWallet, getTokenInfo } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { getUserData } = require("../../helpers/morpho-blue/view");
 const { createMorphoBluePosition } = require("../../helpers/morpho-blue/general");
@@ -11,9 +11,9 @@ const router = express.Router();
 
 /**
  * @swagger
- * /morpho-blue/general/create:
+ * /morpho-blue/general/create/smart-wallet:
  *   post:
- *     summary: Create MorphoBlue position on a vnet
+ *     summary: Create MorphoBlue Smart Wallet position on a vnet
  *     tags:
  *      - MorphoBlue
  *     description:
@@ -45,23 +45,26 @@ const router = express.Router();
  *              lltv:
  *                type: string
  *                example: "860000000000000000"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *              coll:
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
+ *              collAmount:
  *                type: number
- *                example: 2
- *              debt:
+ *                example: 2.0
+ *                description: "Amount of collateral to supply in token units (supports decimals)"
+ *              debtAmount:
  *                type: number
  *                example: 2000
- *              walletAddr:
+ *                description: "Amount of debt to borrow in token units (supports decimals)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -90,10 +93,10 @@ const router = express.Router();
  *                   type: string
  *                   example: "2000000000000000000"
  *                   description: "Amount of collateral supplied"
- *                 owner:
+ *                 user:
  *                   type: string
  *                   example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
- *                   description: "Owner of position"
+ *                   description: "Position owner address"
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -104,18 +107,27 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/create",
-    body(["vnetUrl", "collSymbol", "debtSymbol", "oracle", "irm", "lltv", "owner", "coll", "debt"]).notEmpty(),
+router.post("/create/smart-wallet",
+    body(["vnetUrl", "collSymbol", "debtSymbol", "oracle", "irm", "lltv", "eoa"]).notEmpty(),
+    body("collAmount").notEmpty().isNumeric(),
+    body("debtAmount").notEmpty().isNumeric(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, collSymbol, debtSymbol, oracle, irm, lltv, owner, coll, debt } = req.body;
+        const { vnetUrl, collSymbol, debtSymbol, oracle, irm, lltv, eoa, collAmount, debtAmount } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
-        createMorphoBluePosition({ collSymbol, debtSymbol, oracle, irm, lltv }, owner, coll, debt, getWalletAddr(req), defaultsToSafe(req))
+        await setupVnet(vnetUrl, [eoa]);
+        createMorphoBluePosition(
+            { collSymbol, debtSymbol, oracle, irm, lltv },
+            collAmount,
+            debtAmount,
+            eoa,
+            getSmartWallet(req),
+            defaultsToSafe(req)
+        )
             .then(pos => {
                 res.status(200).send(pos);
             })
@@ -161,7 +173,7 @@ router.post("/create",
  *              lltv:
  *                type: string
  *                example: "860000000000000000"
- *              owner:
+ *              positionOwner:
  *                   type: string
  *                   example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
  *                   description: "Owner of position"
@@ -193,6 +205,10 @@ router.post("/create",
  *                   type: string
  *                   example: "2000000000000000000"
  *                   description: "Amount of collateral supplied"
+ *                 user:
+ *                   type: string
+ *                   example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+ *                   description: "Position owner address"
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -204,23 +220,21 @@ router.post("/create",
  *                   type: string
  */
 router.post("/get-position",
-    body(["vnetUrl", "collSymbol", "debtSymbol", "oracle", "irm", "lltv", "owner"]).notEmpty(),
+    body(["vnetUrl", "collSymbol", "debtSymbol", "oracle", "irm", "lltv", "positionOwner"]).notEmpty(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, collSymbol, debtSymbol, oracle, irm, lltv, owner } = req.body;
+        const { vnetUrl, collSymbol, debtSymbol, oracle, irm, lltv, positionOwner } = req.body;
 
-        setupVnet(vnetUrl);
+        await setupVnet(vnetUrl, [positionOwner]);
 
-        const hre = require("hardhat");
-        const { chainId } = await hre.ethers.provider.getNetwork();
-        const loanToken = getTokenInfo(debtSymbol, chainId).address;
-        const collateralToken = getTokenInfo(collSymbol, chainId).address;
+        const loanToken = (await getTokenInfo(debtSymbol)).address;
+        const collateralToken = (await getTokenInfo(collSymbol)).address;
 
-        getUserData({ loanToken, collateralToken, oracle, irm, lltv }, owner)
+        getUserData({ loanToken, collateralToken, oracle, irm, lltv }, positionOwner)
             .then(pos => {
                 res.status(200).send(pos);
             }).catch(err => {

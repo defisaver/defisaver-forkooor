@@ -1,22 +1,26 @@
 const hre = require("hardhat");
 const dfs = require("@defisaver/sdk");
-const { getAssetInfoByAddress } = require("@defisaver/tokens");
 const { getSender, setBalance, approve, executeAction, addresses, getTokenInfo } = require("../../utils");
 const { getUserData } = require("./view");
 const { morphoBlueAbi } = require("../../abi/morpho-blue/abis");
 
 /**
  * Create a MorphoBlue position for sender on his proxy (created if he doesn't have one)
- * @param {Object} marketParams MorphoBlue marketParams with collSymbol and debtSymbol (symbols will be converted to addresses)
- * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if proxyAddr is not provided
- * @param {number} coll amount of collateral to be supplied (whole number)
- * @param {number} debt amount of debt to be generated (whole number)
+ * @param {Object} marketParams MorphoBlue market params (symbol-based)
+ * @param {string} marketParams.collSymbol collateral token symbol
+ * @param {string} marketParams.debtSymbol debt token symbol
+ * @param {string} marketParams.oracle oracle address
+ * @param {string} marketParams.irm interest rate model address
+ * @param {string} marketParams.lltv LLTV value (uint)
+ * @param {number} collAmount amount of collateral to be supplied in token units (supports decimals, e.g. 1.5)
+ * @param {number} debtAmount amount of debt to be generated in token units (supports decimals, e.g. 2000.25)
+ * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or DSProxy if smartWallet is not provided
  * @returns {Object} object that has users position data in it
  */
-async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAddr, useSafe = true) {
-    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+async function createMorphoBluePosition(marketParams, collAmount, debtAmount, eoa, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
     const { chainId } = await hre.ethers.provider.getNetwork();
 
     dfs.configure({
@@ -28,14 +32,14 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
 
     const [wallet] = await hre.ethers.getSigners();
 
-    const collateralToken = marketParams.collToken;
-    const loanToken = marketParams.loanToken;
+    const collTokenData = await getTokenInfo(marketParams.collSymbol);
+    const debtTokenData = await getTokenInfo(marketParams.debtSymbol);
 
-    await setBalance(collateralToken, owner, coll);
-    await approve(collateralToken, proxy.address, owner);
+    const collateralToken = collTokenData.address;
+    const loanToken = debtTokenData.address;
 
-    const collTokenInfo = getAssetInfoByAddress(collateralToken, chainId);
-    const debtTokenInfo = getAssetInfoByAddress(loanToken, chainId);
+    await setBalance(collateralToken, eoa, collAmount);
+    await approve(collateralToken, proxy.address, eoa);
 
     const marketParamsWithAddresses = {
         loanToken,
@@ -45,8 +49,8 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
         lltv: marketParams.lltv
     };
 
-    const amountColl = hre.ethers.utils.parseUnits(coll.toString(), collTokenInfo.decimals);
-    const amountDebt = hre.ethers.utils.parseUnits(debt.toString(), debtTokenInfo.decimals);
+    const amountColl = hre.ethers.utils.parseUnits(collAmount.toString(), collTokenData.decimals);
+    const amountDebt = hre.ethers.utils.parseUnits(debtAmount.toString(), debtTokenData.decimals);
 
     const createPositionRecipe = new dfs.Recipe("CreateMorphoBluePosition", [
         new dfs.actions.morphoblue.MorphoBlueSupplyCollateralAction(
@@ -64,10 +68,12 @@ async function createMorphoBluePosition(marketParams, owner, coll, debt, proxyAd
     // supply loan token so there's enough liquidity
     const morphoBlueContract = new hre.ethers.Contract(morphoBlueAddress, morphoBlueAbi, wallet);
 
+    const liquidityAmount = hre.ethers.utils.formatUnits(amountDebt.mul(2), debtTokenData.decimals);
+
     await setBalance(
         loanToken,
         wallet.address,
-        amountDebt.mul(2)
+        liquidityAmount
     );
     await approve(loanToken, morphoBlueAddress, wallet.address);
     await morphoBlueContract.supply(marketParamsWithAddresses, amountDebt.mul(2), "0", wallet.address, [], { gasLimit: 3000000 });

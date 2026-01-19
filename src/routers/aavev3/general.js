@@ -28,7 +28,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -166,7 +166,7 @@ router.post("/get-position",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -244,7 +244,7 @@ router.post("/get-safety-ratio",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
@@ -420,7 +420,7 @@ router.post("/create/eoa",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              eoa:
  *                type: string
  *                example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"

@@ -32,7 +32,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0xc3d688B66703497DAA19211EEdff47f25384cdc3"
@@ -151,7 +151,7 @@ router.post("/get-position",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "0xc3d688B66703497DAA19211EEdff47f25384cdc3"
@@ -280,7 +280,7 @@ router.post("/create",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              collSymbol:
  *                type: string
  *                example: "WETH"
@@ -415,7 +415,7 @@ router.post("/create-proxy-position",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              collSymbol:
  *                type: string
  *                example: "WETH"
@@ -540,7 +540,7 @@ router.post("/create-eoa-position",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              marketSymbol:
  *                type: string
  *                example: "USDC"

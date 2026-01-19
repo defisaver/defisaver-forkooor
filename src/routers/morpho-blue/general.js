@@ -37,7 +37,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
@@ -165,7 +165,7 @@ router.post("/create/smart-wallet",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "3f5a3245-131d-42b7-8824-8a408a8cb71c"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              debtSymbol:
  *                type: string
  *                example: "USDC"

@@ -25,7 +25,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -141,7 +141,7 @@ router.post("/leverage-management", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -262,7 +262,7 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -405,7 +405,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -511,7 +511,7 @@ router.post("/payback", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"

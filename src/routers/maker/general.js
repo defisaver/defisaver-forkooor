@@ -24,7 +24,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              vaultId:
  *                type: integer
  *                example: 29721
@@ -94,7 +94,7 @@ router.post("/get-vault", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -181,7 +181,7 @@ router.post("/create-vault", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -262,7 +262,7 @@ router.post("/open-empty-vault", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -346,7 +346,7 @@ router.post("/supply", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -430,7 +430,7 @@ router.post("/withdraw", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -514,7 +514,7 @@ router.post("/borrow", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              owner:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -598,7 +598,7 @@ router.post("/payback", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              sender:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -666,7 +666,7 @@ router.post("/dsr-deposit", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              sender:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"

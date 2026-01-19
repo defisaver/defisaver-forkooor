@@ -26,7 +26,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -143,7 +143,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -260,7 +260,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
@@ -387,7 +387,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/{vnetUrl}"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"

@@ -25,7 +25,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              market:
  *                type: string
  *                example: "WETH"
@@ -120,7 +120,7 @@ router.post("/get-trove",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *               sender:
  *                 type: string
  *                 example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"

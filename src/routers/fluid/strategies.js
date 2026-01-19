@@ -24,7 +24,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *              nftId:
  *                type: string
  *                example: "1000"

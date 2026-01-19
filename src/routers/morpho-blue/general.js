@@ -93,7 +93,7 @@ const router = express.Router();
  *                   type: string
  *                   example: "2000000000000000000"
  *                   description: "Amount of collateral supplied"
- *                 user:
+ *                 positionOwner:
  *                   type: string
  *                   example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
  *                   description: "Position owner address"
@@ -205,7 +205,7 @@ router.post("/create/smart-wallet",
  *                   type: string
  *                   example: "2000000000000000000"
  *                   description: "Amount of collateral supplied"
- *                 user:
+ *                 positionOwner:
  *                   type: string
  *                   example: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
  *                   description: "Position owner address"

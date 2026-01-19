@@ -6,10 +6,10 @@ const { configure } = require("@defisaver/sdk");
 /**
  * returns MorphoBlue position info
  * @param {string} marketParams array of market params, [loanToken, collateralToken, oracle, irm, lltv]
- * @param {string} user address of morphoBlue user
+ * @param {string} positionOwner address of morphoBlue position owner
  * @returns {Object} object that has morphoBlue position info
  */
-async function getUserData(marketParams, user) {
+async function getUserData(marketParams, positionOwner) {
     const [signer] = await hre.ethers.getSigners();
     const { chainId } = await hre.ethers.provider.getNetwork();
 
@@ -21,7 +21,7 @@ async function getUserData(marketParams, user) {
     const morphoBlueViewAddress = addresses[chainId].MORPHO_BLUE_VIEW;
 
     const view = new hre.ethers.Contract(morphoBlueViewAddress, morphoBlueViewAbi, signer);
-    const userData = await view.callStatic.getUserInfo(marketParams, user);
+    const userData = await view.callStatic.getUserInfo(marketParams, positionOwner);
 
     return {
         supplyShares: userData.supplyShares.toString(),
@@ -29,7 +29,7 @@ async function getUserData(marketParams, user) {
         borrowShares: userData.borrowShares.toString(),
         borrowedInAssets: userData.borrowedInAssets.toString(),
         collateral: userData.collateral.toString(),
-        user
+        positionOwner
     };
 }
 

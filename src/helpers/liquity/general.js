@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const { getProxy, executeAction, setBalance, approve } = require("../../utils");
+const { getSender, executeAction, setBalance, approve } = require("../../utils");
 const dfs = require("@defisaver/sdk");
 const { getInsertPosition, getTroveInfo, getHintsForAdjust } = require("./view");
 const { getAssetInfo } = require("@defisaver/tokens");
@@ -8,24 +8,19 @@ const MAX_FEE_PERCENTAGE = ethers.utils.parseUnits("0.05");
 
 /**
  * Function that opens a liquity trove
- * @param {Object} params function parameters with keys
- * @param {string} params.sender eoa of proxy that will own the trove
- * @param {number} params.collAmount collateral amount in the position
- * @param {number} params.debtAmount debt amount in the position
- * @param {string} params.proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} params.useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {string} eoa eoa of proxy that will own the trove
+ * @param {number} collAmount collateral amount in the position in token units (supports decimals, e.g. 1.5)
+ * @param {number} debtAmount debt amount in the position in token units (supports decimals, e.g. 2000.25)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} Obj that contains trove info
  */
-async function openTrove({ sender, collAmount, debtAmount, proxyAddr, useSafe = true }) {
-    const senderAcc = ethers.provider.getSigner(sender.toString());
-
-    senderAcc.address = senderAcc._address;
+async function openTrove(eoa, collAmount, debtAmount, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
     // lusd vault coll and debt assets are both 18 decimals
-    const collAmountInWei = ethers.utils.parseUnits(collAmount.toString());
-    const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString());
-
-    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
+    const collAmountInWei = ethers.utils.parseUnits(collAmount.toString(), 18);
+    const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString(), 18);
     const { upperHint, lowerHint } = await getInsertPosition(
         collAmountInWei,
         debtAmountInWei
@@ -52,26 +47,21 @@ async function openTrove({ sender, collAmount, debtAmount, proxyAddr, useSafe = 
 
 /**
  * Function that adjusts a liquity trove
- * @param {Object} params function parameters with keys
- * @param {string} params.sender eoa of proxy that owns the trove
- * @param {string} params.collAction "supply" | "withdraw"
- * @param {number} params.collAmount amount of collateral to supply/withdraw
- * @param {string} params.debtAction "payback" | "borrow"
- * @param {number} params.debtAmount amount of debt to payback/borrow
- * @param {string} params.proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} params.useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {string} eoa eoa of proxy that owns the trove
+ * @param {string} collAction "supply" | "withdraw"
+ * @param {number} collAmount amount of collateral to supply/withdraw in token units (supports decimals, e.g. 1.5)
+ * @param {string} debtAction "payback" | "borrow"
+ * @param {number} debtAmount amount of debt to payback/borrow in token units (supports decimals, e.g. 2000.25)
+ * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} Obj that contains trove info
  */
-async function adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount, proxyAddr, useSafe = true }) {
-    const senderAcc = await ethers.provider.getSigner(sender.toString());
-
-    senderAcc.address = senderAcc._address;
+async function adjustTrove(eoa, collAction, collAmount, debtAction, debtAmount, proxyAddr, useSafe = true) {
+    const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
     // lusd vault coll and debt assets are both 18 decimals
-    const collAmountInWei = ethers.utils.parseUnits(collAmount.toString());
-    const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString());
-
-    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
+    const collAmountInWei = ethers.utils.parseUnits(collAmount.toString(), 18);
+    const debtAmountInWei = ethers.utils.parseUnits(debtAmount.toString(), 18);
     const { upperHint, lowerHint } = await getHintsForAdjust(
         proxy.address,
         collAction,

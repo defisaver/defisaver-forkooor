@@ -24,18 +24,40 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collSymbol
+ *               - debtSymbol
+ *               - oracle
+ *               - irm
+ *               - lltv
+ *               - collAmount
+ *               - debtAmount
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
- *              debtSymbol:
+ *              eoa:
  *                type: string
- *                example: "USDC"
- *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              collSymbol:
  *                type: string
  *                example: "wstETH"
  *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *              collAmount:
+ *                type: number
+ *                example: 2.0
+ *                description: "Amount of collateral to supply in token units (e.g., 2.0 for 2.0 wstETH, 1.5 for 1.5 ETH). Not USD value. Supports decimals."
+ *              debtSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *              debtAmount:
+ *                type: number
+ *                example: 2000
+ *                description: "Amount of debt to borrow in token units (e.g., 2000 for 2000 USDC, 1000.25 for 1000.25 DAI). Not USD value. Supports decimals."
  *              oracle:
  *                type: string
  *                example: "0x48f7e36eb6b826b2df4b2e630b62cd25e89e40e2"
@@ -45,18 +67,6 @@ const router = express.Router();
  *              lltv:
  *                type: string
  *                example: "860000000000000000"
- *              eoa:
- *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
- *              collAmount:
- *                type: number
- *                example: 2.0
- *                description: "Amount of collateral to supply in token units (supports decimals)"
- *              debtAmount:
- *                type: number
- *                example: 2000
- *                description: "Amount of debt to borrow in token units (supports decimals)"
  *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -64,7 +74,7 @@ const router = express.Router();
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -117,7 +127,7 @@ router.post("/create/smart-wallet",
         if (!validationErrors.isEmpty()) {
             return res.status(400).send({ error: validationErrors.array() });
         }
-        const { vnetUrl, collSymbol, debtSymbol, oracle, irm, lltv, eoa, collAmount, debtAmount } = req.body;
+        const { vnetUrl, eoa, collSymbol, debtSymbol, oracle, irm, lltv, collAmount, debtAmount } = req.body;
 
         await setupVnet(vnetUrl, [eoa]);
         createMorphoBluePosition(

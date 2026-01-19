@@ -1,39 +1,56 @@
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { subToStrategy, getSender } = require("../../utils");
+const { subToStrategy, getSender, getTokenInfo } = require("../../utils");
 const { configure } = require("@defisaver/sdk");
+const { getMarketId } = require("./view");
 const abiCoder = new hre.ethers.utils.AbiCoder();
-
 
 /**
  * Subscribes to MorphoBlue Repay Bundle
- * @param {Object} owner wallet owner
- * @param {number} bundleId MorphoBlue repay Bundle Id
- * @param {Object} marketParams market params in []
- * @param {string} marketId id of the MorphoBlue market
+ * @param {string} eoa wallet owner (EOA)
+ * @param {string} collSymbol collateral token symbol
+ * @param {string} debtSymbol debt token symbol
+ * @param {string} oracle oracle address
+ * @param {string} irm interest rate model address
+ * @param {string} lltv lltv
  * @param {number} minRatio ratio under which the strategy will trigger
  * @param {number} targetRatio target ratio for repay
- * @param {string} user address of the user who is owner of morphoblue position
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} subId and strategySub
  */
 async function subMorphoBlueRepayBundle(
-    owner, bundleId, marketParams, marketId, minRatio, targetRatio, user, proxyAddr, useSafe = true
+    eoa, collSymbol, debtSymbol, oracle, irm, lltv, minRatio, targetRatio, proxyAddr, useSafe = true
 ) {
-    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-
     const { chainId } = await hre.ethers.provider.getNetwork();
+    let bundleId;
+
+    if (chainId === 42161) {
+
+        // Arbitrum
+        bundleId = automationSdk.enums.Bundles.ArbitrumIds.MORPHO_BLUE_REPAY;
+    } else if (chainId === 8453) {
+
+        // Base
+        bundleId = automationSdk.enums.Bundles.BaseIds.MORPHO_BLUE_REPAY;
+    } else {
+
+        // Mainnet (default)
+        bundleId = automationSdk.enums.Bundles.MainnetIds.MORPHO_BLUE_REPAY;
+    }
+
+    const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+    const user = proxy.address;
 
     configure({
         chainId,
         testMode: false
     });
 
-    if (user === hre.ethers.constants.AddressZero) {
-        // eslint-disable-next-line no-param-reassign
-        user = proxy.address;
-    }
+    const loanToken = (await getTokenInfo(debtSymbol)).address;
+    const collateralToken = (await getTokenInfo(collSymbol)).address;
+    const marketParams = [loanToken, collateralToken, oracle, irm, lltv];
+    const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     const triggerData = abiCoder.encode(["bytes32", "address", "uint256", "uint8"], [marketId, user, hre.ethers.utils.parseUnits(minRatio.toString(), 16).toString(), 1]);
     const loanTokenEncoded = abiCoder.encode(["address"], [marketParams[0]]);
@@ -64,33 +81,50 @@ async function subMorphoBlueRepayBundle(
 
 /**
  * Subscribes to MorphoBlue Repay Bundle
- * @param {Object} owner wallet owner
- * @param {number} bundleId MorphoBlue repay Bundle Id
- * @param {Object} marketParams market params in []
- * @param {string} marketId id of the MorphoBlue market
+ * @param {string} eoa wallet owner (EOA)
+ * @param {string} collSymbol collateral token symbol
+ * @param {string} debtSymbol debt token symbol
+ * @param {string} oracle oracle address
+ * @param {string} irm interest rate model address
+ * @param {string} lltv lltv
  * @param {number} maxRatio ratio above which the strategy will trigger
  * @param {number} targetRatio target ratio for repay
- * @param {string} user address of the user who is owner of morphoblue position
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
  * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
  * @returns {Object} subId and strategySub
  */
 async function subMorphoBlueBoostBundle(
-    owner, bundleId, marketParams, marketId, maxRatio, targetRatio, user, proxyAddr, useSafe = true
+    eoa, collSymbol, debtSymbol, oracle, irm, lltv, maxRatio, targetRatio, proxyAddr, useSafe = true
 ) {
-    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
-
     const { chainId } = await hre.ethers.provider.getNetwork();
+    let bundleId;
+
+    if (chainId === 42161) {
+
+        // Arbitrum
+        bundleId = automationSdk.enums.Bundles.ArbitrumIds.MORPHO_BLUE_BOOST;
+    } else if (chainId === 8453) {
+
+        // Base
+        bundleId = automationSdk.enums.Bundles.BaseIds.MORPHO_BLUE_BOOST;
+    } else {
+
+        // Mainnet (default)
+        bundleId = automationSdk.enums.Bundles.MainnetIds.MORPHO_BLUE_BOOST;
+    }
+
+    const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+    const user = proxy.address;
 
     configure({
         chainId,
         testMode: false
     });
 
-    if (user === hre.ethers.constants.AddressZero) {
-        // eslint-disable-next-line no-param-reassign
-        user = proxy.address;
-    }
+    const loanToken = (await getTokenInfo(debtSymbol)).address;
+    const collateralToken = (await getTokenInfo(collSymbol)).address;
+    const marketParams = [loanToken, collateralToken, oracle, irm, lltv];
+    const marketId = await getMarketId({ loanToken, collateralToken, oracle, irm, lltv });
 
     const triggerData = abiCoder.encode(["bytes32", "address", "uint256", "uint8"], [marketId, user, hre.ethers.utils.parseUnits(maxRatio.toString(), 16).toString(), 0]);
     const loanTokenEncoded = abiCoder.encode(["address"], [marketParams[0]]);
@@ -121,11 +155,13 @@ async function subMorphoBlueBoostBundle(
 
 /**
  * Subscribes to MorphoBlue Boost On Price Bundle
- * @param {Object} walletOwner wallet owner
- * @param {number} bundleId MorphoBlue boost on price bundle Id
- * @param {Object} marketParams market params in []
+ * @param {string} eoa wallet owner (EOA)
+ * @param {string} collSymbol collateral token symbol
+ * @param {string} debtSymbol debt token symbol
+ * @param {string} oracle oracle address
+ * @param {string} irm interest rate model address
+ * @param {string} lltv lltv
  * @param {number} targetRatio target ratio for boost on price
- * @param {string} user address of the user who is owner of morphoblue position (EOA or Wallet address)
  * @param {number} price price to trigger the strategy
  * @param {string} priceState under or over
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
@@ -133,21 +169,36 @@ async function subMorphoBlueBoostBundle(
  * @returns {Object} subId and strategySub
  */
 async function subMorphoBlueBoostOnPriceBundle(
-    walletOwner, bundleId, marketParams, targetRatio, user, price, priceState, proxyAddr, useSafe = true
+    eoa, collSymbol, debtSymbol, oracle, irm, lltv, targetRatio, price, priceState, proxyAddr, useSafe = true
 ) {
-    const [, proxy] = await getSender(walletOwner, proxyAddr, useSafe);
-
     const { chainId } = await hre.ethers.provider.getNetwork();
+    let bundleId;
+
+    if (chainId === 42161) {
+
+        // Arbitrum
+        bundleId = automationSdk.enums.Bundles.ArbitrumIds.MORPHO_BLUE_BOOST_ON_PRICE;
+    } else if (chainId === 8453) {
+
+        // Base
+        bundleId = automationSdk.enums.Bundles.BaseIds.MORPHO_BLUE_BOOST_ON_PRICE;
+    } else {
+
+        // Mainnet (default)
+        bundleId = automationSdk.enums.Bundles.MainnetIds.MORPHO_BLUE_BOOST_ON_PRICE;
+    }
+
+    const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+    const user = proxy.address;
 
     configure({
         chainId,
         testMode: false
     });
 
-    if (user === hre.ethers.constants.AddressZero) {
-        // eslint-disable-next-line no-param-reassign
-        user = proxy.address;
-    }
+    const loanToken = (await getTokenInfo(debtSymbol)).address;
+    const collateralToken = (await getTokenInfo(collSymbol)).address;
+    const marketParams = [loanToken, collateralToken, oracle, irm, lltv];
     const strategySub = automationSdk.strategySubService.morphoBlueEncode.leverageManagementOnPrice(
         bundleId,
         true,
@@ -170,9 +221,12 @@ async function subMorphoBlueBoostOnPriceBundle(
 
 /**
  * Subscribes to MorphoBlue Close On Price Bundle
- * @param {Object} owner wallet owner
- * @param {number} bundleId MorphoBlue close on price bundle Id
- * @param {Object} marketParams market params in []
+ * @param {string} eoa wallet owner (EOA)
+ * @param {string} collSymbol collateral token symbol
+ * @param {string} debtSymbol debt token symbol
+ * @param {string} oracle oracle address
+ * @param {string} irm interest rate model address
+ * @param {string} lltv lltv
  * @param {number} stopLossPrice stop loss price
  * @param {number} stopLossType stop loss type (0 for debt, 1 for collateral)
  * @param {number} takeProfitPrice take profit price
@@ -182,9 +236,12 @@ async function subMorphoBlueBoostOnPriceBundle(
  * @returns {Object} subId and strategySub
  */
 async function subMorphoBlueCloseOnPriceBundle(
-    owner,
-    bundleId,
-    marketParams,
+    eoa,
+    collSymbol,
+    debtSymbol,
+    oracle,
+    irm,
+    lltv,
     stopLossPrice,
     stopLossType,
     takeProfitPrice,
@@ -193,7 +250,27 @@ async function subMorphoBlueCloseOnPriceBundle(
     useSafe = true
 ) {
     try {
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const { chainId } = await hre.ethers.provider.getNetwork();
+        let bundleId;
+
+        if (chainId === 42161) {
+
+            // Arbitrum
+            bundleId = automationSdk.enums.Bundles.ArbitrumIds.MORPHO_BLUE_CLOSE;
+        } else if (chainId === 8453) {
+
+            // Base
+            bundleId = automationSdk.enums.Bundles.BaseIds.MORPHO_BLUE_CLOSE;
+        } else {
+
+            // Mainnet (default)
+            bundleId = automationSdk.enums.Bundles.MainnetIds.MORPHO_BLUE_CLOSE;
+        }
+
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+        const loanToken = (await getTokenInfo(debtSymbol)).address;
+        const collateralToken = (await getTokenInfo(collSymbol)).address;
+        const marketParams = [loanToken, collateralToken, oracle, irm, lltv];
 
         const strategySub = automationSdk.strategySubService.morphoBlueEncode.closeOnPrice(
             bundleId,

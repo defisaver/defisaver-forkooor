@@ -24,6 +24,8 @@ const addresses = {
         PROXY_REGISTRY: "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
         SUB_PROXY: "0x88B8cEb76b88Ee0Fb7160E6e2Ad86055a32D72d4",
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        SPARK_MARKET: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE",
+        SPARK_VIEW: "0x79df6aF8738d98D12c16ca59e908445F981F7eAb",
         SPARK_SUB_PROXY: "0xb6F2FC4039aBB60Cd38a2489A2299366cdb037ae",
         AAVE_V3_SUB_PROXY: "0x7D2250A5CC1b32670d23FcA14D08fF3dC6230f96",
         MCD_SUB_PROXY: "0xc044477E9a70a6aFbeDA3B33163710B7fc557eB2",
@@ -927,6 +929,15 @@ async function getAaveV3MarketAddress(market) {
     return market || addresses[(await hre.ethers.provider.getNetwork()).chainId].AAVE_V3_MARKET;
 }
 
+/**
+ * Get Spark market address, returning default market if not provided
+ * @param {string} market Optional market address
+ * @returns {string} Market address (provided or default for current chain)
+ */
+async function getSparkMarketAddress(market) {
+    return market || addresses[(await hre.ethers.provider.getNetwork()).chainId].SPARK_MARKET;
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -937,6 +948,7 @@ module.exports = {
     approve,
     executeAction,
     getAaveV3MarketAddress,
+    getSparkMarketAddress,
     topUpAccount,
     setupVnet,
     setBalance,

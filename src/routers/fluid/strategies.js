@@ -2,6 +2,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { setupVnet } = require("../../utils");
+const { body, validationResult } = require("express-validator");
 const { subFluidT1LeverageManagement } = require("../../helpers/fluid/strategies");
 
 const router = express.Router();
@@ -21,27 +22,33 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - nftId
+ *               - triggerRatio
+ *               - targetRatio
+ *               - ratioState
  *             properties:
  *              vnetUrl:
- *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                description: "Unique identifier for the vnet"
  *              nftId:
  *                type: string
  *                example: "1000"
+ *                description: "NFT ID representing the Fluid position"
  *              triggerRatio:
- *                type: integer
+ *                type: number
  *                example: 200
+ *                description: "Trigger ratio at which the strategy will execute"
  *              targetRatio:
- *                 type: integer
- *                 example: 300
+ *                type: number
+ *                example: 300
+ *                description: "Target ratio to achieve after strategy execution"
  *              ratioState:
- *                 type: string
- *                 example: under
- *                 description: "under = repay and over = boost"
- *              bundleId:
- *                 type: string
- *                 example: "44 for repay, 45 for boost"
- *                 description: "Bundle ID"
+ *                type: string
+ *                example: "under"
+ *                description: "Ratio state: 'under' for repay strategy, 'over' for boost strategy"
  *     responses:
  *       '200':
  *         description: OK
@@ -80,27 +87,33 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/leverage-management-t1", async (req, res) => {
-    let resObj;
+router.post("/leverage-management-t1",
+    body(["vnetUrl", "nftId", "triggerRatio", "targetRatio", "ratioState"]).notEmpty(),
+    body(["triggerRatio", "targetRatio"]).isFloat({ gt: 0 }),
+    body("ratioState").isIn(["under", "over"]),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, nftId, triggerRatio, targetRatio, ratioState, bundleId } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, []);
+        try {
+            const { vnetUrl, nftId, triggerRatio, targetRatio, ratioState } = req.body;
 
-        const sub = await subFluidT1LeverageManagement(
-            nftId,
-            triggerRatio,
-            targetRatio,
-            ratioState,
-            bundleId
-        );
+            await setupVnet(vnetUrl, []);
 
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to Fluid T1 lev. management automation strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+            const sub = await subFluidT1LeverageManagement(
+                nftId,
+                triggerRatio,
+                targetRatio,
+                ratioState
+            );
+
+            res.status(200).send(sub);
+        } catch (err) {
+            res.status(500).send({ error: `Failed to subscribe to Fluid T1 leverage management automation strategy with error : ${err.toString()}` });
+        }
+    });
 
 module.exports = router;

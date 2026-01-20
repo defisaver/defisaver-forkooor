@@ -33,7 +33,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b755aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                description: "Unique identifier for the vnet"
  *              eoa:
  *                type: string
@@ -146,7 +146,7 @@ router.post("/leverage-management",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b755aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                description: "Unique identifier for the vnet"
  *              eoa:
  *                type: string
@@ -282,7 +282,7 @@ router.post("/leverage-management-on-price",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b755aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                description: "Unique identifier for the vnet"
  *              eoa:
  *                type: string
@@ -413,7 +413,7 @@ router.post("/close-on-price",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b755aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                description: "Unique identifier for the vnet"
  *              eoa:
  *                type: string
@@ -539,7 +539,7 @@ router.post("/payback",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b755aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                description: "Unique identifier for the vnet"
  *              eoa:
  *                type: string

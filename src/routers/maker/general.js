@@ -97,7 +97,6 @@ router.post("/get-vault",
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
  *             required:
  *               - vnetUrl
  *               - eoa
@@ -388,10 +387,6 @@ router.post("/supply",
  *         application/json:
  *           schema:
  *             type: object
- *             properties:
- *              vnetUrl:
- *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *             required:
  *               - vnetUrl
  *               - eoa

@@ -161,7 +161,7 @@ async function cloneVnet(cloningvnetUrl, tenderlyProject, tenderlyAccessKey) {
     const forkRes = await axios.post(url, body, { headers });
 
     const vnetUrl = forkRes.data.container.connectivityConfig.endpoints[0].id;
-    const rpc = `https://virtual.mainnet.rpc.tenderly.co/${vnetUrl}`;
+    const rpc = `https://virtual.mainnet.eu.rpc.tenderly.co/${vnetUrl}`;
 
     return rpc;
 }

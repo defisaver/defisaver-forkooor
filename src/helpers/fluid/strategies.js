@@ -7,14 +7,13 @@ const { fluidVaultResolverAbi } = require("../../abi/fluid/abis");
 
 /**
  * Subscribes to Fluid T1 Leverage Management Automation strategy
- * @param {string} nftId nft ID representing the position
- * @param {number} ratio Trigger ratio
+ * @param {string} nftId NFT ID representing the position
+ * @param {number} triggerRatio Trigger ratio
  * @param {number} targetRatio Target ratio
  * @param {string} ratioState "under" for repay and "over" for boost
- * @param {number} bundleId Bundle ID
- * @returns {boolean} StrategySub object and ID of the subscription
+ * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subFluidT1LeverageManagement(nftId, ratio, targetRatio, ratioState, bundleId) {
+async function subFluidT1LeverageManagement(nftId, triggerRatio, targetRatio, ratioState) {
 
     try {
         const { chainId } = await hre.ethers.provider.getNetwork();
@@ -34,12 +33,29 @@ async function subFluidT1LeverageManagement(nftId, ratio, targetRatio, ratioStat
             throw new Error("Vault type is not T1 (1 coll : 1 debt)");
         }
 
+        const ratioStateEnum = ratioState.toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER;
+        let bundleId;
+
+        if (chainId === 42161) {
+            bundleId = ratioStateEnum === automationSdk.enums.RatioState.UNDER
+                ? automationSdk.enums.Bundles.ArbitrumIds.FLUID_T1_REPAY
+                : automationSdk.enums.Bundles.ArbitrumIds.FLUID_T1_BOOST;
+        } else if (chainId === 8453) {
+            bundleId = ratioStateEnum === automationSdk.enums.RatioState.UNDER
+                ? automationSdk.enums.Bundles.BaseIds.FLUID_T1_REPAY
+                : automationSdk.enums.Bundles.BaseIds.FLUID_T1_BOOST;
+        } else {
+            bundleId = ratioStateEnum === automationSdk.enums.RatioState.UNDER
+                ? automationSdk.enums.Bundles.MainnetIds.FLUID_T1_REPAY
+                : automationSdk.enums.Bundles.MainnetIds.FLUID_T1_BOOST;
+        }
+
         const strategySub = automationSdk.strategySubService.fluidEncode.leverageManagement(
             nftId,
             vaultAddress,
-            ratioState.toLocaleLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
+            ratioStateEnum,
             targetRatio,
-            ratio,
+            triggerRatio,
             bundleId
         );
 
@@ -47,7 +63,7 @@ async function subFluidT1LeverageManagement(nftId, ratio, targetRatio, ratioStat
 
         return { subId, strategySub };
     } catch (err) {
-        console.log(err);
+        console.error(err);
         throw err;
     }
 }

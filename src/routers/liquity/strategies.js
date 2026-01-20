@@ -1,6 +1,7 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getSmartWallet, defaultsToSafe } = require("../../utils");
+const { body, validationResult } = require("express-validator");
 const {
     subLiquityDebtInFrontRepayStrategy,
     subLiquityLeverageManagementStrategies,
@@ -25,27 +26,33 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - triggerRatio
+ *               - targetRatio
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              triggerRatio:
- *                type: integer
+ *                type: number
  *                example: 200
  *              targetRatio:
- *                type: integer
+ *                type: number
  *                example: 240
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -70,25 +77,27 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/dsr-payback", async (req, res) => {
-    let resObj;
+router.post("/dsr-payback",
+    body(["vnetUrl", "eoa", "triggerRatio", "targetRatio"]).notEmpty(),
+    body(["triggerRatio", "targetRatio"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, sender, triggerRatio, targetRatio } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [sender]);
+        const { vnetUrl, eoa, triggerRatio, targetRatio } = req.body;
 
-        const proxyAddr = getWalletAddr(req);
-        const useSafe = defaultsToSafe(req);
-
-        const sub = await subLiquityDsrPaybackStrategy({ sender, triggerRatio, targetRatio, proxyAddr, useSafe });
-
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to Liquity Dsr Payback strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subLiquityDsrPaybackStrategy(eoa, triggerRatio, targetRatio, getSmartWallet(req), defaultsToSafe(req))
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Liquity Dsr Payback strategy with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -105,27 +114,33 @@ router.post("/dsr-payback", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - triggerRatio
+ *               - targetRatio
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              triggerRatio:
- *                type: integer
+ *                type: number
  *                example: 200
  *              targetRatio:
- *                type: integer
+ *                type: number
  *                example: 240
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -150,25 +165,27 @@ router.post("/dsr-payback", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/dsr-supply", async (req, res) => {
-    let resObj;
+router.post("/dsr-supply",
+    body(["vnetUrl", "eoa", "triggerRatio", "targetRatio"]).notEmpty(),
+    body(["triggerRatio", "targetRatio"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, sender, triggerRatio, targetRatio } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [sender]);
+        const { vnetUrl, eoa, triggerRatio, targetRatio } = req.body;
 
-        const proxyAddr = getWalletAddr(req);
-        const useSafe = defaultsToSafe(req);
-
-        const sub = await subLiquityDsrSupplyStrategy({ sender, triggerRatio, targetRatio, proxyAddr, useSafe });
-
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to Liquity Dsr Payback strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subLiquityDsrSupplyStrategy(eoa, triggerRatio, targetRatio, getSmartWallet(req), defaultsToSafe(req))
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Liquity Dsr Supply strategy with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -185,27 +202,33 @@ router.post("/dsr-supply", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - debtInFront
+ *               - targetRatioIncrease
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              debtInFront:
- *                type: integer
+ *                type: number
  *                example: 2000000
  *              targetRatioIncrease:
- *                type: integer
+ *                type: number
  *                example: 20
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -230,25 +253,27 @@ router.post("/dsr-supply", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/debt-in-front-repay", async (req, res) => {
-    let resObj;
+router.post("/debt-in-front-repay",
+    body(["vnetUrl", "eoa", "debtInFront", "targetRatioIncrease"]).notEmpty(),
+    body(["debtInFront", "targetRatioIncrease"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, sender, debtInFront, targetRatioIncrease } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [sender]);
+        const { vnetUrl, eoa, debtInFront, targetRatioIncrease } = req.body;
 
-        const proxyAddr = getWalletAddr(req);
-        const useSafe = defaultsToSafe(req);
-
-        const sub = await subLiquityDebtInFrontRepayStrategy({ sender, debtInFront, targetRatioIncrease, proxyAddr, useSafe });
-
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to Liquity Debt in front repay strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subLiquityDebtInFrontRepayStrategy(eoa, debtInFront, targetRatioIncrease, getSmartWallet(req), defaultsToSafe(req))
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Liquity Debt in front repay strategy with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -265,36 +290,45 @@ router.post("/debt-in-front-repay", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - minRatio
+ *               - maxRatio
+ *               - targetRatioRepay
+ *               - targetRatioBoost
+ *               - boostEnabled
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              minRatio:
- *                type: integer
+ *                type: number
  *                example: 220
  *              maxRatio:
- *                type: integer
+ *                type: number
  *                example: 280
  *              targetRatioRepay:
- *                type: integer
+ *                type: number
  *                example: 250
  *              targetRatioBoost:
- *                type: integer
+ *                type: number
  *                example: 260
  *              boostEnabled:
  *                type: boolean
  *                example: true
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -319,42 +353,30 @@ router.post("/debt-in-front-repay", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/leverage-management", async (req, res) => {
-    let resObj;
+router.post("/leverage-management",
+    body(["vnetUrl", "eoa", "minRatio", "maxRatio", "targetRatioRepay", "targetRatioBoost", "boostEnabled"]).notEmpty(),
+    body(["minRatio", "maxRatio", "targetRatioRepay", "targetRatioBoost"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
         const {
-            vnetUrl,
-            sender,
-            minRatio,
-            maxRatio,
-            targetRatioRepay,
-            targetRatioBoost,
-            boostEnabled
+            vnetUrl, eoa, minRatio, maxRatio, targetRatioRepay, targetRatioBoost, boostEnabled
         } = req.body;
 
-        await setupVnet(vnetUrl, [sender]);
-
-        const proxyAddr = getWalletAddr(req);
-        const useSafe = defaultsToSafe(req);
-
-
-        const sub = await subLiquityLeverageManagementStrategies({
-            sender,
-            minRatio,
-            maxRatio,
-            targetRatioRepay,
-            targetRatioBoost,
-            boostEnabled,
-            proxyAddr,
-            useSafe
-        });
-
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to Liquity Leverage Management strategies with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subLiquityLeverageManagementStrategies(
+            eoa, minRatio, maxRatio, targetRatioRepay, targetRatioBoost, boostEnabled, getSmartWallet(req), defaultsToSafe(req)
+        )
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Liquity Leverage Management strategies with error : ${err.toString()}` });
+            });
+    });
 
 module.exports = router;

@@ -1,7 +1,8 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { getTroveInfo } = require("../../helpers/liquity/view");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getSmartWallet, defaultsToSafe } = require("../../utils");
+const { body, validationResult } = require("express-validator");
 const { openTrove, adjustTrove } = require("../../helpers/liquity/general");
 
 const router = express.Router();
@@ -21,14 +22,17 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
- *                description: Address of the trove owner
+ *                description: "Address of the trove owner"
  *     responses:
  *       '200':
  *         description: OK
@@ -68,21 +72,26 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/get-trove", async (req, res) => {
-    let resObj;
+router.post("/get-trove",
+    body(["vnetUrl", "eoa"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl);
-        const troveInfo = await getTroveInfo(owner);
+        const { vnetUrl, eoa } = req.body;
 
-        res.status(200).send(troveInfo);
-    } catch (err) {
-        resObj = { error: `Failed to fetch trove info with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return getTroveInfo(eoa)
+            .then(troveInfo => {
+                res.status(200).send(troveInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to fetch trove info with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -99,27 +108,35 @@ router.post("/get-trove", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collAmount
+ *               - debtAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              collAmount:
- *                type: integer
+ *                type: number
  *                example: 5
+ *                description: "Amount of collateral to supply in token units (e.g., 5 for 5 ETH, 1.5 for 1.5 ETH). Not USD value. Supports decimals."
  *              debtAmount:
- *                type: integer
+ *                type: number
  *                example: 4000
- *              walletAddr:
+ *                description: "Amount of debt to borrow in token units (e.g., 4000 for 4000 LUSD, 2000.25 for 2000.25 LUSD). Not USD value. Supports decimals."
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -159,24 +176,27 @@ router.post("/get-trove", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/open-trove", async (req, res) => {
-    let resObj;
+router.post("/open-trove",
+    body(["vnetUrl", "eoa", "collAmount", "debtAmount"]).notEmpty(),
+    body(["collAmount", "debtAmount"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, sender, collAmount, debtAmount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        const proxyAddr = getWalletAddr(req);
-        const useSafe = defaultsToSafe(req);
+        const { vnetUrl, eoa, collAmount, debtAmount } = req.body;
 
-        await setupVnet(vnetUrl);
-        const troveInfo = await openTrove({ sender, collAmount, debtAmount, proxyAddr, useSafe });
-
-        res.status(200).send(troveInfo);
-    } catch (err) {
-        resObj = { error: `Failed to open trove with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return openTrove(eoa, collAmount, debtAmount, getSmartWallet(req), defaultsToSafe(req))
+            .then(troveInfo => {
+                res.status(200).send(troveInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to open trove with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -193,33 +213,43 @@ router.post("/open-trove", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collAction
+ *               - collAmount
+ *               - debtAction
+ *               - debtAmount
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "29490d5a-f4ca-41fd-89db-fd19ea82d44b"
- *              sender:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x2264164cf3a4d68640ED088A97137f6aa6eaac00"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              collAction:
  *                type: string
  *                example: "withdraw"
  *              collAmount:
- *                type: integer
+ *                type: number
  *                example: 1.5
+ *                description: "Amount of collateral to supply/withdraw in token units (e.g., 1.5 for 1.5 ETH, 5 for 5 ETH). Not USD value. Supports decimals."
  *              debtAction:
  *                type: string
  *                example: "payback"
  *              debtAmount:
- *                type: integer
+ *                type: number
  *                example: 2000
- *              walletAddr:
+ *                description: "Amount of debt to payback/borrow in token units (e.g., 2000 for 2000 LUSD, 1000.25 for 1000.25 LUSD). Not USD value. Supports decimals."
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -259,23 +289,26 @@ router.post("/open-trove", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/adjust-trove", async (req, res) => {
-    let resObj;
+router.post("/adjust-trove",
+    body(["vnetUrl", "eoa", "collAction", "collAmount", "debtAction", "debtAmount"]).notEmpty(),
+    body(["collAmount", "debtAmount"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, sender, collAction, collAmount, debtAction, debtAmount } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        const proxyAddr = getWalletAddr(req);
-        const useSafe = defaultsToSafe(req);
+        const { vnetUrl, eoa, collAction, collAmount, debtAction, debtAmount } = req.body;
 
-        await setupVnet(vnetUrl);
-        const troveInfo = await adjustTrove({ sender, collAction, collAmount, debtAction, debtAmount, proxyAddr, useSafe });
-
-        res.status(200).send(troveInfo);
-    } catch (err) {
-        resObj = { error: `Failed to open trove with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return adjustTrove(eoa, collAction, collAmount, debtAction, debtAmount, getSmartWallet(req), defaultsToSafe(req))
+            .then(troveInfo => {
+                res.status(200).send(troveInfo);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to adjust trove with error : ${err.toString()}` });
+            });
+    });
 
 module.exports = router;

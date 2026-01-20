@@ -1,7 +1,7 @@
 const { ilks } = require("@defisaver/tokens");
 const hre = require("hardhat");
 const automationSdk = require("@defisaver/automation-sdk");
-const { getProxy, addresses, subToStrategy, getSender, subToMcdAutomation} = require("../../utils");
+const { addresses, subToStrategy, getSender, subToMcdAutomation } = require("../../utils");
 const { getVaultInfo, getMcdManagerAddr } = require("../maker/view");
 
 
@@ -10,17 +10,13 @@ const { getVaultInfo, getMcdManagerAddr } = require("../maker/view");
  * @param {number} vaultId ID of the MCD vault
  * @param {number} triggerPrice Price of the asset for which price we're checking (whole number)
  * @param {string} triggerState OVER/UNDER
- * @param {string} owner EOA of the Vault owner
+ * @param {string} eoa EOA of the Vault owner
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner, proxyAddr, useSafe = true) {
-    const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
-
-    senderAcc.address = senderAcc._address;
-
-    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
+async function subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, eoa, proxyAddr, useSafe = true) {
+    const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
     let formattedPriceState;
 
@@ -50,17 +46,13 @@ async function subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, own
  * @param {number} vaultId ID of the MCD vault
  * @param {number} triggerPrice Price of the asset for which price we're checking (whole number)
  * @param {string} triggerState OVER/UNDER
- * @param {string} owner EOA of the Vault owner
+ * @param {string} eoa EOA of the Vault owner
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, owner, proxyAddr, useSafe = true) {
-    const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
-
-    senderAcc.address = senderAcc._address;
-
-    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
+async function subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, eoa, proxyAddr, useSafe = true) {
+    const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
     let formattedPriceState;
 
@@ -89,18 +81,13 @@ async function subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, ow
  * @param {string} protocol yearn/mstable/rari
  * @param {number} minRatio ratio under which the strategy will trigger
  * @param {number} targetRatio wanted ratio after execution
- * @param {string} owner EOA of the Vault owner
+ * @param {string} eoa EOA of the Vault owner
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, owner, proxyAddr, useSafe = true) {
-
-    const senderAcc = await hre.ethers.provider.getSigner(owner.toString());
-
-    senderAcc.address = senderAcc._address;
-
-    const proxy = await getProxy(senderAcc.address, proxyAddr, useSafe);
+async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, eoa, proxyAddr, useSafe = true) {
+    const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
     let bundleId;
 
@@ -127,20 +114,19 @@ async function subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targ
 /**
  * Subscribes to MCD Automation strategy
  * @param {number} vaultId ID of the MCD vault
- * @param {string} owner EOA of the Vault owner
- * @param {string} minRatio ratio under which the strategy will trigger
- * @param {string} maxRatio ratio over which the strategy will trigger
- * @param {string} targetRepayRatio wanted ratio after repay
- * @param {string} targetBoostRatio wanted ratio after boost
+ * @param {string} eoa EOA of the Vault owner
+ * @param {number} minRatio ratio under which the strategy will trigger
+ * @param {number} maxRatio ratio over which the strategy will trigger
+ * @param {number} targetRepayRatio wanted ratio after repay
+ * @param {number} targetBoostRatio wanted ratio after boost
  * @param {boolean} boostEnabled enable boost
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
- * @returns {boolean} StrategySub object and ID of the subscription
+ * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if proxyAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
  */
-async function subMcdAutomationStrategy(vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
-
+async function subMcdAutomationStrategy(vaultId, eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, proxyAddr, useSafe = true) {
     try {
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         const strategySub = automationSdk.strategySubService.makerEncode.leverageManagement(
             vaultId, minRatio, maxRatio, targetBoostRatio, targetRepayRatio, boostEnabled

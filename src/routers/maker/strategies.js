@@ -1,8 +1,8 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
 const { subMcdCloseToDaiStrategy, subMcdCloseToCollStrategy, subMCDSmartSavingsRepayStrategy, subMcdAutomationStrategy } = require("../../helpers/maker/strategies");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
-const { body } = require("express-validator");
+const { setupVnet, getSmartWallet, defaultsToSafe } = require("../../utils");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -21,10 +21,20 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - vaultId
+ *               - triggerPrice
+ *               - triggerState
+ *               - eoa
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              vaultId:
  *                type: integer
  *                example: 29721
@@ -34,17 +44,14 @@ const router = express.Router();
  *              triggerState:
  *                type: string
  *                example: "UNDER"
- *              owner:
- *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -69,21 +76,26 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/close-to-dai", async (req, res) => {
-    let resObj;
+router.post("/close-to-dai",
+    body(["vnetUrl", "vaultId", "triggerPrice", "triggerState", "eoa"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, vaultId, triggerPrice, triggerState, owner } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
-        const sub = await subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
+        const { vnetUrl, eoa, vaultId, triggerPrice, triggerState } = req.body;
 
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to MCD close to DAI strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subMcdCloseToDaiStrategy(vaultId, triggerPrice, triggerState, eoa, getSmartWallet(req), defaultsToSafe(req))
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to MCD close to DAI strategy with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -100,10 +112,20 @@ router.post("/close-to-dai", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - vaultId
+ *               - triggerPrice
+ *               - triggerState
+ *               - eoa
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              vaultId:
  *                type: integer
  *                example: 29721
@@ -113,17 +135,14 @@ router.post("/close-to-dai", async (req, res) => {
  *              triggerState:
  *                type: string
  *                example: "UNDER"
- *              owner:
- *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -148,22 +167,26 @@ router.post("/close-to-dai", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/close-to-coll", async (req, res) => {
-    let resObj;
+router.post("/close-to-coll",
+    body(["vnetUrl", "vaultId", "triggerPrice", "triggerState", "eoa"]).notEmpty(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, vaultId, triggerPrice, triggerState, owner } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
+        const { vnetUrl, eoa, vaultId, triggerPrice, triggerState } = req.body;
 
-        const sub = await subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, owner, getWalletAddr(req), defaultsToSafe(req));
-
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to MCD close to coll strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subMcdCloseToCollStrategy(vaultId, triggerPrice, triggerState, eoa, getSmartWallet(req), defaultsToSafe(req))
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to MCD close to coll strategy with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -180,10 +203,21 @@ router.post("/close-to-coll", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - vaultId
+ *               - protocol
+ *               - minRatio
+ *               - targetRatio
+ *               - eoa
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              vaultId:
  *                type: integer
  *                example: 29721
@@ -191,22 +225,19 @@ router.post("/close-to-coll", async (req, res) => {
  *                type: string
  *                example: "rari"
  *              minRatio:
- *                type: integer
+ *                type: number
  *                example: 200
  *              targetRatio:
- *                type: integer
+ *                type: number
  *                example: 220
- *              owner:
- *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -231,22 +262,27 @@ router.post("/close-to-coll", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/smart-savings-repay", async (req, res) => {
-    let resObj;
+router.post("/smart-savings-repay",
+    body(["vnetUrl", "vaultId", "protocol", "minRatio", "targetRatio", "eoa"]).notEmpty(),
+    body(["minRatio", "targetRatio"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, vaultId, protocol, minRatio, targetRatio, owner } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
+        const { vnetUrl, eoa, vaultId, protocol, minRatio, targetRatio } = req.body;
 
-        const sub = await subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, owner, getWalletAddr(req), defaultsToSafe(req));
-
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to MCD close to coll strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subMCDSmartSavingsRepayStrategy(vaultId, protocol, minRatio, targetRatio, eoa, getSmartWallet(req), defaultsToSafe(req))
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to MCD smart savings repay strategy with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
@@ -263,39 +299,49 @@ router.post("/smart-savings-repay", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - vaultId
+ *               - eoa
+ *               - minRatio
+ *               - maxRatio
+ *               - targetRepayRatio
+ *               - targetBoostRatio
+ *               - boostEnabled
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
+ *                type: string
+ *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              vaultId:
  *                type: integer
  *                example: 29721
- *              owner:
- *                type: string
- *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              minRatio:
- *                type: integer
+ *                type: number
  *                example: 200
  *              maxRatio:
- *                 type: integer
- *                 example: 300
+ *                type: number
+ *                example: 300
  *              targetRepayRatio:
- *                 type: integer
- *                 example: 220
+ *                type: number
+ *                example: 220
  *              targetBoostRatio:
- *                 type: integer
- *                 example: 250
+ *                type: number
+ *                example: 250
  *              boostEnabled:
- *                 type: boolean
- *                 example: true
- *              walletAddr:
+ *                type: boolean
+ *                example: true
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use the safe as smart wallet or dsproxy if smartWallet is not provided. WalletType field is not mandatory. Defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -328,36 +374,29 @@ router.post("/smart-savings-repay", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/dfs-automation", body(
-    [
-        "vnetUrl",
-        "vaultId",
-        "owner",
-        "minRatio",
-        "maxRatio",
-        "targetRepayRatio",
-        "targetBoostRatio",
-        "boostEnabled"
-    ]
-).notEmpty(),
-async (req, res) => {
-    let resObj;
+router.post("/dfs-automation",
+    body(["vnetUrl", "vaultId", "eoa", "minRatio", "maxRatio", "targetRepayRatio", "targetBoostRatio", "boostEnabled"]).notEmpty(),
+    body(["minRatio", "maxRatio", "targetRepayRatio", "targetBoostRatio"]).isNumeric(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
+        const { vnetUrl, eoa, vaultId, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        const sub = await subMcdAutomationStrategy(
-            vaultId, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)
-        );
-
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to MCD automation strategy with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        await setupVnet(vnetUrl, [eoa]);
+        return subMcdAutomationStrategy(
+            vaultId, eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getSmartWallet(req), defaultsToSafe(req)
+        )
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to MCD automation strategy with error : ${err.toString()}` });
+            });
+    });
 
 
 module.exports = router;

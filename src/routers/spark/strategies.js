@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, defaultsToSafe, getSmartWallet } = require("../../utils");
 const { subSparkDfsAutomationStrategy, subSparkCloseOnPriceGeneric } = require("../../helpers/spark/strategies");
 const { body, validationResult } = require("express-validator");
 
@@ -9,9 +9,9 @@ const router = express.Router();
 
 /**
  * @swagger
- * /spark/strategies/dfs-automation:
+ * /spark/strategies/dfs-automation/smart-wallet:
  *   post:
- *     summary: Subscribe to a DFS Automation strategy
+ *     summary: Subscribe to a Spark DFS Automation strategy (Smart Wallet)
  *     tags:
  *      - Spark
  *     description:
@@ -22,11 +22,19 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - minRatio
+ *               - maxRatio
+ *               - targetRepayRatio
+ *               - targetBoostRatio
+ *               - boostEnabled
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "98d472f7-496f-4672-be5a-c3eeab31986f"
- *              owner:
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
  *              minRatio:
@@ -44,14 +52,14 @@ const router = express.Router();
  *              boostEnabled:
  *                type: boolean
  *                example: true
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or DSProxy if smartWallet is not provided. walletType is optional and defaults to safe."
  *     responses:
  *       '200':
  *         description: OK
@@ -79,30 +87,47 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/dfs-automation", async (req, res) => {
-    let resObj;
+router.post("/dfs-automation/smart-wallet",
+    body(["vnetUrl", "eoa"]).notEmpty(),
+    body("minRatio").notEmpty().isNumeric(),
+    body("maxRatio").notEmpty().isNumeric(),
+    body("targetRepayRatio").notEmpty().isNumeric(),
+    body("targetBoostRatio").notEmpty().isNumeric(),
+    body("boostEnabled").notEmpty().isBoolean(),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    try {
-        const { vnetUrl, owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        await setupVnet(vnetUrl, [owner]);
+        const { vnetUrl, eoa, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled } = req.body;
 
-        const sub = await subSparkDfsAutomationStrategy(
-            owner, minRatio, maxRatio, targetRepayRatio, targetBoostRatio, boostEnabled, getWalletAddr(req), defaultsToSafe(req)
-        );
+        await setupVnet(vnetUrl, [eoa]);
 
-        res.status(200).send(sub);
-    } catch (err) {
-        resObj = { error: `Failed to subscribe to Spark DFS Automation with error : ${err.toString()}` };
-        res.status(500).send(resObj);
-    }
-});
+        return subSparkDfsAutomationStrategy(
+            eoa,
+            minRatio,
+            maxRatio,
+            targetRepayRatio,
+            targetBoostRatio,
+            boostEnabled,
+            getSmartWallet(req),
+            defaultsToSafe(req)
+        )
+            .then(sub => {
+                res.status(200).send(sub);
+            })
+            .catch(err => {
+                res.status(500).send({ error: `Failed to subscribe to Spark DFS Automation with error : ${err.toString()}` });
+            });
+    });
 
 /**
  * @swagger
- * /spark/strategies/close-on-price-generic:
+ * /spark/strategies/close-on-price/generic/smart-wallet:
  *   post:
- *     summary: Subscribe to Spark Close On Price strategy
+ *     summary: Subscribe to Spark Close On Price strategy (Smart Wallet)
  *     tags:
  *       - Spark
  *     description: Subscribes to Spark Close On Price strategy with stop loss and take profit functionality.
@@ -115,9 +140,7 @@ router.post("/dfs-automation", async (req, res) => {
  *             type: object
  *             required:
  *               - vnetUrl
- *               - owner
- *               - bundleId
- *               - market
+ *               - eoa
  *               - collSymbol
  *               - debtSymbol
  *               - stopLossPrice
@@ -127,20 +150,16 @@ router.post("/dfs-automation", async (req, res) => {
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/bb3fe51f-1769-48b7-937d-50a524a63dae"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
  *                 description: "Unique identifier for the vnet"
- *               owner:
+ *               eoa:
  *                 type: string
  *                 example: "0x45a933848c814868307c184F135Cf146eDA28Cc5"
  *                 description: "EOA address that will own the strategy"
- *               bundleId:
- *                 type: integer
- *                 example: 57
- *                 description: "Bundle ID for the strategy. 57 - Close on price"
  *               market:
  *                 type: string
  *                 example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
- *                 description: "Spark market address"
+ *                 description: "Spark market address. Optional - if not provided, the default market for the chain will be used."
  *               collSymbol:
  *                 type: string
  *                 example: "WETH"
@@ -165,14 +184,14 @@ router.post("/dfs-automation", async (req, res) => {
  *                 type: integer
  *                 example: 1
  *                 description: "Take profit type (0 for debt, 1 for collateral)"
- *               proxyAddr:
+ *               smartWallet:
  *                 type: string
  *                 example: "0x0000000000000000000000000000000000000000"
- *                 description: "Optional proxy address. If not provided, a new wallet will be created"
- *               useSafe:
- *                 type: boolean
- *                 example: true
- *                 description: "Whether to use Safe as smart wallet or dsproxy (default: true)"
+ *                 description: "Smart wallet address. Optional - if not provided, a new wallet will be created."
+ *               walletType:
+ *                 type: string
+ *                 example: "safe"
+ *                 description: "Whether to use Safe as smart wallet or dsproxy (default: safe)."
  *     responses:
  *       '200':
  *         description: Strategy subscribed successfully
@@ -210,13 +229,12 @@ router.post("/dfs-automation", async (req, res) => {
  *                   type: string
  *                   example: "Failed to subscribe to Spark Close On Price strategy with error: ..."
  */
-router.post("/close-on-price-generic",
-    body(["vnetUrl", "owner", "bundleId", "market", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
-    body("bundleId").isInt(),
+router.post("/close-on-price/generic/smart-wallet",
+    body(["vnetUrl", "eoa", "collSymbol", "debtSymbol", "stopLossPrice", "stopLossType", "takeProfitPrice", "takeProfitType"]).notEmpty(),
     body("stopLossPrice").isFloat(),
-    body("stopLossType").isFloat(),
+    body("stopLossType").isInt(),
     body("takeProfitPrice").isFloat(),
-    body("takeProfitType").isFloat(),
+    body("takeProfitType").isInt(),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -226,8 +244,7 @@ router.post("/close-on-price-generic",
 
         const {
             vnetUrl,
-            owner,
-            bundleId,
+            eoa,
             market,
             collSymbol,
             debtSymbol,
@@ -237,11 +254,10 @@ router.post("/close-on-price-generic",
             takeProfitType
         } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
+        await setupVnet(vnetUrl, [eoa]);
 
         subSparkCloseOnPriceGeneric(
-            owner,
-            bundleId,
+            eoa,
             market,
             collSymbol,
             debtSymbol,
@@ -249,7 +265,7 @@ router.post("/close-on-price-generic",
             stopLossType,
             takeProfitPrice,
             takeProfitType,
-            getWalletAddr(req),
+            getSmartWallet(req),
             defaultsToSafe(req)
         )
             .then(sub => {

@@ -27,7 +27,6 @@ async function openTroveV2(
     interestRate,
     interestBatchManager = hre.ethers.constants.AddressZero
 ) {
-    const { chainId } = await hre.ethers.provider.getNetwork();
     const marketAddr = LIQUITY_V2_MARKETS[market];
     const marketContract = await hre.ethers.getContractAt(addressRegistryAbi, marketAddr);
     const borrowerOperationsAddr = await marketContract.borrowerOperations();
@@ -36,8 +35,8 @@ async function openTroveV2(
     const collAmountFormatted = hre.ethers.utils.parseUnits(collAmount.toString(), 18);
     const boldAmountFormatted = hre.ethers.utils.parseUnits(debtAmount.toString(), 18);
     const annualInterestRateFormatted = hre.ethers.utils.parseUnits(interestRate.toString(), 16);
-    const collTokenData = getAssetInfo(market, chainId);
-    const wethTokenData = getAssetInfo("WETH", chainId);
+    const collTokenData = getAssetInfo(market, 1);
+    const wethTokenData = getAssetInfo("WETH", 1);
 
     const { upperHint, lowerHint } = await getLiquityV2Hints(market, annualInterestRateFormatted);
     const maxUpfrontFee = await getLiquityV2MaxUpfrontFee(
@@ -50,8 +49,8 @@ async function openTroveV2(
 
     const ethGasCompensation = hre.ethers.utils.parseUnits(ETH_GAS_COMPENSATION, "ether");
 
-    const collTokenAddress = collTokenData.addresses[chainId];
-    const wethTokenAddress = wethTokenData.addresses[chainId];
+    const collTokenAddress = collTokenData.addresses[1];
+    const wethTokenAddress = wethTokenData.addresses[1];
 
     if (collTokenData.symbol === "WETH") {
         await setBalance(collTokenAddress, senderAcc.address, collAmountFormatted.add(ethGasCompensation));
@@ -99,9 +98,10 @@ async function openTroveV2(
         await tx.wait();
     }
 
+    // vars.troveId = uint256(keccak256(abi.encode(msg.sender, _owner, _ownerIndex)));
     const encodedData = hre.ethers.utils.defaultAbiCoder.encode(
         ["address", "address", "uint256"],
-        [troveOwner, troveOwner, troveOwnerIndex]
+        [eoa, troveOwner, troveOwnerIndex]
     );
     const troveId = hre.ethers.utils.keccak256(encodedData);
     const troveInfo = await getTroveInfo(market, troveId);

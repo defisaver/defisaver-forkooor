@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, defaultsToSafe, getWalletAddr } = require("../../utils");
+const { setupVnet, defaultsToSafe, getSmartWallet } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { getPositionByNftId } = require("../../helpers/fluid/view");
 const { fluidT1Open } = require("../../helpers/fluid/general");
@@ -311,39 +311,51 @@ router.post("/get-position-by-nft",
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - vaultId
+ *               - collSymbol
+ *               - collAmount
+ *               - debtSymbol
+ *               - debtAmount
+ *               - owner
  *             properties:
  *              vnetUrl:
- *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
+ *                description: "Unique identifier for the vnet"
  *              vaultId:
  *                type: number
  *                example: 4
+ *                description: "ID of the Fluid vault"
  *              collSymbol:
  *                type: string
  *                example: "wstETH"
- *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Collateral token symbol (e.g., wstETH, WETH, WBTC)"
  *              collAmount:
  *                type: number
  *                example: 10
+ *                description: "Amount of collateral to supply in token units (e.g., 10 for 10 wstETH). Supports float numbers (e.g., 10.5)"
  *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Debt token symbol (e.g., USDC, DAI, USDT)"
  *              debtAmount:
  *                type: number
  *                example: 15000
+ *                description: "Amount of debt to borrow in token units (e.g., 15000 for 15000 USDC). Supports float numbers (e.g., 15000.25)"
  *              owner:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *                description: "The the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
  *              walletAddr:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
- *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or dsproxy if walletAddr is not provided. Optional, defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -590,6 +602,7 @@ router.post("/get-position-by-nft",
  */
 router.post("/create-t1",
     body(["vnetUrl", "vaultId", "collSymbol", "collAmount", "debtSymbol", "debtAmount", "owner"]).notEmpty(),
+    body(["collAmount", "debtAmount"]).isFloat({ gt: 0 }),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -602,7 +615,7 @@ router.post("/create-t1",
         await setupVnet(vnetUrl, [owner]);
 
         fluidT1Open(
-            vaultId, collSymbol, collAmount, debtSymbol, debtAmount, owner, getWalletAddr(req), defaultsToSafe(req)
+            vaultId, collSymbol, collAmount, debtSymbol, debtAmount, owner, getSmartWallet(req), defaultsToSafe(req)
         )
             .then(pos => {
                 res.status(200).send(pos);

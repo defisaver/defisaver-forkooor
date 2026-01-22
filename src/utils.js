@@ -17,6 +17,9 @@ const { liquityLeverageManagementSubProxyAbi } = require("./abi/liquity/abis");
 const SAFE_PROXY_FACTORY_ADDR = "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67";
 const SAFE_SINGLETON_ADDR = "0x41675C099F32341bf84BFc5382aF534df5C7461a";
 
+// Custom chainId for AaveV4 testing (forked from mainnet)
+const AAVE_V4_TEST_CHAIN_ID = 123456789;
+
 const addresses = {
     1: {
         REGISTRY_ADDR: "0x287778F121F134C66212FB16c9b53eC991D32f5b",
@@ -37,7 +40,9 @@ const addresses = {
         CURVE_USD_VIEW: "0x4bbcf0e587853aaedfc3e60f74c10e07d8dea701",
         LIQUITY_V2_VIEW: "0xF1f3D940392ddAD78A5e2dE1b595aB529f63c365",
         FLUID_VAULT_RESOLVER: "0x814c8C7ceb1411B364c2940c4b9380e739e06686",
-        FLUID_VIEW: "0xf8e3bbf7c95057be1fD5E741a9ADb73E956dC724"
+        FLUID_VIEW: "0xf8e3bbf7c95057be1fD5E741a9ADb73E956dC724",
+        AAVE_V4_VIEW: "0x59E0350D75936F9Fb435bEa0657541c4D5f52f97",
+        AAVE_V4_CORE_SPOKE: "0xBa97c5E52cd5BC3D7950Ae70779F8FfE92d40CdC"
     },
     10: {
         REGISTRY_ADDR: "0xAf707Ee480204Ed6e2640B53cE86F680D28Afcbd",
@@ -91,6 +96,17 @@ const addresses = {
         OWNER_ACC: "0x13fa3D42C09E5E15153F08bb90A79A3Bd63E289D",
         DAI_ADDRESS: "", // No deployment on Plasma
         AAVE_V3_VIEW: "0x5B0B7E38C2a8e46CfAe13c360BC5927570BeEe94"
+    },
+
+    // Custom AaveV4 test network (forked from mainnet) - uses mainnet addresses
+    [AAVE_V4_TEST_CHAIN_ID]: {
+        REGISTRY_ADDR: "0x287778F121F134C66212FB16c9b53eC991D32f5b",
+        OWNER_ACC: "0xBc841B0dE0b93205e912CFBBd1D0c160A1ec6F00",
+        PROXY_REGISTRY: "0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4",
+        SUB_PROXY: "0x88B8cEb76b88Ee0Fb7160E6e2Ad86055a32D72d4",
+        DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        AAVE_V4_VIEW: "0x59E0350D75936F9Fb435bEa0657541c4D5f52f97",
+        AAVE_V4_CORE_SPOKE: "0xBa97c5E52cd5BC3D7950Ae70779F8FfE92d40CdC"
     }
 };
 
@@ -404,23 +420,32 @@ function toBytes32(bn) {
  * Sets ETH balance of a given address to desired amount on a tenderly vnet
  * @param {string} address address whose balance we want to top up
  * @param {number} amount amount of ETH to top up the address with (whole number)
+ * @param {boolean} throwOnError whether to throw an error if the balance update fails
  * @returns {void}
  */
-async function topUpAccount(address, amount = 100) {
+async function topUpAccount(address, amount = 100, throwOnError = false) {
     const weiAmount = hre.ethers.utils.parseUnits(amount.toString(), 18);
     const weiAmountInHexString = weiAmount.toHexString();
 
-    await hre.ethers.provider.send("tenderly_setBalance", [
-        [address],
+    try {
+        await hre.ethers.provider.send("tenderly_setBalance", [
+            [address],
 
-        // amount in wei will be set for all wallets
-        hre.ethers.utils.hexValue(weiAmountInHexString)
-    ]);
+            // amount in wei will be set for all wallets
+            hre.ethers.utils.hexValue(weiAmountInHexString)
+        ]);
 
-    const newBalance = await hre.ethers.provider.getBalance(address);
+        const newBalance = await hre.ethers.provider.getBalance(address);
 
-    if (newBalance.toString() !== weiAmount.toString()) {
-        throw new Error(`Failed to update balance, balance now : ${newBalance}`);
+        if (newBalance.toString() !== weiAmount.toString()) {
+            throw new Error(`Failed to update balance, balance now : ${newBalance}`);
+        }
+    } catch (err) {
+        console.warn(`Warning: Could not top up account ${address}. This may require Admin RPC URL. Error: ${err.message}`);
+
+        if (throwOnError) {
+            throw err;
+        }
     }
 }
 
@@ -431,7 +456,9 @@ async function topUpAccount(address, amount = 100) {
  * @returns {void}
  */
 async function setupVnet(vnetUrl, accounts = []) {
-    hre.ethers.provider = await hre.ethers.getDefaultProvider(vnetUrl);
+
+    // Use JsonRpcProvider directly instead of getDefaultProvider for custom/unknown chains
+    hre.ethers.provider = new hre.ethers.providers.JsonRpcProvider(vnetUrl);
     await Promise.all(accounts.map(async account => {
         await topUpAccount(account, 100);
     }));
@@ -556,7 +583,12 @@ async function findBalancesSlot(tokenAddress) {
  * @returns {void}
  */
 async function setBalance(tokenAddr, userAddr, amount) {
-    const { chainId } = await hre.ethers.provider.getNetwork();
+    let { chainId } = await hre.ethers.provider.getNetwork();
+
+    // TODO: Remove later
+    if (chainId === AAVE_V4_TEST_CHAIN_ID) {
+        chainId = 1;
+    }
 
     const [signer] = await hre.ethers.getSigners();
 
@@ -927,6 +959,49 @@ async function getAaveV3MarketAddress(market) {
     return market || addresses[(await hre.ethers.provider.getNetwork()).chainId].AAVE_V3_MARKET;
 }
 
+/**
+ * Get the effective chainId for AaveV4 operations
+ * Maps custom test chainId (123456789) to mainnet (1) for token/address lookups
+ * @param {number} chainId The actual chainId from the network
+ * @returns {number} The effective chainId to use for lookups
+ */
+function getAaveV4EffectiveChainId(chainId) {
+    if (chainId === AAVE_V4_TEST_CHAIN_ID) {
+        return 1; // Map to mainnet for token lookups
+    }
+    return chainId;
+}
+
+/**
+ * Get Aave V4 spoke address, returning default spoke if not provided or if address(0)
+ * @param {string} spoke Optional spoke address
+ * @returns {string} Spoke address (provided or default for current chain)
+ */
+async function getAaveV4SpokeAddress(spoke) {
+
+    // Use default if spoke is not provided or is address(0)
+    if (spoke && spoke !== hre.ethers.constants.AddressZero) {
+        return spoke;
+    }
+
+    const { chainId } = await hre.ethers.provider.getNetwork();
+
+    return addresses[chainId].AAVE_V4_CORE_SPOKE;
+}
+
+/**
+ * Get asset info from tokens package for AaveV4, handling custom test chainId
+ * @param {string} symbol Token symbol (e.g., "ETH", "WETH", "DAI")
+ * @returns {Object} Asset info object with address, symbol, and other properties
+ */
+async function getTokenInfoForAaveV4(symbol) {
+    const { chainId } = await hre.ethers.provider.getNetwork();
+    const effectiveChainId = getAaveV4EffectiveChainId(chainId);
+    const normalizedSymbol = symbol === "ETH" ? "WETH" : symbol;
+
+    return getAssetInfo(normalizedSymbol, effectiveChainId);
+}
+
 module.exports = {
     addresses,
     getHeaders,
@@ -937,6 +1012,10 @@ module.exports = {
     approve,
     executeAction,
     getAaveV3MarketAddress,
+    getAaveV4SpokeAddress,
+    getAaveV4EffectiveChainId,
+    getTokenInfoForAaveV4,
+    AAVE_V4_TEST_CHAIN_ID,
     topUpAccount,
     setupVnet,
     setBalance,

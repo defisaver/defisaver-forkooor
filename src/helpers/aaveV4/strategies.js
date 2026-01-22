@@ -94,7 +94,8 @@ async function subAaveV4LeverageManagementOnPrice(
             price,
             (priceState.toString().toLowerCase() === "under")
                 ? automationSdk.enums.RatioState.UNDER
-                : automationSdk.enums.RatioState.OVER
+                : automationSdk.enums.RatioState.OVER,
+            isBoost ? automationSdk.enums.RatioState.OVER : automationSdk.enums.RatioState.UNDER
         );
 
         const subId = await subToStrategy(proxy, strategySub);

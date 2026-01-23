@@ -45,7 +45,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -195,7 +195,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -344,7 +344,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -475,7 +475,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -585,7 +585,7 @@ router.post("/leverage-management/sub-proxy", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -725,7 +725,7 @@ async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e"
@@ -871,7 +871,7 @@ async (req, res) => {
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -999,7 +999,7 @@ router.post("/leverage-management/generic/eoa",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -1127,7 +1127,7 @@ router.post("/leverage-management/generic/smart-wallet",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -1257,7 +1257,7 @@ router.post("/leverage-management/without-sub-proxy",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -1406,7 +1406,7 @@ router.post("/repay-on-price/generic/eoa",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -1555,7 +1555,7 @@ router.post("/repay-on-price/generic/smart-wallet",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -1704,7 +1704,7 @@ router.post("/boost-on-price/generic/eoa",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -1854,7 +1854,7 @@ router.post("/boost-on-price/generic/smart-wallet",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -2009,7 +2009,7 @@ router.post("/close-on-price/generic/eoa",
  *             properties:
  *               vnetUrl:
  *                 type: string
- *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 description: "Unique identifier for the vnet"
  *               eoa:
  *                 type: string
@@ -2156,7 +2156,7 @@ router.post("/close-on-price/generic/smart-wallet",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                description: "Unique identifier for the vnet"
  *              market:
  *                type: string

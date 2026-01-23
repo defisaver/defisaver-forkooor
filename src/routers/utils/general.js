@@ -55,7 +55,7 @@ const router = express.Router();
  *               properties:
  *                 vnetUrl:
  *                   type: string
- *                   example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                   example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *                 newAccount:
  *                   type: string
  *                   example: "0x3333333333333333333333333333333333333333"
@@ -122,7 +122,7 @@ router.post("/new-vnet", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              botAccounts:
  *                type: array
  *                items:
@@ -187,7 +187,7 @@ router.post("/set-bot-auth", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              safes:
  *                type: array
  *                items:
@@ -259,7 +259,7 @@ router.post("/set-safe-thresholds", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              account:
  *                type: string
  *                example: "0x000000000000000000000000000000000000dEaD"
@@ -327,7 +327,7 @@ router.post("/set-eth-balance", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              token:
  *                type: string
  *                example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
@@ -401,7 +401,7 @@ router.post("/set-token-balance", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              token:
  *                type: string
  *                example: "0x6B175474E89094C44Da98b954EedeAC495271d0F"
@@ -493,7 +493,7 @@ router.post("/give-approval", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              amount:
  *                type: integer
  *                example: 10000000
@@ -592,7 +592,7 @@ router.get("/new-address", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              owner:
  *                type: string
  *                example: "0xc78E09653fb412264321653468bF56244D00153E"
@@ -648,7 +648,7 @@ router.post("/create-safe", async (req, res) => {
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              timestamp:
  *                type: integer
  *                example: 1679424065

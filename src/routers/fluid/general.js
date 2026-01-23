@@ -26,7 +26,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              nftId:
  *                type: string
  *                example: "10"
@@ -331,7 +331,7 @@ router.post("/get-position-by-nft",
  *              collSymbol:
  *                type: string
  *                example: "wstETH"
- *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Collateral token symbol (e.g., wstETH, WETH, WBTC)"
  *              collAmount:
  *                type: number
  *                example: 10
@@ -339,7 +339,7 @@ router.post("/get-position-by-nft",
  *              debtSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Debt token symbol (e.g., USDC, DAI, USDT)"
  *              debtAmount:
  *                type: number
  *                example: 15000

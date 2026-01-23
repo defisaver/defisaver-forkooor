@@ -25,7 +25,7 @@ const router = express.Router();
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -169,7 +169,7 @@ router.post("/get-position",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -340,7 +340,7 @@ router.post("/create/smart-wallet",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -500,7 +500,7 @@ router.post("/supply/smart-wallet",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -660,7 +660,7 @@ router.post("/withdraw/smart-wallet",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"
@@ -820,7 +820,7 @@ router.post("/borrow/smart-wallet",
  *             properties:
  *              vnetUrl:
  *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
  *              market:
  *                type: string
  *                example: "0x02C3eA4e34C0cBd694D2adFa2c690EECbC1793eE"

@@ -1,7 +1,7 @@
 /* eslint-disable consistent-return */
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
+const { setupVnet, getSmartWallet, defaultsToSafe } = require("../../utils");
 const { body, validationResult } = require("express-validator");
 const { subCurveUsdRepayBundle, subCurveUsdBoostBundle, subCurveUsdPaybackStrategy } = require("../../helpers/curveusd/strategies");
 
@@ -23,30 +23,41 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - controller
+ *               - minRatio
+ *               - targetRatio
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
- *              owner:
+ *                description: "Unique identifier for the vnet"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions"
  *              controller:
  *                type: string
  *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
+ *                description: "CurveUSD controller address"
  *              minRatio:
- *                  type: integer
- *                  example: 250
+ *                type: number
+ *                example: 250
+ *                description: "Ratio under which the strategy will trigger"
  *              targetRatio:
- *                  type: integer
- *                  example: 300
- *              walletAddr:
+ *                type: number
+ *                example: 300
+ *                description: "Target ratio to achieve after strategy execution"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
- *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or dsproxy if smartWallet is not provided. Optional, defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -71,32 +82,35 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/repay", body(
-    [
-        "vnetUrl",
-        "owner",
-        "controller",
-        "minRatio",
-        "targetRatio"
-    ]
-).notEmpty(),
-async (req, res) => {
-    const validationErrors = validationResult(req);
+router.post("/repay",
+    body(["vnetUrl", "eoa", "controller", "minRatio", "targetRatio"]).notEmpty(),
+    body(["minRatio", "targetRatio"]).isFloat({ gt: 0 }),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    if (!validationErrors.isEmpty()) {
-        return res.status(400).send({ error: validationErrors.array() });
-    }
-    const { vnetUrl, owner, controller, minRatio, targetRatio } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-    await setupVnet(vnetUrl, [owner]);
-    subCurveUsdRepayBundle(
-        owner, controller, minRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
-    ).then(sub => {
-        res.status(200).send(sub);
-    }).catch(err => {
-        res.status(500).send({ error: `Failed to subscribe to CurveUsd Repay strategy with error : ${err.toString()}` });
+        try {
+            const { vnetUrl, eoa, controller, minRatio, targetRatio, smartWallet } = req.body;
+
+            await setupVnet(vnetUrl, [eoa]);
+
+            const sub = await subCurveUsdRepayBundle(
+                eoa,
+                controller,
+                minRatio,
+                targetRatio,
+                smartWallet || getSmartWallet(req),
+                defaultsToSafe(req)
+            );
+
+            res.status(200).send(sub);
+        } catch (err) {
+            res.status(500).send({ error: `Failed to subscribe to CurveUSD Repay strategy with error : ${err.toString()}` });
+        }
     });
-});
 
 
 /**
@@ -114,30 +128,41 @@ async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - controller
+ *               - maxRatio
+ *               - targetRatio
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
- *              owner:
+ *                description: "Unique identifier for the vnet"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions"
  *              controller:
  *                type: string
  *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
+ *                description: "CurveUSD controller address"
  *              maxRatio:
- *                  type: integer
- *                  example: 350
+ *                type: number
+ *                example: 350
+ *                description: "Ratio over which the strategy will trigger"
  *              targetRatio:
- *                  type: integer
- *                  example: 300
- *              walletAddr:
+ *                type: number
+ *                example: 300
+ *                description: "Target ratio to achieve after strategy execution"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
- *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or dsproxy if smartWallet is not provided. Optional, defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -162,32 +187,35 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/boost", body(
-    [
-        "vnetUrl",
-        "owner",
-        "controller",
-        "maxRatio",
-        "targetRatio"
-    ]
-).notEmpty(),
-async (req, res) => {
-    const validationErrors = validationResult(req);
+router.post("/boost",
+    body(["vnetUrl", "eoa", "controller", "maxRatio", "targetRatio"]).notEmpty(),
+    body(["maxRatio", "targetRatio"]).isFloat({ gt: 0 }),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    if (!validationErrors.isEmpty()) {
-        return res.status(400).send({ error: validationErrors.array() });
-    }
-    const { vnetUrl, owner, controller, maxRatio, targetRatio } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-    await setupVnet(vnetUrl, [owner]);
-    subCurveUsdBoostBundle(
-        owner, controller, maxRatio, targetRatio, getWalletAddr(req), defaultsToSafe(req)
-    ).then(sub => {
-        res.status(200).send(sub);
-    }).catch(err => {
-        res.status(500).send({ error: `Failed to subscribe to CurveUsd Boost strategy with error : ${err.toString()}` });
+        try {
+            const { vnetUrl, eoa, controller, maxRatio, targetRatio, smartWallet } = req.body;
+
+            await setupVnet(vnetUrl, [eoa]);
+
+            const sub = await subCurveUsdBoostBundle(
+                eoa,
+                controller,
+                maxRatio,
+                targetRatio,
+                smartWallet || getSmartWallet(req),
+                defaultsToSafe(req)
+            );
+
+            res.status(200).send(sub);
+        } catch (err) {
+            res.status(500).send({ error: `Failed to subscribe to CurveUSD Boost strategy with error : ${err.toString()}` });
+        }
     });
-});
 
 /**
  * @swagger
@@ -204,37 +232,51 @@ async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - addressToPullTokensFrom
+ *               - positionOwner
+ *               - controller
+ *               - minHealthRatio
+ *               - amountToPayback
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
- *              owner:
+ *                description: "Unique identifier for the vnet"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "The EOA which will be sending transactions"
  *              addressToPullTokensFrom:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
+ *                description: "Address to pull crvUSD tokens from"
  *              positionOwner:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
- *                description: "Zero address defaults to wallet"
+ *                description: "Address which holds CurveUSD position. Zero address defaults to wallet"
  *              controller:
  *                type: string
  *                example: "0xA920De414eA4Ab66b97dA1bFE9e6EcA7d4219635"
+ *                description: "CurveUSD controller address"
  *              minHealthRatio:
- *                type: integer
+ *                type: number
  *                example: 15
+ *                description: "Below this ratio strategy will trigger"
  *              amountToPayback:
- *                type: integer
+ *                type: number
  *                example: 20000
- *              walletAddr:
+ *                description: "Amount of crvUSD to payback in token units. Supports float numbers (e.g., 20000.5)"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
- *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or dsproxy if smartWallet is not provided. Optional, defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -259,33 +301,36 @@ async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/payback", body(
-    [
-        "vnetUrl",
-        "owner",
-        "addressToPullTokensFrom",
-        "positionOwner",
-        "controller",
-        "minHealthRatio",
-        "amountToPayback"
-    ]
-).notEmpty(),
-async (req, res) => {
-    const validationErrors = validationResult(req);
+router.post("/payback",
+    body(["vnetUrl", "eoa", "addressToPullTokensFrom", "positionOwner", "controller", "minHealthRatio", "amountToPayback"]).notEmpty(),
+    body(["minHealthRatio", "amountToPayback"]).isFloat({ gt: 0 }),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-    if (!validationErrors.isEmpty()) {
-        return res.status(400).send({ error: validationErrors.array() });
-    }
-    const { vnetUrl, owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback } = req.body;
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-    await setupVnet(vnetUrl, [owner]);
-    subCurveUsdPaybackStrategy(
-        owner, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback, getWalletAddr(req), defaultsToSafe(req)
-    ).then(sub => {
-        res.status(200).send(sub);
-    }).catch(err => {
-        res.status(500).send({ error: `Failed to subscribe to CurveUsd Payback strategy with error : ${err.toString()}` });
+        try {
+            const { vnetUrl, eoa, addressToPullTokensFrom, positionOwner, controller, minHealthRatio, amountToPayback, smartWallet } = req.body;
+
+            await setupVnet(vnetUrl, [eoa]);
+
+            const sub = await subCurveUsdPaybackStrategy(
+                eoa,
+                addressToPullTokensFrom,
+                positionOwner,
+                controller,
+                minHealthRatio,
+                amountToPayback,
+                smartWallet || getSmartWallet(req),
+                defaultsToSafe(req)
+            );
+
+            res.status(200).send(sub);
+        } catch (err) {
+            res.status(500).send({ error: `Failed to subscribe to CurveUSD Payback strategy with error : ${err.toString()}` });
+        }
     });
-});
 
 module.exports = router;

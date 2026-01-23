@@ -5,7 +5,6 @@ const { setupVnet, getProxy, isContract, getWalletAddr, defaultsToSafe } = requi
 const { getLoanData, COMP_V3_MARKETS } = require("../../helpers/compoundV3/view");
 const {
     createCompoundV3Position,
-    createCompoundV3ProxyPosition,
     createCompoundV3EOAPosition,
     addManager
 } = require("../../helpers/compoundV3/general");
@@ -380,7 +379,8 @@ router.post("/create-proxy-position",
 
         await setupVnet(vnetUrl, [eoa]);
 
-        createCompoundV3ProxyPosition(
+        createCompoundV3Position(
+            null, // market - will be derived from debtSymbol
             collSymbol,
             collAmount,
             debtSymbol,

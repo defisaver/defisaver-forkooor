@@ -14,9 +14,9 @@ const { getPositionByNftId } = require("./view");
  * @param {number} collAmount collateral amount
  * @param {string} debtSymbol debt token symbol
  * @param {number} debtAmount debt amount
- * @param {string} owner the EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided
+ * @param {string} eoa the EOA which will be sending transactions and own the newly created wallet if proxyAddr is not provided
  * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {boolean} useSafe whether to use Safe as smart wallet or dsproxy if proxyAddr is not provided
  * @returns {Object} Obj that contains Fluid T1 position info
  */
 async function fluidT1Open(
@@ -25,7 +25,7 @@ async function fluidT1Open(
     collAmount,
     debtSymbol,
     debtAmount,
-    owner,
+    eoa,
     proxyAddr,
     useSafe
 ) {
@@ -60,10 +60,10 @@ async function fluidT1Open(
     const collAmountScaled = hre.ethers.utils.parseUnits(collAmount.toString(), collTokenData.decimals);
     const debtAmountScaled = hre.ethers.utils.parseUnits(debtAmount.toString(), debtTokenData.decimals);
 
-    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
-    await setBalance(collTokenData.address, owner, collAmount);
-    await approve(collTokenData.address, proxy.address, owner);
+    await setBalance(collTokenData.addresses[chainId], eoa, collAmountScaled);
+    await approve(collTokenData.addresses[chainId], proxy.address, eoa);
 
     const fluidT1OpenAction = new dfs.actions.fluid.FluidVaultT1OpenAction(
         vaultAddress,

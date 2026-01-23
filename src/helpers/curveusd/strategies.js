@@ -7,19 +7,19 @@ const { curveusdControllerAbi } = require("../../abi/curveusd/abis");
 const CURVE_USD_ADDRESS = "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E";
 
 /**
- * Subscribes to CurveUsd Repay Bundle
- * @param {Object} owner eoa or proxy
- * @param {string} controllerAddr address of the curveusd controller
- * @param {number} minRatio ratio under which the strategy will trigger
- * @param {number} targetRatio target ratio for repay
- * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
- * @returns {Object} subId and strategySub
+ * Subscribes to CurveUSD Repay Bundle
+ * @param {string} eoa The EOA which will be sending transactions
+ * @param {string} controllerAddr Address of the CurveUSD controller
+ * @param {number} minRatio Ratio under which the strategy will trigger
+ * @param {number} targetRatio Target ratio to achieve after strategy execution
+ * @param {string} proxyAddr Optional proxy address. If not provided, a new wallet will be created
+ * @param {boolean} useSafe Whether to use Safe as smart wallet or dsproxy if proxyAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCurveUsdRepayBundle(
-    owner, controllerAddr, minRatio, targetRatio, proxyAddr, useSafe = true
+    eoa, controllerAddr, minRatio, targetRatio, proxyAddr, useSafe = true
 ) {
-    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
     const controllerContract = new hre.ethers.Contract(controllerAddr, curveusdControllerAbi, senderAcc);
     const collateralToken = await controllerContract.collateral_token();
@@ -40,19 +40,19 @@ async function subCurveUsdRepayBundle(
 }
 
 /**
- * Subscribes to CurveUsd Boost Bundle
- * @param {Object} owner eoa or proxy
- * @param {string} controllerAddr address of the curveusd controller
- * @param {number} maxRatio ratio over which the strategy will trigger
- * @param {number} targetRatio target ratio for repay
- * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
- * @returns {Object} subId and strategySub
+ * Subscribes to CurveUSD Boost Bundle
+ * @param {string} eoa The EOA which will be sending transactions
+ * @param {string} controllerAddr Address of the CurveUSD controller
+ * @param {number} maxRatio Ratio over which the strategy will trigger
+ * @param {number} targetRatio Target ratio to achieve after strategy execution
+ * @param {string} proxyAddr Optional proxy address. If not provided, a new wallet will be created
+ * @param {boolean} useSafe Whether to use Safe as smart wallet or dsproxy if proxyAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCurveUsdBoostBundle(
-    owner, controllerAddr, maxRatio, targetRatio, proxyAddr, useSafe = true
+    eoa, controllerAddr, maxRatio, targetRatio, proxyAddr, useSafe = true
 ) {
-    const [senderAcc, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const [senderAcc, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
     const controllerContract = new hre.ethers.Contract(controllerAddr, curveusdControllerAbi, senderAcc);
     const collateralToken = await controllerContract.collateral_token();
@@ -73,19 +73,19 @@ async function subCurveUsdBoostBundle(
 }
 
 /**
- * Subscribes to CurveUsd Payback Strategy
- * @param {Object} owner eoa
- * @param {string} addressToPullTokensFrom address to pull crvUsd tokens from
- * @param {string} positionOwner address which holds curve usd position. Zero address defaults to wallet
- * @param {string} controllerAddr address of the curveusd controller
- * @param {number} minHealthRatio below this ratio strategy will trigger
- * @param {number} amountToPayback amount of crvusd to payback
- * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
- * @returns {Object} subId and strategySub
+ * Subscribes to CurveUSD Payback Strategy
+ * @param {string} eoa The EOA which will be sending transactions
+ * @param {string} addressToPullTokensFrom Address to pull crvUSD tokens from
+ * @param {string} positionOwner Address which holds CurveUSD position. Zero address defaults to wallet
+ * @param {string} controllerAddr Address of the CurveUSD controller
+ * @param {number} minHealthRatio Below this ratio strategy will trigger
+ * @param {number} amountToPayback Amount of crvUSD to payback in token units (supports decimals, e.g. 20000.5)
+ * @param {string} proxyAddr Optional proxy address. If not provided, a new wallet will be created
+ * @param {boolean} useSafe Whether to use Safe as smart wallet or dsproxy if proxyAddr is not provided
+ * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCurveUsdPaybackStrategy(
-    owner,
+    eoa,
     addressToPullTokensFrom,
     positionOwner,
     controllerAddr,
@@ -94,13 +94,15 @@ async function subCurveUsdPaybackStrategy(
     proxyAddr,
     useSafe = true
 ) {
-    const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+    const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
+
+    const amountToPaybackScaled = hre.ethers.utils.parseUnits(amountToPayback.toString(), 18);
 
     const strategySub = automationSdk.strategySubService.crvUSDEncode.payback(
         proxy.address,
         addressToPullTokensFrom,
         positionOwner,
-        amountToPayback.toString(),
+        amountToPaybackScaled.toString(),
         CURVE_USD_ADDRESS,
         controllerAddr,
         minHealthRatio

@@ -318,12 +318,12 @@ router.post("/get-position-by-nft",
  *               - collAmount
  *               - debtSymbol
  *               - debtAmount
- *               - owner
+ *               - eoa
  *             properties:
  *              vnetUrl:
- *                type: string
- *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/55aa2dae-1c9c-4c63-8ef4-36ad6a5594b7"
- *                description: "Unique identifier for the vnet"
+ *                 type: string
+ *                 example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                 description: "Unique identifier for the vnet"
  *              vaultId:
  *                type: number
  *                example: 4
@@ -344,18 +344,18 @@ router.post("/get-position-by-nft",
  *                type: number
  *                example: 15000
  *                description: "Amount of debt to borrow in token units (e.g., 15000 for 15000 USDC). Supports float numbers (e.g., 15000.25)"
- *              owner:
+ *              eoa:
  *                type: string
  *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *                description: "The EOA which will be sending transactions and own the newly created wallet if walletAddr is not provided"
- *              walletAddr:
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
  *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use Safe as smart wallet or dsproxy if walletAddr is not provided. Optional, defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or dsproxy if smartWallet is not provided. Optional, defaults to safe"
  *     responses:
  *       '200':
  *         description: OK
@@ -601,7 +601,7 @@ router.post("/get-position-by-nft",
  *                   type: string
  */
 router.post("/create-t1",
-    body(["vnetUrl", "vaultId", "collSymbol", "collAmount", "debtSymbol", "debtAmount", "owner"]).notEmpty(),
+    body(["vnetUrl", "vaultId", "collSymbol", "collAmount", "debtSymbol", "debtAmount", "eoa"]).notEmpty(),
     body(["collAmount", "debtAmount"]).isFloat({ gt: 0 }),
     async (req, res) => {
         const validationErrors = validationResult(req);
@@ -610,19 +610,26 @@ router.post("/create-t1",
             return res.status(400).send({ error: validationErrors.array() });
         }
 
-        const { vnetUrl, vaultId, collSymbol, collAmount, debtSymbol, debtAmount, owner } = req.body;
+        try {
+            const { vnetUrl, vaultId, collSymbol, collAmount, debtSymbol, debtAmount, eoa, smartWallet } = req.body;
 
-        await setupVnet(vnetUrl, [owner]);
+            await setupVnet(vnetUrl, [eoa]);
 
-        fluidT1Open(
-            vaultId, collSymbol, collAmount, debtSymbol, debtAmount, owner, getSmartWallet(req), defaultsToSafe(req)
-        )
-            .then(pos => {
-                res.status(200).send(pos);
-            })
-            .catch(err => {
-                res.status(500).send({ error: `Failed to create position info with error : ${err.toString()}` });
-            });
+            const pos = await fluidT1Open(
+                vaultId,
+                collSymbol,
+                collAmount,
+                debtSymbol,
+                debtAmount,
+                eoa,
+                smartWallet || getSmartWallet(req),
+                defaultsToSafe(req)
+            );
+
+            res.status(200).send(pos);
+        } catch (err) {
+            res.status(500).send({ error: `Failed to create Fluid position with error : ${err.toString()}` });
+        }
     });
 
 module.exports = router;

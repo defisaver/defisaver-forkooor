@@ -118,7 +118,7 @@ async function subCompoundV3AutomationStrategy(
  * @param {string} debtSymbol Debt (base) token symbol. ETH → WETH.
  * @param {number} triggerRatio trigger ratio
  * @param {number} targetRatio target ratio
- * @param {string} ratioState "under" or "over"
+ * @param {boolean} isRepay true for repay, false for boost
  * @param {boolean} isEOA whether the subscription is for an EOA
  * @param {string} proxyAddr wallet address, or AddressZero to create one
  * @returns {Object} StrategySub object and ID of the subscription
@@ -129,7 +129,7 @@ async function subCompoundV3LeverageManagement(
     debtSymbol,
     triggerRatio,
     targetRatio,
-    ratioState,
+    isRepay,
     isEOA,
     proxyAddr
 ) {
@@ -153,8 +153,7 @@ async function subCompoundV3LeverageManagement(
 
         const debtTokenData = await getTokenInfo(debtSymbol);
 
-        // Resolve bundleId from automation-sdk (ratioState: under=repay, over=boost)
-        const isRepay = ratioState.toLowerCase() === "under";
+        // Resolve bundleId from automation-sdk
 
         let bundleId;
 

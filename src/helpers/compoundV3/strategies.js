@@ -45,23 +45,23 @@ async function _subToCompoundV3Automation(proxy, strategySub) {
 
 /**
  * Subscribes to Compound V3 Automation strategy
- * @param {string} owner proxy owner
- * @param {string} market compoundV3 market address
- * @param {string} baseToken market base token address
- * @param {int} minRatio ratio under which the strategy will trigger
- * @param {int} maxRatio ratio over which the strategy will trigger
- * @param {int} targetRepayRatio wanted ratio after repay
- * @param {int} targetBoostRatio wanted ratio after boost
+ * @param {string|null} marketSymbol Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol.
+ * @param {string} eoa EOA which will be sending transactions and own the wallet
+ * @param {string} debtSymbol Debt (base) token symbol. ETH → WETH.
+ * @param {number} minRatio ratio under which the strategy will trigger
+ * @param {number} maxRatio ratio over which the strategy will trigger
+ * @param {number} targetRepayRatio wanted ratio after repay
+ * @param {number} targetBoostRatio wanted ratio after boost
  * @param {boolean} boostEnabled enable boost
  * @param {boolean} isEOA is EOA subscription
- * @param {string} proxyAddr the address of the wallet that will be used for the position, if not provided a new wallet will be created
- * @param {boolean} useSafe whether to use the safe as smart wallet or dsproxy if walletAddr is not provided
+ * @param {string} proxyAddr the address of the wallet for the position, or AddressZero to create one
+ * @param {boolean} useSafe whether to use Safe or dsproxy if proxyAddr is not provided
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCompoundV3AutomationStrategy(
-    owner,
-    market,
-    baseToken,
+    marketSymbol,
+    eoa,
+    debtSymbol,
     minRatio,
     maxRatio,
     targetRepayRatio,
@@ -71,12 +71,25 @@ async function subCompoundV3AutomationStrategy(
     proxyAddr,
     useSafe = true
 ) {
-
     try {
-        const [, proxy] = await getSender(owner, proxyAddr, useSafe);
+        const [, proxy] = await getSender(eoa, proxyAddr, useSafe);
 
         const { chainId } = await hre.ethers.provider.getNetwork();
 
+        // Resolve market address from symbol (use debtSymbol if marketSymbol not provided)
+        const resolvedMarketSymbol = marketSymbol || debtSymbol;
+
+        if (!COMP_V3_MARKETS[chainId]) {
+            throw new Error(`Chain ${chainId} is not supported`);
+        }
+
+        const market = COMP_V3_MARKETS[chainId][resolvedMarketSymbol === "ETH" ? "WETH" : resolvedMarketSymbol];
+
+        if (!market) {
+            throw new Error(`Market not found for symbol ${resolvedMarketSymbol} on chain ${chainId}`);
+        }
+
+        const baseToken = (await getTokenInfo(debtSymbol)).address;
         let strategySub;
 
         if (chainId === 1) {
@@ -100,34 +113,76 @@ async function subCompoundV3AutomationStrategy(
 
 /**
  * Subscribes to Compound V3 leverage management
- * @param {string} bundleId bundleId
- * @param {string} marketSymbol market symbol
+ * @param {string|null} marketSymbol Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol.
+ * @param {string} eoa EOA address
+ * @param {string} debtSymbol Debt (base) token symbol. ETH → WETH.
  * @param {number} triggerRatio trigger ratio
  * @param {number} targetRatio target ratio
- * @param {string} ratioState ratio state
- * @param {string} eoa EOA address
- * @param {string} proxyAddr proxy address
+ * @param {string} ratioState "under" or "over"
  * @param {boolean} isEOA whether the subscription is for an EOA
+ * @param {string} proxyAddr wallet address, or AddressZero to create one
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCompoundV3LeverageManagement(
-    bundleId,
     marketSymbol,
+    eoa,
+    debtSymbol,
     triggerRatio,
     targetRatio,
     ratioState,
-    eoa,
-    proxyAddr,
-    isEOA
+    isEOA,
+    proxyAddr
 ) {
     try {
         const [, proxy] = await getSender(eoa, proxyAddr, true);
 
         const { chainId } = await hre.ethers.provider.getNetwork();
 
-        const market = COMP_V3_MARKETS[chainId][marketSymbol === "ETH" ? "WETH" : marketSymbol];
+        // Resolve market address from symbol (use debtSymbol if marketSymbol not provided)
+        const resolvedMarketSymbol = marketSymbol || debtSymbol;
 
-        const debtTokenData = getTokenInfo(marketSymbol, chainId);
+        if (!COMP_V3_MARKETS[chainId]) {
+            throw new Error(`Chain ${chainId} is not supported`);
+        }
+
+        const market = COMP_V3_MARKETS[chainId][resolvedMarketSymbol === "ETH" ? "WETH" : resolvedMarketSymbol];
+
+        if (!market) {
+            throw new Error(`Market not found for symbol ${resolvedMarketSymbol} on chain ${chainId}`);
+        }
+
+        const debtTokenData = await getTokenInfo(debtSymbol);
+
+        // Resolve bundleId from automation-sdk (ratioState: under=repay, over=boost)
+        const isRepay = ratioState.toLowerCase() === "under";
+
+        let bundleId;
+
+        const M = automationSdk.enums.Bundles.MainnetIds;
+        const A = automationSdk.enums.Bundles.ArbitrumIds;
+        const B = automationSdk.enums.Bundles.BaseIds;
+
+        if (chainId === 1) {
+            if (isEOA) {
+                bundleId = isRepay ? M.COMP_V3_EOA_REPAY_V2_BUNDLE : M.COMP_V3_EOA_BOOST_V2_BUNDLE;
+            } else {
+                bundleId = isRepay ? M.COMP_V3_SW_REPAY_V2_BUNDLE : M.COMP_V3_SW_BOOST_V2_BUNDLE;
+            }
+        } else if (chainId === 42161) {
+            if (isEOA) {
+                bundleId = isRepay ? A.COMP_V3_EOA_REPAY : A.COMP_V3_EOA_BOOST;
+            } else {
+                bundleId = isRepay ? A.COMP_V3_SW_REPAY_BUNDLE : A.COMP_V3_SW_BOOST_BUNDLE;
+            }
+        } else if (chainId === 8453) {
+            if (isEOA) {
+                bundleId = isRepay ? B.COMP_V3_EOA_REPAY : B.COMP_V3_EOA_BOOST;
+            } else {
+                bundleId = isRepay ? B.COMP_V3_SW_REPAY_BUNDLE : B.COMP_V3_SW_BOOST_BUNDLE;
+            }
+        } else {
+            throw new Error(`Chain ${chainId} is not supported for Compound V3 leverage management`);
+        }
 
         // --------------------ENCODE SUB DATA---------------------
         // @dev We don't want to use the automation sdk here to simplify encoding and differentiate between repay and boost
@@ -136,10 +191,8 @@ async function subCompoundV3LeverageManagement(
 
         const targetRatioFormatted = hre.ethers.utils.parseUnits(targetRatio.toString(), 16);
         const triggerRatioFormatted = hre.ethers.utils.parseUnits(triggerRatio.toString(), 16);
-        const ratioStateFormatted = ratioState.toLocaleLowerCase() === "under"
-            ? automationSdk.enums.RatioState.UNDER
-            : automationSdk.enums.RatioState.OVER;
-        const user = isEOA ? eoa : proxyAddr;
+        const ratioStateFormatted = isRepay ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER;
+        const user = isEOA ? eoa : proxy.address;
         const isBundle = true;
 
         const triggerDataEncoded = abiCoder.encode(
@@ -169,39 +222,81 @@ async function subCompoundV3LeverageManagement(
 
 /**
  * Subscribes to Compound V3 leverage management on price strategy
- * @param {string} bundleId bundleId
- * @param {string} debtSymbol symbol of the debt token
+ * @param {string|null} marketSymbol Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol.
+ * @param {string} eoa EOA address
+ * @param {boolean} isEOA whether the subscription is for an EOA position or not
  * @param {string} collSymbol symbol of the collateral token
+ * @param {string} debtSymbol symbol of the debt token
  * @param {number} targetRatio target ratio
  * @param {number} price price
  * @param {string} priceState price state
  * @param {string} ratioState ratio state
- * @param {string} eoa EOA address
  * @param {string} proxyAddr proxy address
- * @param {boolean} isEOA whether the subscription is for an EOA position or not
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCompoundV3LeverageManagementOnPrice(
-    bundleId,
-    debtSymbol,
+    marketSymbol,
+    eoa,
+    isEOA,
     collSymbol,
+    debtSymbol,
     targetRatio,
     price,
     priceState,
     ratioState,
-    eoa,
-    proxyAddr,
-    isEOA
+    proxyAddr
 ) {
     try {
         const [, proxy] = await getSender(eoa, proxyAddr, true);
 
         const { chainId } = await hre.ethers.provider.getNetwork();
 
-        const market = COMP_V3_MARKETS[chainId][debtSymbol === "ETH" ? "WETH" : debtSymbol];
+        // Resolve market address from symbol (use debtSymbol if marketSymbol not provided)
+        const resolvedMarketSymbol = marketSymbol || debtSymbol;
 
-        const collTokenData = getTokenInfo(collSymbol, chainId);
-        const debtTokenData = getTokenInfo(debtSymbol, chainId);
+        if (!COMP_V3_MARKETS[chainId]) {
+            throw new Error(`Chain ${chainId} is not supported`);
+        }
+
+        const market = COMP_V3_MARKETS[chainId][resolvedMarketSymbol === "ETH" ? "WETH" : resolvedMarketSymbol];
+
+        if (!market) {
+            throw new Error(`Market not found for symbol ${resolvedMarketSymbol} on chain ${chainId}`);
+        }
+
+        // Resolve bundleId from automation-sdk (ratioState: under=repay, over=boost)
+        const isRepay = ratioState.toLowerCase() === "under";
+
+        let bundleId;
+
+        const M = automationSdk.enums.Bundles.MainnetIds;
+        const A = automationSdk.enums.Bundles.ArbitrumIds;
+        const B = automationSdk.enums.Bundles.BaseIds;
+
+        if (chainId === 1) {
+            if (isEOA) {
+                bundleId = isRepay ? M.COMP_V3_EOA_REPAY_ON_PRICE : M.COMP_V3_EOA_BOOST_ON_PRICE;
+            } else {
+                bundleId = isRepay ? M.COMP_V3_SW_REPAY_ON_PRICE : M.COMP_V3_SW_BOOST_ON_PRICE;
+            }
+        } else if (chainId === 42161) {
+            if (isEOA) {
+                bundleId = isRepay ? A.COMP_V3_EOA_REPAY_ON_PRICE : A.COMP_V3_EOA_BOOST_ON_PRICE;
+            } else {
+                bundleId = isRepay ? A.COMP_V3_SW_REPAY_ON_PRICE : A.COMP_V3_SW_BOOST_ON_PRICE;
+            }
+        } else if (chainId === 8453) {
+            if (isEOA) {
+                bundleId = isRepay ? B.COMP_V3_EOA_REPAY_ON_PRICE : B.COMP_V3_EOA_BOOST_ON_PRICE;
+            } else {
+                bundleId = isRepay ? B.COMP_V3_SW_REPAY_ON_PRICE : B.COMP_V3_SW_BOOST_ON_PRICE;
+            }
+        } else {
+            throw new Error(`Chain ${chainId} is not supported for Compound V3 leverage management on price`);
+        }
+
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
 
         const strategySub = automationSdk.strategySubService.compoundV3Encode.leverageManagementOnPrice(
             bundleId,
@@ -212,7 +307,7 @@ async function subCompoundV3LeverageManagementOnPrice(
             price,
             priceState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
             ratioState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
-            isEOA ? eoa : proxyAddr
+            isEOA ? eoa : proxy.address
         );
 
         const subId = await subToStrategy(proxy, strategySub);
@@ -226,37 +321,62 @@ async function subCompoundV3LeverageManagementOnPrice(
 
 /**
  * Subscribes to Compound V3 close on price strategy
- * @param {string} bundleId Bundle ID
- * @param {string} debtSymbol symbol of the debt token
- * @param {string} collSymbol symbol of the collateral token
- * @param {number} stopLossPrice trigger price for stop loss
- * @param {number} takeProfitPrice rigger price for take profit
- * @param {number} closeStrategyType Type of close strategy. See automationSdk.enums.CloseStrategyType
+ * @param {string|null} marketSymbol Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol.
  * @param {string} eoa EOA address
- * @param {string} proxyAddr proxy address
  * @param {boolean} isEOA whether the subscription is for an EOA position or not
+ * @param {string} collSymbol symbol of the collateral token
+ * @param {string} debtSymbol symbol of the debt token
+ * @param {number} stopLossPrice trigger price for stop loss
+ * @param {number} takeProfitPrice trigger price for take profit
+ * @param {number} closeStrategyType Type of close strategy. See automationSdk.enums.CloseStrategyType
+ * @param {string} proxyAddr proxy address
  * @returns {Object} StrategySub object and ID of the subscription
  */
 async function subCompoundV3CloseOnPrice(
-    bundleId,
-    debtSymbol,
+    marketSymbol,
+    eoa,
+    isEOA,
     collSymbol,
+    debtSymbol,
     stopLossPrice,
     takeProfitPrice,
     closeStrategyType,
-    eoa,
-    proxyAddr,
-    isEOA
+    proxyAddr
 ) {
     try {
         const [, proxy] = await getSender(eoa, proxyAddr, true);
 
         const { chainId } = await hre.ethers.provider.getNetwork();
 
-        const market = COMP_V3_MARKETS[chainId][debtSymbol === "ETH" ? "WETH" : debtSymbol];
+        // Resolve market address from symbol (use debtSymbol if marketSymbol not provided)
+        const resolvedMarketSymbol = marketSymbol || debtSymbol;
 
-        const collTokenData = getTokenInfo(collSymbol, chainId);
-        const debtTokenData = getTokenInfo(debtSymbol, chainId);
+        if (!COMP_V3_MARKETS[chainId]) {
+            throw new Error(`Chain ${chainId} is not supported`);
+        }
+
+        const market = COMP_V3_MARKETS[chainId][resolvedMarketSymbol === "ETH" ? "WETH" : resolvedMarketSymbol];
+
+        if (!market) {
+            throw new Error(`Market not found for symbol ${resolvedMarketSymbol} on chain ${chainId}`);
+        }
+
+        // Resolve bundleId from automation-sdk
+
+        let bundleId;
+
+        if (chainId === 1) {
+            bundleId = isEOA ? automationSdk.enums.Bundles.MainnetIds.COMP_V3_EOA_CLOSE : automationSdk.enums.Bundles.MainnetIds.COMP_V3_SW_CLOSE;
+        } else if (chainId === 42161) {
+            bundleId = isEOA ? automationSdk.enums.Bundles.ArbitrumIds.COMP_V3_EOA_CLOSE : automationSdk.enums.Bundles.ArbitrumIds.COMP_V3_SW_CLOSE;
+        } else if (chainId === 8453) {
+            bundleId = isEOA ? automationSdk.enums.Bundles.BaseIds.COMP_V3_EOA_CLOSE : automationSdk.enums.Bundles.BaseIds.COMP_V3_SW_CLOSE;
+        } else {
+            throw new Error(`Chain ${chainId} is not supported for Compound V3 close on price`);
+        }
+
+        const collTokenData = await getTokenInfo(collSymbol);
+        const debtTokenData = await getTokenInfo(debtSymbol);
 
         const {
             stopLossType,
@@ -272,7 +392,7 @@ async function subCompoundV3CloseOnPrice(
             stopLossType,
             takeProfitPrice,
             takeProfitType,
-            isEOA ? eoa : proxyAddr
+            isEOA ? eoa : proxy.address
         );
 
         const subId = await subToStrategy(proxy, strategySub);

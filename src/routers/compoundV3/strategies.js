@@ -1,7 +1,8 @@
 /* eslint-disable jsdoc/check-tag-names */
 const express = require("express");
-const { setupVnet, getWalletAddr, defaultsToSafe } = require("../../utils");
-const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagementOnPrice, subCompoundV3CloseOnPrice, subCompoundV3LeverageManagement } = require("../../helpers/compoundV3/strategies");
+const { setupVnet, getSmartWallet, defaultsToSafe } = require("../../utils");
+const { subCompoundV3AutomationStrategy, subCompoundV3LeverageManagement, subCompoundV3LeverageManagementOnPrice, subCompoundV3CloseOnPrice } = require("../../helpers/compoundV3/strategies");
+const { body, validationResult } = require("express-validator");
 
 const router = express.Router();
 
@@ -20,31 +21,44 @@ const router = express.Router();
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - debtSymbol
+ *               - minRatio
+ *               - maxRatio
+ *               - targetRepayRatio
+ *               - targetBoostRatio
+ *               - boostEnabled
+ *               - isEOA
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
- *              owner:
+ *                description: "RPC URL of the Tenderly vnet"
+ *              eoa:
  *                type: string
  *                example: "0x938D18B5bFb3d03D066052d6e513d2915d8797A0"
- *              market:
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
+ *              marketSymbol:
  *                type: string
- *                example: "0xc3d688B66703497DAA19211EEdff47f25384cdc3"
- *              baseToken:
+ *                example: "USDC"
+ *                description: "Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol."
+ *              debtSymbol:
  *                type: string
- *                example: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
- *                description: "Base token for market, e.g. USDC coin address"
+ *                example: "USDC"
+ *                description: "Debt (base) token symbol; market resolved from marketSymbol or debtSymbol. ETH → WETH."
  *              minRatio:
- *                type: integer
+ *                type: number
  *                example: 200
  *              maxRatio:
- *                 type: integer
+ *                 type: number
  *                 example: 300
  *              targetRepayRatio:
- *                 type: integer
+ *                 type: number
  *                 example: 220
  *              targetBoostRatio:
- *                 type: integer
+ *                 type: number
  *                 example: 250
  *              boostEnabled:
  *                 type: boolean
@@ -52,15 +66,24 @@ const router = express.Router();
  *              isEOA:
  *                 type: boolean
  *                 example: false
- *              walletAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
- *                description: "The address of the wallet that will be used for the position, if not provided a new wallet will be created"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *              walletType:
  *                type: string
  *                example: "safe"
- *                description: "Whether to use the safe as smart wallet or dsproxy if walletAddr is not provided. WalletType field is not mandatory. Defaults to safe"
+ *                description: "Whether to use Safe as smart wallet or dsproxy if smartWallet is not provided. Optional, defaults to safe"
  *     responses:
+ *       '400':
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
  *       '200':
  *         description: OK
  *         content:
@@ -92,46 +115,51 @@ const router = express.Router();
  *                 error:
  *                   type: string
  */
-router.post("/dfs-automation", async (req, res) => {
-    try {
-        const {
-            vnetUrl,
-            owner,
-            market,
-            baseToken,
-            minRatio,
-            maxRatio,
-            targetRepayRatio,
-            targetBoostRatio,
-            boostEnabled,
-            isEOA
-        } = req.body;
+router.post("/dfs-automation",
+    body(["vnetUrl", "eoa", "debtSymbol", "minRatio", "maxRatio", "targetRepayRatio", "targetBoostRatio", "boostEnabled", "isEOA"]).notEmpty(),
+    body(["minRatio", "maxRatio", "targetRepayRatio", "targetBoostRatio"]).isFloat({ gt: 0 }),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-        await setupVnet(vnetUrl, [owner]);
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        const sub = await subCompoundV3AutomationStrategy(
-            owner,
-            market,
-            baseToken,
-            minRatio,
-            maxRatio,
-            targetRepayRatio,
-            targetBoostRatio,
-            boostEnabled,
-            isEOA,
-            getWalletAddr(req),
-            defaultsToSafe(req)
-        );
+        try {
+            const {
+                vnetUrl,
+                eoa,
+                marketSymbol,
+                debtSymbol,
+                minRatio,
+                maxRatio,
+                targetRepayRatio,
+                targetBoostRatio,
+                boostEnabled,
+                isEOA
+            } = req.body;
 
-        res.status(200).send(sub);
-    } catch (err) {
-        const e = {
-            error: `Failed to subscribe to Compound V3 automation strategy with error : ${err.toString()}`
-        };
+            await setupVnet(vnetUrl, [eoa]);
 
-        res.status(500).send(e);
-    }
-});
+            const sub = await subCompoundV3AutomationStrategy(
+                marketSymbol || null,
+                eoa,
+                debtSymbol,
+                minRatio,
+                maxRatio,
+                targetRepayRatio,
+                targetBoostRatio,
+                boostEnabled,
+                isEOA,
+                getSmartWallet(req),
+                defaultsToSafe(req)
+            );
+
+            return res.status(200).send(sub);
+        } catch (err) {
+            return res.status(500).send({ error: `Failed to subscribe to Compound V3 automation strategy with error : ${err.toString()}` });
+        }
+    });
 
 /**
  * @swagger
@@ -140,18 +168,7 @@ router.post("/dfs-automation", async (req, res) => {
  *     summary: Subscribe to a Compound V3 leverage management strategy
  *     tags:
  *      - CompoundV3
- *     description: >
- *      MAINNNET BUNDLES:<br/>
- *          &nbsp;&nbsp;SW_REPAY = 28 [15, 82]<br/>
- *          &nbsp;&nbsp;SW_BOOST = 29 [19, 83]<br/>
- *          &nbsp;&nbsp;EOA_REPAY = 30 [23, 84]<br/>
- *          &nbsp;&nbsp;EOA_BOOST = 31 [27, 85]<br/><br/>
- *      ARBITRUM BUNDLES:<br/>
- *          &nbsp;&nbsp;SW_REPAY = 4 [10, 11]<br/>
- *          &nbsp;&nbsp;SW_BOOST = 5 [12, 13]<br/><br/>
- *      BASE BUNDLES:<br/>
- *          &nbsp;&nbsp;SW_REPAY = 4 [10, 11]<br/>
- *          &nbsp;&nbsp;SW_BOOST = 5 [12, 13]<br/><br/>
+ *     description:
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -159,18 +176,31 @@ router.post("/dfs-automation", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - debtSymbol
+ *               - triggerRatio
+ *               - targetRatio
+ *               - ratioState
+ *               - isEOA
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
- *              bundleId:
+ *                description: "RPC URL of the Tenderly vnet"
+ *              eoa:
  *                type: string
- *                example: "28"
- *                description: "For mainnet 28 = sw repay; 29 = sw boost; 30 = eoa repay; 31 = eoa boost"
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              marketSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Symbol of the market token (e.g., USDC, ETH, WETH)"
+ *                description: "Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol."
+ *              debtSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Debt (base) token symbol; market resolved from marketSymbol or debtSymbol. ETH → WETH."
  *              triggerRatio:
  *                type: number
  *                example: 200
@@ -181,20 +211,17 @@ router.post("/dfs-automation", async (req, res) => {
  *                description: "Target ratio after the strategy executes"
  *              ratioState:
  *                type: string
+ *                enum: [under, over]
  *                example: "under"
  *                description: "Ratio state trigger condition ('under' or 'over')"
- *              eoa:
- *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *                description: "The EOA which will be sending transactions"
- *              proxyAddr:
- *                type: string
- *                example: "0xAA28CaFdd40a8156E23b64b75C8fD9fdF28064Ed"
- *                description: "The address of the wallet"
  *              isEOA:
  *                type: boolean
  *                example: false
  *                description: "Whether the subscription is for an EOA"
+ *              smartWallet:
+ *                type: string
+ *                example: "0xAA28CaFdd40a8156E23b64b75C8fD9fdF28064Ed"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *     responses:
  *       '200':
  *         description: OK
@@ -216,6 +243,15 @@ router.post("/dfs-automation", async (req, res) => {
  *                     ["0x..."],
  *                     ["0x...", "0x...", "0x...", "0x..."]
  *                   ]
+ *       '400':
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -226,42 +262,47 @@ router.post("/dfs-automation", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/leverage-management", async (req, res) => {
-    try {
-        const {
-            vnetUrl,
-            bundleId,
-            marketSymbol,
-            triggerRatio,
-            targetRatio,
-            ratioState,
-            eoa,
-            proxyAddr,
-            isEOA
-        } = req.body;
+router.post("/leverage-management",
+    body(["vnetUrl", "debtSymbol", "triggerRatio", "targetRatio", "ratioState", "eoa", "isEOA"]).notEmpty(),
+    body(["triggerRatio", "targetRatio"]).isFloat({ gt: 0 }),
+    body("ratioState").isIn(["under", "over"]),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-        await setupVnet(vnetUrl, [eoa]);
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        const sub = await subCompoundV3LeverageManagement(
-            bundleId,
-            marketSymbol,
-            triggerRatio,
-            targetRatio,
-            ratioState,
-            eoa,
-            proxyAddr,
-            isEOA
-        );
+        try {
+            const {
+                vnetUrl,
+                marketSymbol,
+                debtSymbol,
+                triggerRatio,
+                targetRatio,
+                ratioState,
+                eoa,
+                isEOA
+            } = req.body;
 
-        res.status(200).send(sub);
-    } catch (err) {
-        const e = {
-            error: `Failed to subscribe to Compound V3 leverage management strategy with error : ${err.toString()}`
-        };
+            await setupVnet(vnetUrl, [eoa]);
 
-        res.status(500).send(e);
-    }
-});
+            const sub = await subCompoundV3LeverageManagement(
+                marketSymbol || null,
+                eoa,
+                debtSymbol,
+                triggerRatio,
+                targetRatio,
+                ratioState,
+                isEOA,
+                getSmartWallet(req)
+            );
+
+            return res.status(200).send(sub);
+        } catch (err) {
+            return res.status(500).send({ error: `Failed to subscribe to Compound V3 leverage management strategy with error : ${err.toString()}` });
+        }
+    });
 
 /**
  * @swagger
@@ -278,26 +319,41 @@ router.post("/leverage-management", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - isEOA
+ *               - collSymbol
+ *               - debtSymbol
+ *               - targetRatio
+ *               - price
+ *               - priceState
+ *               - ratioState
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
- *              bundleId:
+ *                description: "RPC URL of the Tenderly vnet"
+ *              eoa:
  *                type: string
- *                example: "for mainnet 46 = repayOnPrice; 47 = boostOnPrice; 49 = eoa repayOnPrice; 50 = eoa boostOnPrice"
- *                description: "ID of the bundle to subscribe to"
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              isEOA:
  *                type: boolean
  *                example: false
  *                description: "Whether the subscription is for an EOA"
- *              debtSymbol:
+ *              marketSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol."
  *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH → WETH."
+ *              debtSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Debt token symbol; market resolved from marketSymbol or debtSymbol. ETH → WETH."
  *              targetRatio:
  *                type: number
  *                example: 200
@@ -308,20 +364,18 @@ router.post("/leverage-management", async (req, res) => {
  *                description: "Price threshold for triggering the strategy"
  *              priceState:
  *                type: string
+ *                enum: [under, over]
  *                example: "under"
  *                description: "Price state trigger condition ('under' or 'over')"
  *              ratioState:
  *                type: string
+ *                enum: [under, over]
  *                example: "under"
  *                description: "'under' for repay on price or 'over' for boost on price"
- *              eoa:
- *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *                description: "The EOA which will be sending transactions"
- *              proxyAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0xAA28CaFdd40a8156E23b64b75C8fD9fdF28064Ed"
- *                description: "The address of the wallet"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *     responses:
  *       '200':
  *         description: OK
@@ -346,6 +400,15 @@ router.post("/leverage-management", async (req, res) => {
  *                     "2000",
  *                     "0"
  *                   ]
+ *       '400':
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -356,46 +419,51 @@ router.post("/leverage-management", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/leverage-management-on-price", async (req, res) => {
-    try {
-        const {
-            vnetUrl,
-            bundleId,
-            isEOA,
-            debtSymbol,
-            collSymbol,
-            targetRatio,
-            price,
-            priceState,
-            ratioState,
-            eoa,
-            proxyAddr
-        } = req.body;
+router.post("/leverage-management-on-price",
+    body(["vnetUrl", "isEOA", "debtSymbol", "collSymbol", "targetRatio", "price", "priceState", "ratioState", "eoa"]).notEmpty(),
+    body(["targetRatio", "price"]).isFloat({ gt: 0 }),
+    body(["priceState", "ratioState"]).isIn(["under", "over"]),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-        await setupVnet(vnetUrl, [eoa]);
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        const sub = await subCompoundV3LeverageManagementOnPrice(
-            bundleId,
-            debtSymbol,
-            collSymbol,
-            targetRatio,
-            price,
-            priceState,
-            ratioState,
-            eoa,
-            proxyAddr,
-            isEOA
-        );
+        try {
+            const {
+                vnetUrl,
+                isEOA,
+                marketSymbol,
+                debtSymbol,
+                collSymbol,
+                targetRatio,
+                price,
+                priceState,
+                ratioState,
+                eoa
+            } = req.body;
 
-        res.status(200).send(sub);
-    } catch (err) {
-        const e = {
-            error: `Failed to subscribe to Compound V3 leverage management on price strategy with error : ${err.toString()}`
-        };
+            await setupVnet(vnetUrl, [eoa]);
 
-        res.status(500).send(e);
-    }
-});
+            const sub = await subCompoundV3LeverageManagementOnPrice(
+                marketSymbol || null,
+                eoa,
+                isEOA,
+                collSymbol,
+                debtSymbol,
+                targetRatio,
+                price,
+                priceState,
+                ratioState,
+                getSmartWallet(req)
+            );
+
+            return res.status(200).send(sub);
+        } catch (err) {
+            return res.status(500).send({ error: `Failed to subscribe to Compound V3 leverage management on price strategy with error : ${err.toString()}` });
+        }
+    });
 
 /**
  * @swagger
@@ -412,46 +480,56 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - isEOA
+ *               - collSymbol
+ *               - debtSymbol
+ *               - stopLossPrice
+ *               - takeProfitPrice
+ *               - closeStrategyType
  *             properties:
  *              vnetUrl:
  *                type: string
  *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
- *              bundleId:
+ *                description: "RPC URL of the Tenderly vnet"
+ *              eoa:
  *                type: string
- *                example: "for mainnet 48 = closeOnPrice; 51 = eoa closeOnPrice"
- *                description: "ID of the bundle to subscribe to"
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the newly created wallet if smartWallet is not provided"
  *              isEOA:
  *                type: boolean
  *                example: false
  *                description: "Whether the subscription is for an EOA"
- *              debtSymbol:
+ *              marketSymbol:
  *                type: string
  *                example: "USDC"
- *                description: "Debt token symbol (e.g., DAI, USDC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol."
  *              collSymbol:
  *                type: string
  *                example: "WETH"
- *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH will be automatically converted to WETH."
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH → WETH."
+ *              debtSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Debt token symbol; market resolved from marketSymbol or debtSymbol. ETH → WETH."
  *              stopLossPrice:
- *                type: integer
+ *                type: number
  *                example: 1500
  *                description: "Lower price for stop loss. Pass 0 if only subscribing to take profit."
  *              takeProfitPrice:
- *                 type: integer
+ *                 type: number
  *                 example: 4000
  *                 description: "Upper price for take profit. Pass 0 if only subscribing to stop loss."
  *              closeStrategyType:
- *                 type: number
+ *                 type: integer
  *                 example: 5
  *                 description: "0=TakeProfitColl, 1=StopLossColl, 2=TakeProfitDebt, 3=StopLossDebt, 4=TakeProfitCollStopLossColl, 5=TakeProfitCollStopLossDebt, 6=TakeProfitDebtStopLossDebt, 7=TakeProfitDebtStopLossColl"
- *              eoa:
- *                type: string
- *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
- *                description: "The EOA which will be sending transactions"
- *              proxyAddr:
+ *              smartWallet:
  *                type: string
  *                example: "0xAA28CaFdd40a8156E23b64b75C8fD9fdF28064Ed"
- *                description: "The address of the wallet"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
  *     responses:
  *       '200':
  *         description: OK
@@ -477,6 +555,15 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *                     "2200",
  *                     "1"
  *                   ]
+ *       '400':
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
  *       '500':
  *         description: Internal Server Error
  *         content:
@@ -487,43 +574,48 @@ router.post("/leverage-management-on-price", async (req, res) => {
  *                 error:
  *                   type: string
  */
-router.post("/close-on-price", async (req, res) => {
-    try {
-        const {
-            vnetUrl,
-            bundleId,
-            isEOA,
-            debtSymbol,
-            collSymbol,
-            stopLossPrice,
-            takeProfitPrice,
-            closeStrategyType,
-            eoa,
-            proxyAddr
-        } = req.body;
+router.post("/close-on-price",
+    body(["vnetUrl", "isEOA", "debtSymbol", "collSymbol", "stopLossPrice", "takeProfitPrice", "closeStrategyType", "eoa"]).notEmpty(),
+    body(["stopLossPrice", "takeProfitPrice"]).isFloat({ min: 0 }),
+    body("closeStrategyType").isInt({ min: 0, max: 7 }),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
 
-        await setupVnet(vnetUrl, [eoa]);
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
 
-        const sub = await subCompoundV3CloseOnPrice(
-            bundleId,
-            debtSymbol,
-            collSymbol,
-            stopLossPrice,
-            takeProfitPrice,
-            closeStrategyType,
-            eoa,
-            proxyAddr,
-            isEOA
-        );
+        try {
+            const {
+                vnetUrl,
+                isEOA,
+                marketSymbol,
+                debtSymbol,
+                collSymbol,
+                stopLossPrice,
+                takeProfitPrice,
+                closeStrategyType,
+                eoa
+            } = req.body;
 
-        res.status(200).send(sub);
-    } catch (err) {
-        const e = {
-            error: `Failed to subscribe to Compound V3 close on price strategy with error : ${err.toString()}`
-        };
+            await setupVnet(vnetUrl, [eoa]);
 
-        res.status(500).send(e);
-    }
-});
+            const sub = await subCompoundV3CloseOnPrice(
+                marketSymbol || null,
+                eoa,
+                isEOA,
+                collSymbol,
+                debtSymbol,
+                stopLossPrice,
+                takeProfitPrice,
+                closeStrategyType,
+                getSmartWallet(req)
+            );
+
+            return res.status(200).send(sub);
+        } catch (err) {
+            return res.status(500).send({ error: `Failed to subscribe to Compound V3 close on price strategy with error : ${err.toString()}` });
+        }
+    });
 
 module.exports = router;

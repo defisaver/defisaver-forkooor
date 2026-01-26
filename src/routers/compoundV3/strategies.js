@@ -824,12 +824,12 @@ router.post("/boost/smart-wallet",
 
 /**
  * @swagger
- * /compound/v3/strategies/leverage-management-on-price/eoa:
+ * /compound/v3/strategies/repay-on-price/eoa:
  *   post:
- *     summary: Subscribe to a Compound V3 leverage management on price strategy (EOA)
+ *     summary: Subscribe to a Compound V3 repay on price strategy (EOA)
  *     tags:
  *      - CompoundV3
- *     description: Subscribes to Compound V3 leverage management on price strategy for EOA positions
+ *     description: Subscribes to Compound V3 repay on price strategy for EOA positions
  *     requestBody:
  *       description: Request body for the API endpoint
  *       required: true
@@ -843,9 +843,8 @@ router.post("/boost/smart-wallet",
  *               - collSymbol
  *               - debtSymbol
  *               - targetRatio
- *               - price
+ *               - triggerPrice
  *               - priceState
- *               - ratioState
  *             properties:
  *              vnetUrl:
  *                type: string
@@ -871,7 +870,7 @@ router.post("/boost/smart-wallet",
  *                type: number
  *                example: 200
  *                description: "Target ratio for the leverage management"
- *              price:
+ *              triggerPrice:
  *                type: number
  *                example: 2000
  *                description: "Price threshold for triggering the strategy"
@@ -880,11 +879,6 @@ router.post("/boost/smart-wallet",
  *                enum: [under, over]
  *                example: "under"
  *                description: "Price state trigger condition ('under' or 'over')"
- *              ratioState:
- *                type: string
- *                enum: [under, over]
- *                example: "under"
- *                description: "'under' for repay on price or 'over' for boost on price"
  *              smartWallet:
  *                type: string
  *                example: "0x0000000000000000000000000000000000000000"
@@ -932,10 +926,10 @@ router.post("/boost/smart-wallet",
  *                 error:
  *                   type: string
  */
-router.post("/leverage-management-on-price/eoa",
-    body(["vnetUrl", "debtSymbol", "collSymbol", "targetRatio", "price", "priceState", "ratioState", "eoa"]).notEmpty(),
-    body(["targetRatio", "price"]).isFloat({ gt: 0 }),
-    body(["priceState", "ratioState"]).isIn(["under", "over"]),
+router.post("/repay-on-price/eoa",
+    body(["vnetUrl", "debtSymbol", "collSymbol", "targetRatio", "triggerPrice", "priceState", "eoa"]).notEmpty(),
+    body(["targetRatio", "triggerPrice"]).isFloat({ gt: 0 }),
+    body(["priceState"]).isIn(["under", "over"]),
     async (req, res) => {
         const validationErrors = validationResult(req);
 
@@ -950,9 +944,8 @@ router.post("/leverage-management-on-price/eoa",
                 debtSymbol,
                 collSymbol,
                 targetRatio,
-                price,
+                triggerPrice,
                 priceState,
-                ratioState,
                 eoa
             } = req.body;
 
@@ -965,9 +958,9 @@ router.post("/leverage-management-on-price/eoa",
                 collSymbol,
                 debtSymbol,
                 targetRatio,
-                price,
+                triggerPrice,
                 priceState,
-                ratioState,
+                true,
                 getSmartWallet(req)
             );
 
@@ -976,6 +969,452 @@ router.post("/leverage-management-on-price/eoa",
             return res.status(500).send({ error: `Failed to subscribe to Compound V3 leverage management on price strategy (EOA) with error : ${err.toString()}` });
         }
     });
+
+/**
+ * @swagger
+ * /compound/v3/strategies/repay-on-price/smart-wallet:
+ *   post:
+ *     summary: Subscribe to a Compound V3 repay on price strategy (Smart Wallet)
+ *     tags:
+ *      - CompoundV3
+ *     description: Subscribes to Compound V3 repay on price strategy for Smart Wallet positions
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collSymbol
+ *               - debtSymbol
+ *               - targetRatio
+ *               - triggerPrice
+ *               - priceState
+ *             properties:
+ *              vnetUrl:
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                description: "RPC URL of the Tenderly vnet"
+ *              eoa:
+ *                type: string
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the position"
+ *              marketSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol."
+ *              collSymbol:
+ *                type: string
+ *                example: "WETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH → WETH."
+ *              debtSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Debt token symbol; market resolved from marketSymbol or debtSymbol. ETH → WETH."
+ *              targetRatio:
+ *                type: number
+ *                example: 200
+ *                description: "Target ratio for the leverage management"
+ *              triggerPrice:
+ *                type: number
+ *                example: 2000
+ *                description: "Price threshold for triggering the strategy"
+ *              priceState:
+ *                type: string
+ *                enum: [under, over]
+ *                example: "under"
+ *                description: "Price state trigger condition ('under' or 'over')"
+ *              smartWallet:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "230"
+ *                   description: "ID of the created subscription"
+ *                 strategySub:
+ *                   type: array
+ *                   description: "Strategy subscription details"
+ *                   example: [
+ *                     "42",
+ *                     "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+ *                     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+ *                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+ *                     "200",
+ *                     "2000",
+ *                     "0"
+ *                   ]
+ *       '400':
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/repay-on-price/smart-wallet",
+    body(["vnetUrl", "debtSymbol", "collSymbol", "targetRatio", "triggerPrice", "priceState", "eoa"]).notEmpty(),
+    body(["targetRatio", "triggerPrice"]).isFloat({ gt: 0 }),
+    body(["priceState"]).isIn(["under", "over"]),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        try {
+            const {
+                vnetUrl,
+                marketSymbol,
+                debtSymbol,
+                collSymbol,
+                targetRatio,
+                triggerPrice,
+                priceState,
+                eoa
+            } = req.body;
+
+            await setupVnet(vnetUrl, [eoa]);
+
+            const sub = await subCompoundV3LeverageManagementOnPrice(
+                marketSymbol || null,
+                eoa,
+                false,
+                collSymbol,
+                debtSymbol,
+                targetRatio,
+                triggerPrice,
+                priceState,
+                true,
+                getSmartWallet(req)
+            );
+
+            return res.status(200).send(sub);
+        } catch (err) {
+            return res.status(500).send({ error: `Failed to subscribe to Compound V3 leverage management on price strategy (EOA) with error : ${err.toString()}` });
+        }
+    });
+
+
+/**
+ * @swagger
+ * /compound/v3/strategies/boost-on-price/eoa:
+ *   post:
+ *     summary: Subscribe to a Compound V3 boost on price strategy (EOA)
+ *     tags:
+ *      - CompoundV3
+ *     description: Subscribes to Compound V3 boost on price strategy for EOA positions
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collSymbol
+ *               - debtSymbol
+ *               - targetRatio
+ *               - triggerPrice
+ *               - priceState
+ *             properties:
+ *              vnetUrl:
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                description: "RPC URL of the Tenderly vnet"
+ *              eoa:
+ *                type: string
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the position"
+ *              marketSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol."
+ *              collSymbol:
+ *                type: string
+ *                example: "WETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH → WETH."
+ *              debtSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Debt token symbol; market resolved from marketSymbol or debtSymbol. ETH → WETH."
+ *              targetRatio:
+ *                type: number
+ *                example: 200
+ *                description: "Target ratio for the leverage management"
+ *              triggerPrice:
+ *                type: number
+ *                example: 2000
+ *                description: "Price threshold for triggering the strategy"
+ *              priceState:
+ *                type: string
+ *                enum: [under, over]
+ *                example: "under"
+ *                description: "Price state trigger condition ('under' or 'over')"
+ *              smartWallet:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "230"
+ *                   description: "ID of the created subscription"
+ *                 strategySub:
+ *                   type: array
+ *                   description: "Strategy subscription details"
+ *                   example: [
+ *                     "42",
+ *                     "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+ *                     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+ *                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+ *                     "200",
+ *                     "2000",
+ *                     "0"
+ *                   ]
+ *       '400':
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/boost-on-price/eoa",
+    body(["vnetUrl", "debtSymbol", "collSymbol", "targetRatio", "triggerPrice", "priceState", "eoa"]).notEmpty(),
+    body(["targetRatio", "triggerPrice"]).isFloat({ gt: 0 }),
+    body(["priceState"]).isIn(["under", "over"]),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        try {
+            const {
+                vnetUrl,
+                marketSymbol,
+                debtSymbol,
+                collSymbol,
+                targetRatio,
+                triggerPrice,
+                priceState,
+                eoa
+            } = req.body;
+
+            await setupVnet(vnetUrl, [eoa]);
+
+            const sub = await subCompoundV3LeverageManagementOnPrice(
+                marketSymbol || null,
+                eoa,
+                true,
+                collSymbol,
+                debtSymbol,
+                targetRatio,
+                triggerPrice,
+                priceState,
+                false,
+                getSmartWallet(req)
+            );
+
+            return res.status(200).send(sub);
+        } catch (err) {
+            return res.status(500).send({ error: `Failed to subscribe to Compound V3 leverage management on price strategy (EOA) with error : ${err.toString()}` });
+        }
+    });
+
+/**
+ * @swagger
+ * /compound/v3/strategies/boost-on-price/smart-wallet:
+ *   post:
+ *     summary: Subscribe to a Compound V3 boost on price strategy (Smart Wallet)
+ *     tags:
+ *      - CompoundV3
+ *     description: Subscribes to Compound V3 boost on price strategy for Smart Wallet positions
+ *     requestBody:
+ *       description: Request body for the API endpoint
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - vnetUrl
+ *               - eoa
+ *               - collSymbol
+ *               - debtSymbol
+ *               - targetRatio
+ *               - triggerPrice
+ *               - priceState
+ *             properties:
+ *              vnetUrl:
+ *                type: string
+ *                example: "https://virtual.mainnet.eu.rpc.tenderly.co/7aedef25-da67-4ef4-88f2-f41ce6fc5ea0"
+ *                description: "RPC URL of the Tenderly vnet"
+ *              eoa:
+ *                type: string
+ *                example: "0x499CC74894FDA108c5D32061787e98d1019e64D0"
+ *                description: "The EOA which will be sending transactions and own the position"
+ *              marketSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Optional. Market symbol (e.g. USDC, WETH). If not provided, derived from debtSymbol."
+ *              collSymbol:
+ *                type: string
+ *                example: "WETH"
+ *                description: "Collateral token symbol (e.g., ETH, WBTC, USDT). ETH → WETH."
+ *              debtSymbol:
+ *                type: string
+ *                example: "USDC"
+ *                description: "Debt token symbol; market resolved from marketSymbol or debtSymbol. ETH → WETH."
+ *              targetRatio:
+ *                type: number
+ *                example: 200
+ *                description: "Target ratio for the leverage management"
+ *              triggerPrice:
+ *                type: number
+ *                example: 2000
+ *                description: "Price threshold for triggering the strategy"
+ *              priceState:
+ *                type: string
+ *                enum: [under, over]
+ *                example: "under"
+ *                description: "Price state trigger condition ('under' or 'over')"
+ *              smartWallet:
+ *                type: string
+ *                example: "0x0000000000000000000000000000000000000000"
+ *                description: "Optional proxy address. If not provided, a new wallet will be created"
+ *     responses:
+ *       '200':
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subId:
+ *                   type: string
+ *                   example: "230"
+ *                   description: "ID of the created subscription"
+ *                 strategySub:
+ *                   type: array
+ *                   description: "Strategy subscription details"
+ *                   example: [
+ *                     "42",
+ *                     "0xc3d688B66703497DAA19211EEdff47f25384cdc3",
+ *                     "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+ *                     "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+ *                     "200",
+ *                     "2000",
+ *                     "0"
+ *                   ]
+ *       '400':
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *       '500':
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
+router.post("/boost-on-price/smart-wallet",
+    body(["vnetUrl", "debtSymbol", "collSymbol", "targetRatio", "triggerPrice", "priceState", "eoa"]).notEmpty(),
+    body(["targetRatio", "triggerPrice"]).isFloat({ gt: 0 }),
+    body(["priceState"]).isIn(["under", "over"]),
+    async (req, res) => {
+        const validationErrors = validationResult(req);
+
+        if (!validationErrors.isEmpty()) {
+            return res.status(400).send({ error: validationErrors.array() });
+        }
+
+        try {
+            const {
+                vnetUrl,
+                marketSymbol,
+                debtSymbol,
+                collSymbol,
+                targetRatio,
+                triggerPrice,
+                priceState,
+                eoa
+            } = req.body;
+
+            await setupVnet(vnetUrl, [eoa]);
+
+            const sub = await subCompoundV3LeverageManagementOnPrice(
+                marketSymbol || null,
+                eoa,
+                false,
+                collSymbol,
+                debtSymbol,
+                targetRatio,
+                triggerPrice,
+                priceState,
+                false,
+                getSmartWallet(req)
+            );
+
+            return res.status(200).send(sub);
+        } catch (err) {
+            return res.status(500).send({ error: `Failed to subscribe to Compound V3 leverage management on price strategy (EOA) with error : ${err.toString()}` });
+        }
+    });
+
 
 /**
  * @swagger

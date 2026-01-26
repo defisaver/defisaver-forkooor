@@ -229,7 +229,7 @@ async function subCompoundV3LeverageManagement(
  * @param {number} targetRatio target ratio
  * @param {number} price price
  * @param {string} priceState price state
- * @param {string} ratioState ratio state
+ * @param {string} isRepay true for repay on price, false for boost on price
  * @param {string} proxyAddr proxy address
  * @returns {Object} StrategySub object and ID of the subscription
  */
@@ -242,7 +242,7 @@ async function subCompoundV3LeverageManagementOnPrice(
     targetRatio,
     price,
     priceState,
-    ratioState,
+    isRepay,
     proxyAddr
 ) {
     try {
@@ -264,7 +264,6 @@ async function subCompoundV3LeverageManagementOnPrice(
         }
 
         // Resolve bundleId from automation-sdk (ratioState: under=repay, over=boost)
-        const isRepay = ratioState.toLowerCase() === "under";
 
         let bundleId;
 
@@ -305,7 +304,7 @@ async function subCompoundV3LeverageManagementOnPrice(
             targetRatio,
             price,
             priceState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
-            ratioState.toString().toLowerCase() === "under" ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
+            isRepay ? automationSdk.enums.RatioState.UNDER : automationSdk.enums.RatioState.OVER,
             isEOA ? eoa : proxy.address
         );
 
